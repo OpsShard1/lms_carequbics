@@ -1,0 +1,126 @@
+/* Parent Progress Page */
+.parent-progress-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.parent-progress-container {
+  background: white;
+  border-radius: 24px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+}
+
+.header-section { text-align: center; margin-bottom: 2rem; }
+.header-section h1 { color: #1a1a2e; font-size: 2rem; margin-bottom: 0.5rem; }
+.header-section p { color: #64748b; }
+
+.lookup-form { max-width: 400px; margin: 0 auto; }
+
+.progress-report { animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.report-header { 
+  display: flex; 
+  align-items: center; 
+  gap: 1rem; 
+  margin-bottom: 2rem; 
+  padding-bottom: 1rem; 
+  border-bottom: 2px solid #e2e8f0; 
+  flex-wrap: wrap; 
+}
+
+.report-header h2 { color: #64748b; font-size: 1rem; font-weight: 500; }
+.report-header h3 { flex: 1; color: #1a1a2e; font-size: 1.5rem; margin: 0; }
+
+.attendance-summary h4, .chapter-progress h4 { 
+  color: #1a1a2e; 
+  margin-bottom: 1rem; 
+  font-size: 1.1rem; 
+}
+
+.summary-cards { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 1rem; 
+  margin-bottom: 2rem; 
+}
+
+.summary-card { 
+  text-align: center; 
+  padding: 1.25rem; 
+  border-radius: 12px; 
+  background: #f8fafc; 
+}
+
+.summary-card .number { 
+  display: block; 
+  font-size: 2rem; 
+  font-weight: 800; 
+  color: #1a1a2e; 
+}
+
+.summary-card .label { 
+  font-size: 0.8rem; 
+  color: #64748b; 
+  text-transform: uppercase; 
+}
+
+.summary-card.present { background: #d1fae5; }
+.summary-card.present .number { color: #059669; }
+.summary-card.absent { background: #fee2e2; }
+.summary-card.absent .number { color: #dc2626; }
+.summary-card.percentage { background: linear-gradient(135deg, #667eea, #764ba2); }
+.summary-card.percentage .number, .summary-card.percentage .label { color: white; }
+
+.progress-list { display: grid; gap: 0.75rem; }
+
+.progress-item { 
+  padding: 1rem 1.25rem; 
+  border-radius: 12px; 
+  background: #f8fafc; 
+  border-left: 4px solid #e2e8f0; 
+}
+
+.progress-item.status-completed { border-left-color: #10b981; }
+.progress-item.status-progress { border-left-color: #f59e0b; }
+
+.progress-main { display: flex; align-items: center; gap: 1rem; }
+.status-icon { font-size: 1.25rem; width: 30px; text-align: center; }
+.chapter-info { flex: 1; }
+.chapter-name { font-weight: 600; color: #1a1a2e; display: block; }
+.chapter-status { font-size: 0.8rem; color: #64748b; text-transform: capitalize; }
+
+.score { 
+  background: linear-gradient(135deg, #667eea, #764ba2); 
+  color: white; 
+  padding: 0.25rem 0.75rem; 
+  border-radius: 20px; 
+  font-weight: 600; 
+  font-size: 0.9rem; 
+}
+
+.remarks { 
+  margin-top: 0.75rem; 
+  padding-top: 0.75rem; 
+  border-top: 1px solid #e2e8f0; 
+  color: #64748b; 
+  font-size: 0.9rem; 
+}
+
+.completed-date { margin-top: 0.5rem; font-size: 0.8rem; color: #94a3b8; }
+
+@media (max-width: 600px) {
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .parent-progress-container { padding: 1.5rem; }
+}

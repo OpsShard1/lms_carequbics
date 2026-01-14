@@ -1,0 +1,130 @@
+/* Class Management Styles */
+.classes-page { max-width: 1200px; }
+.class-form-container { max-width: 100%; }
+
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.form-section:last-of-type { border-bottom: none; }
+.form-section h4 { color: #1a1a2e; margin-bottom: 0.5rem; font-size: 1.1rem; }
+.form-section .hint { color: #64748b; font-size: 0.875rem; margin-bottom: 1rem; }
+
+/* Add Student Form - Responsive Grid */
+.add-student-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
+}
+
+.add-student-row input, .add-student-row select {
+  padding: 0.7rem 0.85rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.add-student-row input:focus, .add-student-row select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-student-row .btn-success {
+  white-space: nowrap;
+  padding: 0.75rem 1.25rem;
+  width: 100%;
+}
+
+.students-list { margin-top: 1rem; max-height: 400px; overflow-y: auto; }
+
+.badge { 
+  display: inline-block; 
+  padding: 0.25rem 0.6rem; 
+  border-radius: 12px; 
+  font-size: 0.7rem; 
+  font-weight: 600; 
+  text-transform: uppercase; 
+}
+
+.badge.new { background: #d1fae5; color: #065f46; }
+.badge.existing { background: #e0e7ff; color: #3730a3; }
+.badge.remove { background: #fee2e2; color: #991b1b; }
+
+.data-table tr.to-remove { opacity: 0.5; background: #fee2e2; }
+
+.form-actions { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 1rem; 
+  margin-top: 2rem; 
+  padding-top: 1.5rem; 
+  border-top: 2px solid #e2e8f0; 
+}
+
+.classes-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 1.5rem; 
+}
+
+.class-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.class-card:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
+  border-color: #667eea; 
+}
+
+.class-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 1rem; 
+  padding-bottom: 1rem; 
+  border-bottom: 2px solid #f1f5f9; 
+}
+
+.class-header h3 { margin: 0; color: #1a1a2e; font-size: 1.25rem; }
+
+.grade-badge { 
+  background: linear-gradient(135deg, #667eea, #764ba2); 
+  color: white; 
+  padding: 0.35rem 0.85rem; 
+  border-radius: 20px; 
+  font-size: 0.8rem; 
+  font-weight: 600; 
+}
+
+.class-details { margin-bottom: 1rem; }
+.class-details p { margin: 0.5rem 0; color: #64748b; font-size: 0.9rem; }
+.class-details strong { color: #1a1a2e; }
+
+.class-actions { display: flex; gap: 0.5rem; }
+
+@media (max-width: 900px) {
+  .add-student-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .add-student-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .classes-grid { grid-template-columns: 1fr; }
+}

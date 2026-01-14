@@ -1,0 +1,215 @@
+/* Attendance Page Styles */
+.attendance-page { max-width: 1200px; }
+
+/* Attendance Controls Bar */
+.attendance-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.date-time-picker {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.date-time-picker .form-group { margin-bottom: 0; }
+
+.date-time-picker label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.date-time-picker input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 160px;
+  transition: all 0.2s;
+}
+
+.date-time-picker input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.bulk-actions { display: flex; gap: 0.75rem; }
+
+.bulk-actions button {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.bulk-actions button:hover { transform: translateY(-1px); }
+
+/* Attendance Summary Bar */
+.attendance-summary {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.attendance-summary span { display: flex; align-items: center; gap: 0.5rem; }
+.attendance-summary .present { color: #059669; }
+.attendance-summary .absent { color: #dc2626; }
+
+/* Day Indicator */
+.day-indicator {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.day-indicator strong { font-size: 1.25rem; }
+
+/* Period Block (School Attendance) */
+.period-block {
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.period-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.period-info { display: flex; align-items: center; gap: 1.5rem; }
+.period-info h3 { font-size: 1.1rem; color: #1a1a2e; font-weight: 700; }
+.period-info .time { color: #64748b; font-size: 0.9rem; background: white; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0; }
+.period-info .subject { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+/* Students Grid */
+.students-grid { padding: 1.5rem; display: grid; gap: 0.75rem; }
+
+.student-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.student-row:hover { background: #f1f5f9; }
+.student-row.present { background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-color: #10b981; }
+.student-row.absent { background: linear-gradient(135deg, #fee2e2, #fecaca); border-color: #ef4444; }
+.student-row.late { background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #f59e0b; }
+
+.student-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.student-info .name { font-weight: 600; color: #1a1a2e; font-size: 1rem; }
+.student-info .class { font-size: 0.85rem; color: #64748b; }
+
+/* Attendance Buttons */
+.attendance-buttons { display: flex; gap: 0.5rem; }
+
+.attendance-buttons button {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attendance-buttons button:hover { transform: scale(1.05); }
+.attendance-buttons .btn-present:hover, .attendance-buttons .btn-present.active { background: linear-gradient(135deg, #10b981, #059669); color: white; border-color: #10b981; }
+.attendance-buttons .btn-absent:hover, .attendance-buttons .btn-absent.active { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border-color: #ef4444; }
+.attendance-buttons .btn-late:hover, .attendance-buttons .btn-late.active { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-color: #f59e0b; }
+
+/* Center Attendance - Student Cards Grid */
+.students-attendance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.student-card {
+  background: white;
+  padding: 1.25rem 1.5rem;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.student-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.student-card.present { border-color: #10b981; background: linear-gradient(135deg, #ecfdf5, #d1fae5); }
+.student-card.absent { border-color: #ef4444; background: linear-gradient(135deg, #fef2f2, #fee2e2); }
+.student-card.late { border-color: #f59e0b; background: linear-gradient(135deg, #fffbeb, #fef3c7); }
+
+.student-card .student-name { font-weight: 600; font-size: 1rem; color: #1a1a2e; }
+.student-card .student-school { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+
+/* Save Section */
+.save-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+/* Recent Attendance */
+.recent-attendance { margin-top: 3rem; }
+.recent-attendance h3 { margin-bottom: 1rem; color: #1a1a2e; font-size: 1.25rem; }
+
+@media (max-width: 768px) {
+  .attendance-controls { flex-direction: column; align-items: stretch; }
+  .date-time-picker { flex-direction: column; }
+  .bulk-actions { justify-content: center; }
+  .students-attendance-grid { grid-template-columns: 1fr; }
+}

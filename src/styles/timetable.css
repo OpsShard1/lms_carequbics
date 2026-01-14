@@ -1,0 +1,293 @@
+/* Timetable Page Styles */
+.timetable-page { max-width: 1100px; }
+
+/* Wizard Container */
+.wizard-container {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
+}
+
+/* Wizard Progress Steps */
+.wizard-progress {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.wizard-progress .step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.wizard-progress .step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.wizard-progress .step.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.wizard-progress .step.active .step-number { background: rgba(255,255,255,0.3); }
+.wizard-progress .step.completed { background: #d1fae5; color: #065f46; }
+.wizard-progress .step.completed .step-number { background: #10b981; }
+
+.wizard-progress .step-connector {
+  width: 40px;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.wizard-progress .step-connector.active {
+  background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* Wizard Step Content */
+.wizard-step { animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-step h3 { font-size: 1.5rem; color: #1a1a2e; margin-bottom: 0.5rem; }
+.wizard-step > p { color: #64748b; margin-bottom: 2rem; font-size: 1rem; }
+
+/* Wizard Actions */
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+/* Period Configuration */
+.period-config {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.period-config label {
+  display: block;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.period-config input[type="number"] {
+  width: 120px;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: #1a1a2e;
+}
+
+.period-config input[type="number"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Period Timings Grid */
+.period-timings { display: grid; gap: 1rem; max-width: 600px; }
+
+.timing-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.timing-row .period-label { min-width: 100px; font-weight: 700; color: #1a1a2e; font-size: 1rem; }
+
+.timing-row input[type="time"] {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.timing-row input[type="time"]:focus { outline: none; border-color: #667eea; }
+.timing-row span { color: #94a3b8; font-weight: 500; }
+
+/* Days Selector */
+.days-selector { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+
+.day-btn {
+  padding: 1rem 1.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  min-width: 130px;
+  text-align: center;
+}
+
+.day-btn:hover { border-color: #667eea; background: #f8fafc; }
+
+.day-btn.selected {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Schedule Grid */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.day-schedule {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 2px solid #e2e8f0;
+}
+
+.day-schedule h4 {
+  margin-bottom: 1rem;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.day-schedule h4::before { content: '📅'; }
+
+.periods-list { display: grid; gap: 0.75rem; }
+
+.period-entry {
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.period-entry.active {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.period-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.period-checkbox input[type="checkbox"] { width: 20px; height: 20px; accent-color: #667eea; cursor: pointer; }
+.period-checkbox span { color: #1a1a2e; }
+
+.period-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.period-details input {
+  padding: 0.65rem 0.85rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.period-details input:focus { outline: none; border-color: #667eea; }
+.period-details input::placeholder { color: #94a3b8; }
+
+/* Timetable View */
+.timetable-view {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+}
+
+.timetable-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.timetable-header h3 { flex: 1; margin: 0; font-size: 1.25rem; color: #1a1a2e; }
+.timetable-header span { background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; color: #64748b; }
+
+.timetable-grid { overflow-x: auto; }
+.timetable-grid .data-table .day-cell { font-weight: 700; color: #667eea; text-transform: capitalize; }
+
+/* No Timetable State */
+.no-timetable {
+  background: white;
+  padding: 4rem 2rem;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.no-timetable p { color: #64748b; margin-bottom: 1.5rem; font-size: 1.1rem; }
+.no-timetable .btn-primary { margin-top: 1rem; }
+
+@media (max-width: 900px) {
+  .wizard-progress { flex-wrap: wrap; gap: 0.5rem; }
+  .wizard-progress .step-connector { display: none; }
+  .schedule-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .wizard-container { padding: 1.5rem; }
+  .wizard-step h3 { font-size: 1.25rem; }
+}
