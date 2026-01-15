@@ -4,8 +4,7 @@ import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const SchoolClasses = () => {
-  const { selectedSchool, selectSchool } = useAuth();
-  const [schools, setSchools] = useState([]);
+  const { selectedSchool, selectSchool, availableSchools } = useAuth();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -19,28 +18,18 @@ const SchoolClasses = () => {
   const [newStudent, setNewStudent] = useState({ first_name: '', last_name: '', date_of_birth: '', gender: '', parent_name: '', parent_contact: '' });
 
   useEffect(() => {
-    loadSchools();
-  }, []);
+    // Auto-select first school if none selected
+    if (availableSchools.length > 0 && !selectedSchool) {
+      selectSchool(availableSchools[0]);
+    }
+    setLoading(false);
+  }, [availableSchools, selectedSchool]);
 
   useEffect(() => {
     if (selectedSchool?.id) {
       loadClasses();
     }
   }, [selectedSchool]);
-
-  const loadSchools = async () => {
-    try {
-      const res = await api.get('/schools');
-      setSchools(res.data);
-      if (res.data.length > 0 && !selectedSchool) {
-        selectSchool(res.data[0]);
-      }
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to load schools:', err);
-      setLoading(false);
-    }
-  };
 
   const loadClasses = async () => {
     if (!selectedSchool?.id) return;
@@ -163,19 +152,21 @@ const SchoolClasses = () => {
       <div className="page-header">
         <h2>Classes Management</h2>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <select 
-            value={selectedSchool?.id || ''} 
-            onChange={(e) => {
-              const school = schools.find(s => s.id === parseInt(e.target.value));
-              selectSchool(school);
-            }}
-            className="school-selector"
-          >
-            <option value="">Select School</option>
-            {schools.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          {availableSchools.length > 1 && (
+            <select 
+              value={selectedSchool?.id || ''} 
+              onChange={(e) => {
+                const school = availableSchools.find(s => s.id === parseInt(e.target.value));
+                selectSchool(school);
+              }}
+              className="school-selector"
+            >
+              <option value="">Select School</option>
+              {availableSchools.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          )}
           <button onClick={startNewClass} className="btn-primary" disabled={!selectedSchool}>
             Create Class
           </button>

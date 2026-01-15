@@ -121,10 +121,12 @@ async function seedDatabase() {
       await connection.query(`
         INSERT INTO users (email, password, first_name, last_name, role_id, section_type, phone) VALUES
         ('teacher@lms.com', ?, 'Sunita', 'Sharma', 5, 'school', '9876500001'),
-        ('trainer@lms.com', ?, 'Rajiv', 'Kumar', 6, 'center', '9876500002'),
-        ('principal@lms.com', ?, 'Dr. Meera', 'Iyer', 4, 'school', '9876500003')
-      `, [teacherPassword, trainerPassword, teacherPassword]);
-      console.log('✅ Added 3 users (teacher@lms.com, trainer@lms.com, principal@lms.com - all password: teacher123 or trainer123)');
+        ('trainer@lms.com', ?, 'Rajiv', 'Kumar', 6, 'both', '9876500002'),
+        ('principal@lms.com', ?, 'Dr. Meera', 'Iyer', 4, 'school', '9876500003'),
+        ('trainerhead@lms.com', ?, 'Vikram', 'Singh', 3, 'both', '9876500004'),
+        ('trainer2@lms.com', ?, 'Neha', 'Gupta', 6, 'both', '9876500005')
+      `, [teacherPassword, trainerPassword, teacherPassword, trainerPassword, trainerPassword]);
+      console.log('✅ Added 5 users');
     }
 
     // Add user assignments
@@ -132,8 +134,25 @@ async function seedDatabase() {
     if (existingAssignments[0].count === 0) {
       // Get user IDs
       const [users] = await connection.query('SELECT id, email, section_type FROM users');
+      const [roles] = await connection.query('SELECT u.id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id');
+      const roleMap = {};
+      roles.forEach(r => roleMap[r.id] = r.role_name);
       
       for (const user of users) {
+        const roleName = roleMap[user.id];
+        
+        // Skip school_teacher - they get assigned via teacher-assignments
+        if (roleName === 'school_teacher') {
+          // Assign teacher to first school
+          if (schools.length > 0) {
+            await connection.query(
+              'INSERT INTO user_assignments (user_id, school_id, is_primary) VALUES (?, ?, true)',
+              [user.id, schools[0].id]
+            );
+          }
+          continue;
+        }
+        
         if (user.section_type === 'both' || user.section_type === 'school') {
           // Assign to first school
           if (schools.length > 0) {
@@ -153,7 +172,77 @@ async function seedDatabase() {
           }
         }
       }
-      console.log('✅ Added user assignments');
+      console.log('✅ Added user assignments (including teacher assignments)');
+    }
+
+    // Add trainer assignments
+    const [existingTrainerAssignments] = await connection.query('SELECT COUNT(*) as count FROM trainer_assignments');
+    if (existingTrainerAssignments[0].count === 0) {
+      // Get trainer users
+      const [trainers] = await connection.query(`
+        SELECT u.id FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name = 'trainer'
+      `);
+      
+      // Get admin user for assigned_by
+      const [admins] = await connection.query(`
+        SELECT u.id FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name IN ('developer', 'trainer_head')
+        LIMIT 1
+      `);
+      
+      if (trainers.length > 0 && admins.length > 0 && schools.length > 0 && centers.length > 0) {
+        const adminId = admins[0].id;
+        
+        // Assign first trainer to first school and first center
+        await connection.query(`
+          INSERT INTO trainer_assignments (trainer_id, school_id, assigned_by) VALUES (?, ?, ?)
+        `, [trainers[0].id, schools[0].id, adminId]);
+        
+        await connection.query(`
+          INSERT INTO trainer_assignments (trainer_id, center_id, assigned_by) VALUES (?, ?, ?)
+        `, [trainers[0].id, centers[0].id, adminId]);
+        
+        // If there's a second trainer, assign to second school/center
+        if (trainers.length > 1 && schools.length > 1) {
+          await connection.query(`
+            INSERT INTO trainer_assignments (trainer_id, school_id, assigned_by) VALUES (?, ?, ?)
+          `, [trainers[1].id, schools[1].id, adminId]);
+        }
+        if (trainers.length > 1 && centers.length > 1) {
+          await connection.query(`
+            INSERT INTO trainer_assignments (trainer_id, center_id, assigned_by) VALUES (?, ?, ?)
+          `, [trainers[1].id, centers[1].id, adminId]);
+        }
+        
+        console.log('✅ Added trainer assignments');
+      }
+    }
+
+    // Add extra students (added by trainers)
+    const [existingExtraStudents] = await connection.query('SELECT COUNT(*) as count FROM students WHERE is_extra = true');
+    if (existingExtraStudents[0].count === 0 && classes.length > 0) {
+      const [trainers] = await connection.query(`
+        SELECT u.id FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name = 'trainer' LIMIT 1
+      `);
+      
+      if (trainers.length > 0) {
+        const trainerId = trainers[0].id;
+        const schoolId = classes[0].school_id;
+        const classId = classes[0].id;
+        
+        await connection.query(`
+          INSERT INTO students (first_name, last_name, date_of_birth, age, gender, student_type, school_id, class_id, parent_name, parent_contact, is_extra, added_by, enrollment_date) VALUES
+          ('Vikash', 'Yadav', '2018-01-20', 7, 'male', 'school', ?, ?, 'Ramesh Yadav', '9876543010', true, ?, CURDATE()),
+          ('Meera', 'Joshi', '2018-06-15', 7, 'female', 'school', ?, ?, 'Suresh Joshi', '9876543011', true, ?, CURDATE())
+        `, [schoolId, classId, trainerId, schoolId, classId, trainerId]);
+        
+        console.log('✅ Added 2 extra students (shown in yellow)');
+      }
     }
 
     // Add sample timetable for first class
@@ -229,11 +318,107 @@ async function seedDatabase() {
       }
     }
 
+    // Add sample curriculums with subjects and topics
+    const [existingCurriculums] = await connection.query('SELECT COUNT(*) as count FROM curriculums');
+    if (existingCurriculums[0].count === 0) {
+      // Get admin user for created_by
+      const [admins] = await connection.query(`
+        SELECT u.id FROM users u 
+        JOIN roles r ON u.role_id = r.id 
+        WHERE r.name IN ('developer', 'trainer_head')
+        LIMIT 1
+      `);
+      
+      if (admins.length > 0) {
+        const adminId = admins[0].id;
+        
+        // Create Primary Curriculum
+        const [currResult] = await connection.query(`
+          INSERT INTO curriculums (name, description, created_by) 
+          VALUES ('Primary Curriculum', 'Foundation level curriculum for beginners', ?)
+        `, [adminId]);
+        const primaryCurrId = currResult.insertId;
+        
+        // Add subjects to Primary Curriculum
+        const subjects = [
+          { name: 'Robotics', desc: 'Introduction to robotics and automation' },
+          { name: 'Electronics', desc: 'Basic electronics and circuits' },
+          { name: 'AI & Machine Learning', desc: 'Fundamentals of artificial intelligence' },
+          { name: 'Drone Technology', desc: 'Drone building and programming' }
+        ];
+        
+        for (let i = 0; i < subjects.length; i++) {
+          const [subResult] = await connection.query(`
+            INSERT INTO curriculum_subjects (curriculum_id, name, description, sort_order)
+            VALUES (?, ?, ?, ?)
+          `, [primaryCurrId, subjects[i].name, subjects[i].desc, i + 1]);
+          
+          // Add topics to each subject
+          const topicsBySubject = {
+            'Robotics': ['Introduction to Robots', 'Sensors and Actuators', 'Basic Programming', 'Building Your First Robot', 'Line Following Robot'],
+            'Electronics': ['Circuit Basics', 'LED Projects', 'Resistors and Capacitors', 'Arduino Introduction', 'Simple Circuits'],
+            'AI & Machine Learning': ['What is AI?', 'Pattern Recognition', 'Simple ML Models', 'Image Classification', 'Voice Commands'],
+            'Drone Technology': ['Drone Components', 'Flight Principles', 'Remote Control Basics', 'Safety Guidelines', 'First Flight']
+          };
+          
+          const topics = topicsBySubject[subjects[i].name] || [];
+          for (let j = 0; j < topics.length; j++) {
+            await connection.query(`
+              INSERT INTO curriculum_topics (subject_id, name, sort_order)
+              VALUES (?, ?, ?)
+            `, [subResult.insertId, topics[j], j + 1]);
+          }
+        }
+        
+        // Create Advanced Curriculum
+        const [advCurrResult] = await connection.query(`
+          INSERT INTO curriculums (name, description, created_by) 
+          VALUES ('Advanced Curriculum', 'Advanced level for experienced students', ?)
+        `, [adminId]);
+        const advCurrId = advCurrResult.insertId;
+        
+        // Add one subject to Advanced
+        const [advSubResult] = await connection.query(`
+          INSERT INTO curriculum_subjects (curriculum_id, name, description, sort_order)
+          VALUES (?, 'Advanced Robotics', 'Complex robotics projects', 1)
+        `, [advCurrId]);
+        
+        const advTopics = ['Autonomous Navigation', 'Computer Vision', 'Multi-Robot Systems', 'Industrial Applications'];
+        for (let j = 0; j < advTopics.length; j++) {
+          await connection.query(`
+            INSERT INTO curriculum_topics (subject_id, name, sort_order)
+            VALUES (?, ?, ?)
+          `, [advSubResult.insertId, advTopics[j], j + 1]);
+        }
+        
+        console.log('✅ Added sample curriculums with subjects and topics');
+        
+        // Assign curriculums to existing center students
+        const [centerStudents] = await connection.query(
+          'SELECT id FROM students WHERE student_type = "center" AND curriculum_id IS NULL'
+        );
+        
+        if (centerStudents.length > 0) {
+          // Assign first 2 students to Primary, rest to Advanced
+          for (let i = 0; i < centerStudents.length; i++) {
+            const currId = i < 2 ? primaryCurrId : advCurrId;
+            await connection.query(
+              'UPDATE students SET curriculum_id = ? WHERE id = ?',
+              [currId, centerStudents[i].id]
+            );
+          }
+          console.log('✅ Assigned curriculums to center students');
+        }
+      }
+    }
+
     console.log('\n🎉 Database seeded successfully!');
     console.log('\n📋 Login credentials:');
     console.log('   Admin: admin@lms.com / admin123');
     console.log('   Teacher: teacher@lms.com / teacher123');
     console.log('   Trainer: trainer@lms.com / trainer123');
+    console.log('   Trainer 2: trainer2@lms.com / trainer123');
+    console.log('   Trainer Head: trainerhead@lms.com / trainer123');
     console.log('   Principal: principal@lms.com / teacher123');
 
   } catch (error) {

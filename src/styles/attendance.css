@@ -245,3 +245,58 @@
   .monthly-attendance-table .student-header,
   .monthly-attendance-table .student-name-cell { min-width: 150px; }
 }
+
+
+/* Extra Student Styling (Yellow) */
+.extra-student-row {
+  background: linear-gradient(90deg, #fef3c7, transparent) !important;
+}
+
+.extra-student {
+  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+}
+
+.extra-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: white;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.legend-box.extra-box {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
+}
+
+/* Action buttons in controls */
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Modal hint text */
+.modal-hint {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-radius: 8px;
+  border-left: 3px solid #f59e0b;
+}
+
+/* Form row for side-by-side inputs */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .form-row { grid-template-columns: 1fr; }
+}

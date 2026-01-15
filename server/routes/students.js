@@ -25,8 +25,9 @@ router.get('/school/:schoolId', authenticate, async (req, res) => {
 router.get('/center/:centerId', authenticate, async (req, res) => {
   try {
     const [students] = await pool.query(`
-      SELECT s.*
+      SELECT s.*, c.name as curriculum_name
       FROM students s
+      LEFT JOIN curriculums c ON s.curriculum_id = c.id
       WHERE s.center_id = ? AND s.student_type = 'center' AND s.is_active = true
       ORDER BY s.first_name
     `, [req.params.centerId]);
@@ -45,7 +46,7 @@ router.get('/class/:classId', authenticate, async (req, res) => {
       FROM students s
       LEFT JOIN classes c ON s.class_id = c.id
       WHERE s.class_id = ? AND s.is_active = true
-      ORDER BY s.first_name
+      ORDER BY s.is_extra ASC, s.first_name
     `, [req.params.classId]);
     res.json(students);
   } catch (error) {
@@ -58,11 +59,12 @@ router.get('/class/:classId', authenticate, async (req, res) => {
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const [students] = await pool.query(`
-      SELECT s.*, c.name as class_name, sc.name as school_name, ct.name as center_name
+      SELECT s.*, c.name as class_name, sc.name as school_name, ct.name as center_name, cur.name as curriculum_name
       FROM students s
       LEFT JOIN classes c ON s.class_id = c.id
       LEFT JOIN schools sc ON s.school_id = sc.id
       LEFT JOIN centers ct ON s.center_id = ct.id
+      LEFT JOIN curriculums cur ON s.curriculum_id = cur.id
       WHERE s.id = ?
     `, [req.params.id]);
 
@@ -77,7 +79,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Create school student
-router.post('/school', authenticate, authorize('developer', 'owner', 'school_teacher'), async (req, res) => {
+router.post('/school', authenticate, authorize('developer', 'school_teacher'), async (req, res) => {
   try {
     const { 
       first_name, last_name, date_of_birth, age, gender,
@@ -98,10 +100,11 @@ router.post('/school', authenticate, authorize('developer', 'owner', 'school_tea
       INSERT INTO students (
         first_name, last_name, date_of_birth, age, gender, student_type,
         school_id, class_id, parent_name, parent_contact, parent_email, 
-        parent_address, enrollment_date
-      ) VALUES (?, ?, ?, ?, ?, 'school', ?, ?, ?, ?, ?, ?, ?)
+        parent_address, enrollment_date, is_extra, added_by
+      ) VALUES (?, ?, ?, ?, ?, 'school', ?, ?, ?, ?, ?, ?, ?, false, ?)
     `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, school_id, classIdValue, 
-        parent_name || null, parent_contact || null, parent_email || null, parent_address || null, enrollment_date || null]);
+        parent_name || null, parent_contact || null, parent_email || null, parent_address || null, 
+        enrollment_date || null, req.user.id]);
 
     const [newStudent] = await pool.query('SELECT * FROM students WHERE id = ?', [result.insertId]);
     res.status(201).json(newStudent[0]);
@@ -111,12 +114,43 @@ router.post('/school', authenticate, authorize('developer', 'owner', 'school_tea
   }
 });
 
-// Create center student (with full registration form)
-router.post('/center', authenticate, authorize('developer', 'owner', 'trainer', 'trainer_head'), async (req, res) => {
+// Create extra student (by trainer)
+router.post('/school/extra', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { 
       first_name, last_name, date_of_birth, age, gender,
-      center_id, school_name_external, class_id,
+      school_id, class_id, parent_name, parent_contact
+    } = req.body;
+
+    if (!first_name || !date_of_birth || !school_id || !class_id) {
+      return res.status(400).json({ error: 'First name, date of birth, school, and class are required' });
+    }
+
+    const ageValue = age && age !== '' ? age : null;
+    const genderValue = gender && gender !== '' ? gender : null;
+
+    const [result] = await pool.query(`
+      INSERT INTO students (
+        first_name, last_name, date_of_birth, age, gender, student_type,
+        school_id, class_id, parent_name, parent_contact, is_extra, added_by, enrollment_date
+      ) VALUES (?, ?, ?, ?, ?, 'school', ?, ?, ?, ?, true, ?, CURDATE())
+    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, 
+        school_id, class_id, parent_name || null, parent_contact || null, req.user.id]);
+
+    const [newStudent] = await pool.query('SELECT * FROM students WHERE id = ?', [result.insertId]);
+    res.status(201).json(newStudent[0]);
+  } catch (error) {
+    console.error('Create extra student error:', error);
+    res.status(500).json({ error: 'Failed to create student' });
+  }
+});
+
+// Create center student (with full registration form)
+router.post('/center', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+  try {
+    const { 
+      first_name, last_name, date_of_birth, age, gender,
+      center_id, school_name_external, class_id, curriculum_id,
       parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address,
       parent_qualification, parent_occupation, referral_source,
       program_type, attended_before, class_format, enrollment_date
@@ -128,18 +162,19 @@ router.post('/center', authenticate, authorize('developer', 'owner', 'trainer', 
 
     // Convert empty strings to null
     const classIdValue = class_id && class_id !== '' ? class_id : null;
+    const curriculumIdValue = curriculum_id && curriculum_id !== '' ? curriculum_id : null;
     const ageValue = age && age !== '' ? age : null;
     const genderValue = gender && gender !== '' ? gender : null;
 
     const [result] = await pool.query(`
       INSERT INTO students (
         first_name, last_name, date_of_birth, age, gender, student_type,
-        center_id, school_name_external, class_id,
+        center_id, school_name_external, class_id, curriculum_id,
         parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address,
         parent_qualification, parent_occupation, referral_source,
         program_type, attended_before, class_format, enrollment_date
-      ) VALUES (?, ?, ?, ?, ?, 'center', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, center_id, school_name_external || null, classIdValue,
+      ) VALUES (?, ?, ?, ?, ?, 'center', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, center_id, school_name_external || null, classIdValue, curriculumIdValue,
         parent_name || null, parent_contact || null, parent_alternate_contact || null, parent_email || null, parent_address || null,
         parent_qualification || null, parent_occupation || null, referral_source || null,
         program_type || null, attended_before || false, class_format || null, enrollment_date || null]);

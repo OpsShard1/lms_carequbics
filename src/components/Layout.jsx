@@ -7,6 +7,9 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Determine if user can switch between sections
+  const canSwitchSections = canAccessSection('school') && canAccessSection('center');
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -19,11 +22,11 @@ const Layout = () => {
   };
 
   const schoolMenuItems = [
-    { path: '/school/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'principal', 'school_teacher', 'trainer_head'] },
+    { path: '/school/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'principal', 'school_teacher', 'trainer_head', 'trainer'] },
     { path: '/school/classes', label: 'Classes', roles: ['developer', 'owner', 'school_teacher'] },
-    { path: '/school/students', label: 'Students', roles: ['developer', 'owner', 'school_teacher', 'principal'] },
-    { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher'] },
-    { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'school_teacher', 'trainer', 'principal'] },
+    { path: '/school/students', label: 'Students', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'] },
+    { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher', 'trainer', 'trainer_head'] },
+    { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'trainer', 'trainer_head'] },
   ];
 
   const centerMenuItems = [
@@ -31,12 +34,15 @@ const Layout = () => {
     { path: '/center/students', label: 'Students', roles: ['developer', 'owner', 'trainer_head', 'trainer'] },
     { path: '/center/attendance', label: 'Attendance', roles: ['developer', 'owner', 'trainer_head', 'trainer'] },
     { path: '/center/progress', label: 'Progress', roles: ['developer', 'owner', 'trainer_head', 'trainer'] },
+    { path: '/center/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head'] },
   ];
 
   const adminMenuItems = [
     { path: '/admin/users', label: 'Users', roles: ['developer', 'owner'] },
     { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner'] },
     { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner'] },
+    { path: '/admin/trainer-assignments', label: 'Trainer Assignments', roles: ['developer', 'owner', 'trainer_head'] },
+    { path: '/admin/teacher-assignments', label: 'Teacher Assignments', roles: ['developer', 'owner'] },
   ];
 
   const menuItems = currentSection === 'school' ? schoolMenuItems : centerMenuItems;
@@ -51,7 +57,7 @@ const Layout = () => {
       <header className="header">
         <div className="header-left">
           <h1 className="logo">LMS</h1>
-          {canAccessSection('school') && canAccessSection('center') && (
+          {canSwitchSections && (
             <div className="section-switcher">
               <button 
                 className={`section-btn ${currentSection === 'school' ? 'active' : ''}`}

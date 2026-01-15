@@ -3,41 +3,23 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
 const SchoolDashboard = () => {
-  const { selectedSchool, selectSchool, user } = useAuth();
-  const [schools, setSchools] = useState([]);
+  const { selectedSchool, selectSchool, user, availableSchools } = useAuth();
   const [stats, setStats] = useState({ classes: 0, students: 0 });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadSchools();
-  }, []);
+    // Auto-select first school if none selected and schools are available
+    if (availableSchools.length > 0 && !selectedSchool) {
+      selectSchool(availableSchools[0]);
+    }
+    setLoading(false);
+  }, [availableSchools, selectedSchool]);
 
   useEffect(() => {
     if (selectedSchool?.id) {
       loadStats();
     }
   }, [selectedSchool]);
-
-  const loadSchools = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await api.get('/schools');
-      console.log('Loaded schools:', res.data);
-      setSchools(res.data);
-      
-      // Auto-select first school if none selected
-      if (res.data.length > 0 && !selectedSchool) {
-        selectSchool(res.data[0]);
-      }
-    } catch (err) {
-      console.error('Failed to load schools:', err);
-      setError('Failed to load schools: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadStats = async () => {
     if (!selectedSchool?.id) return;
@@ -56,33 +38,32 @@ const SchoolDashboard = () => {
   };
 
   if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error-message">{error}</div>;
 
   return (
     <div className="dashboard">
       <div className="page-header">
         <h2>School Dashboard</h2>
-        {schools.length > 0 && (
+        {availableSchools.length > 1 && (
           <select 
             value={selectedSchool?.id || ''} 
             onChange={(e) => {
-              const school = schools.find(s => s.id === parseInt(e.target.value));
+              const school = availableSchools.find(s => s.id === parseInt(e.target.value));
               selectSchool(school);
             }}
             className="school-selector"
           >
             <option value="">Select School</option>
-            {schools.map(s => (
+            {availableSchools.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
         )}
       </div>
 
-      {schools.length === 0 ? (
+      {availableSchools.length === 0 ? (
         <div className="welcome-message">
-          <h3>No Schools Found</h3>
-          <p>Go to Admin → Schools to create your first school.</p>
+          <h3>No Schools Assigned</h3>
+          <p>You don't have access to any schools. Please contact admin.</p>
         </div>
       ) : selectedSchool ? (
         <>

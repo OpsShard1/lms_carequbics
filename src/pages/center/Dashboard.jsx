@@ -3,31 +3,21 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
 const CenterDashboard = () => {
-  const { selectedCenter, selectCenter, user } = useAuth();
-  const [centers, setCenters] = useState([]);
+  const { selectedCenter, selectCenter, user, availableCenters } = useAuth();
   const [stats, setStats] = useState({ students: 0 });
 
   useEffect(() => {
-    loadCenters();
-  }, []);
+    // Auto-select first center if none selected and centers are available
+    if (availableCenters.length > 0 && !selectedCenter) {
+      selectCenter(availableCenters[0]);
+    }
+  }, [availableCenters, selectedCenter]);
 
   useEffect(() => {
     if (selectedCenter) {
       loadStats();
     }
   }, [selectedCenter]);
-
-  const loadCenters = async () => {
-    try {
-      const res = await api.get('/centers');
-      setCenters(res.data);
-      if (!selectedCenter && res.data.length > 0) {
-        selectCenter(res.data[0]);
-      }
-    } catch (err) {
-      console.error('Failed to load centers:', err);
-    }
-  };
 
   const loadStats = async () => {
     try {
@@ -42,23 +32,28 @@ const CenterDashboard = () => {
     <div className="dashboard">
       <div className="page-header">
         <h2>Center Dashboard</h2>
-        {centers.length > 1 && (
+        {availableCenters.length > 1 && (
           <select 
             value={selectedCenter?.id || ''} 
             onChange={(e) => {
-              const center = centers.find(c => c.id === parseInt(e.target.value));
+              const center = availableCenters.find(c => c.id === parseInt(e.target.value));
               selectCenter(center);
             }}
             className="center-selector"
           >
-            {centers.map(c => (
+            {availableCenters.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
         )}
       </div>
 
-      {selectedCenter ? (
+      {availableCenters.length === 0 ? (
+        <div className="welcome-message">
+          <h3>No Centers Assigned</h3>
+          <p>You don't have access to any centers. Please contact admin.</p>
+        </div>
+      ) : selectedCenter ? (
         <>
           <div className="stats-grid">
             <div className="stat-card">

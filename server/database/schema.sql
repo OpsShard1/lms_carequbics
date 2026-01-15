@@ -2,12 +2,17 @@
 -- Supports multiple schools and centers with role-based access
 
 -- Drop existing tables if they exist (in reverse order of dependencies)
+DROP TABLE IF EXISTS student_topic_progress;
+DROP TABLE IF EXISTS curriculum_topics;
+DROP TABLE IF EXISTS curriculum_subjects;
 DROP TABLE IF EXISTS student_progress;
 DROP TABLE IF EXISTS attendance;
 DROP TABLE IF EXISTS timetable_entries;
 DROP TABLE IF EXISTS timetables;
 DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS curriculums;
 DROP TABLE IF EXISTS classes;
+DROP TABLE IF EXISTS trainer_assignments;
 DROP TABLE IF EXISTS user_assignments;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS centers;
@@ -91,6 +96,23 @@ CREATE TABLE user_assignments (
     CHECK (school_id IS NOT NULL OR center_id IS NOT NULL)
 );
 
+-- Trainer assignments (links trainers to specific schools/centers they can access)
+CREATE TABLE trainer_assignments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    trainer_id INT NOT NULL,
+    school_id INT,
+    center_id INT,
+    assigned_by INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (trainer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    FOREIGN KEY (center_id) REFERENCES centers(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES users(id),
+    CHECK (school_id IS NOT NULL OR center_id IS NOT NULL)
+);
+
 -- Classes table (for schools)
 CREATE TABLE classes (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -106,6 +128,22 @@ CREATE TABLE classes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
     FOREIGN KEY (teacher_id) REFERENCES users(id)
+);
+
+-- =============================================
+-- CURRICULUM TABLES (must be before students for FK reference)
+-- =============================================
+
+-- Curriculums (e.g., Primary, Secondary, Advanced)
+CREATE TABLE curriculums (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
 -- =============================================
@@ -128,6 +166,11 @@ CREATE TABLE students (
     center_id INT,
     class_id INT,
     school_name_external VARCHAR(255), -- For center students (their actual school)
+    student_class VARCHAR(50), -- Class/Grade for center students (e.g., Class 5, Grade 7)
+    
+    -- Extra student flag (added by trainer, shown in yellow)
+    is_extra BOOLEAN DEFAULT FALSE,
+    added_by INT, -- User who added this student
     
     -- Parent Information
     parent_name VARCHAR(200),
@@ -145,6 +188,7 @@ CREATE TABLE students (
     program_type ENUM('long_term', 'short_term', 'holiday_program', 'birthday_events'),
     attended_before BOOLEAN DEFAULT FALSE,
     class_format ENUM('weekday', 'weekend'),
+    curriculum_id INT, -- Assigned curriculum for center students
     
     -- Status
     enrollment_date DATE,
@@ -154,7 +198,9 @@ CREATE TABLE students (
     
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL,
     FOREIGN KEY (center_id) REFERENCES centers(id) ON DELETE SET NULL,
-    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
+    FOREIGN KEY (added_by) REFERENCES users(id),
+    FOREIGN KEY (curriculum_id) REFERENCES curriculums(id) ON DELETE SET NULL
 );
 
 
@@ -229,10 +275,66 @@ CREATE TABLE attendance (
 );
 
 -- =============================================
--- STUDENT PROGRESS (Center Section Only)
+-- CURRICULUM SUBJECTS & TOPICS (Center Section)
 -- =============================================
 
--- Student progress tracking (chapter-wise)
+-- Curriculum Subjects (e.g., Robotics, Electronics, AI, Drone)
+CREATE TABLE curriculum_subjects (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    curriculum_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (curriculum_id) REFERENCES curriculums(id) ON DELETE CASCADE
+);
+
+-- Curriculum Topics (individual topics within subjects)
+CREATE TABLE curriculum_topics (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    subject_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subject_id) REFERENCES curriculum_subjects(id) ON DELETE CASCADE
+);
+
+-- Student Topic Progress (skill ratings per topic)
+CREATE TABLE student_topic_progress (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    topic_id INT NOT NULL,
+    center_id INT NOT NULL,
+    
+    -- Status
+    status ENUM('not_started', 'in_progress', 'completed') DEFAULT 'not_started',
+    
+    -- Skill ratings: -1 = negative, 0 = neutral, 1 = positive
+    concept_understanding TINYINT DEFAULT 0,
+    application_of_knowledge TINYINT DEFAULT 0,
+    hands_on_skill TINYINT DEFAULT 0,
+    communication_skill TINYINT DEFAULT 0,
+    consistency TINYINT DEFAULT 0,
+    idea_generation TINYINT DEFAULT 0,
+    iteration_improvement TINYINT DEFAULT 0,
+    
+    remarks TEXT,
+    trainer_id INT,
+    completed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (topic_id) REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+    FOREIGN KEY (center_id) REFERENCES centers(id) ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id) REFERENCES users(id),
+    UNIQUE KEY unique_student_topic (student_id, topic_id)
+);
+
+-- Legacy student progress (keeping for backward compatibility)
 CREATE TABLE student_progress (
     id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
@@ -264,6 +366,13 @@ CREATE INDEX idx_attendance_date ON attendance(attendance_date);
 CREATE INDEX idx_attendance_student ON attendance(student_id);
 CREATE INDEX idx_timetable_entries_day ON timetable_entries(day_of_week);
 CREATE INDEX idx_student_progress_student ON student_progress(student_id);
+CREATE INDEX idx_trainer_assignments_trainer ON trainer_assignments(trainer_id);
+CREATE INDEX idx_trainer_assignments_school ON trainer_assignments(school_id);
+CREATE INDEX idx_trainer_assignments_center ON trainer_assignments(center_id);
+CREATE INDEX idx_curriculum_subjects ON curriculum_subjects(curriculum_id);
+CREATE INDEX idx_curriculum_topics ON curriculum_topics(subject_id);
+CREATE INDEX idx_student_topic_progress_student ON student_topic_progress(student_id);
+CREATE INDEX idx_student_topic_progress_topic ON student_topic_progress(topic_id);
 
 -- =============================================
 -- DEFAULT DATA

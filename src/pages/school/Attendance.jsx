@@ -5,7 +5,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'dat
 import '../../styles/attendance.css';
 
 const SchoolAttendance = () => {
-  const { selectedSchool } = useAuth();
+  const { selectedSchool, canAddExtraStudents, user } = useAuth();
+  const canMarkAttendance = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -13,6 +14,10 @@ const SchoolAttendance = () => {
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showAddExtra, setShowAddExtra] = useState(false);
+  const [extraStudent, setExtraStudent] = useState({
+    first_name: '', last_name: '', date_of_birth: '', parent_name: '', parent_contact: ''
+  });
 
   // Get all days in the selected month
   const monthStart = startOfMonth(new Date(selectedMonth + '-01'));
@@ -55,7 +60,6 @@ const SchoolAttendance = () => {
       const endDate = format(monthEnd, 'yyyy-MM-dd');
       const res = await api.get(`/attendance/school/${selectedSchool.id}/range?startDate=${startDate}&endDate=${endDate}&classId=${selectedClass}`);
       
-      // Create a map: studentId-date -> status
       const dataMap = {};
       res.data.forEach(record => {
         const dateKey = format(new Date(record.attendance_date), 'yyyy-MM-dd');
@@ -71,10 +75,11 @@ const SchoolAttendance = () => {
   };
 
   const toggleAttendance = (studentId, date, currentStatus) => {
+    if (!canMarkAttendance) return; // Owner can't mark attendance
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     const key = `${studentId}-${dateStr}`;
     
-    // Cycle through: none -> present -> absent -> late -> none
     let newStatus = null;
     if (!currentStatus) newStatus = 'present';
     else if (currentStatus === 'present') newStatus = 'absent';
@@ -93,6 +98,8 @@ const SchoolAttendance = () => {
   };
 
   const markColumnPresent = (date) => {
+    if (!canMarkAttendance) return; // Owner can't mark attendance
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     setAttendanceData(prev => {
       const newData = { ...prev };
@@ -106,15 +113,8 @@ const SchoolAttendance = () => {
   const saveAttendance = async () => {
     setSaving(true);
     try {
-      // Group by date
       const recordsByDate = {};
       Object.entries(attendanceData).forEach(([key, status]) => {
-        const [studentId, date] = key.split('-').reduce((acc, part, idx, arr) => {
-          if (idx === 0) return [part, ''];
-          if (idx === 1) return [acc[0], part];
-          return [acc[0], acc[1] + '-' + part];
-        }, ['', '']);
-        
         const actualStudentId = key.split('-')[0];
         const actualDate = key.substring(actualStudentId.length + 1);
         
@@ -125,7 +125,6 @@ const SchoolAttendance = () => {
         });
       });
 
-      // Save each date's attendance
       for (const [date, records] of Object.entries(recordsByDate)) {
         await api.post('/attendance/school/mark-bulk', {
           school_id: selectedSchool.id,
@@ -142,6 +141,23 @@ const SchoolAttendance = () => {
       alert('Failed to save attendance');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddExtraStudent = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/students/school/extra', {
+        ...extraStudent,
+        school_id: selectedSchool.id,
+        class_id: selectedClass
+      });
+      setShowAddExtra(false);
+      setExtraStudent({ first_name: '', last_name: '', date_of_birth: '', parent_name: '', parent_contact: '' });
+      loadStudents();
+      alert('Extra student added!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to add student');
     }
   };
 
@@ -194,12 +210,77 @@ const SchoolAttendance = () => {
           </div>
         </div>
         
-        {selectedClass && students.length > 0 && (
-          <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Attendance'}
-          </button>
-        )}
+        <div className="action-buttons">
+          {selectedClass && canAddExtraStudents() && canMarkAttendance && (
+            <button onClick={() => setShowAddExtra(true)} className="btn-secondary">
+              + Add Extra Student
+            </button>
+          )}
+          {selectedClass && students.length > 0 && canMarkAttendance && (
+            <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Attendance'}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Add Extra Student Modal */}
+      {showAddExtra && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Add Extra Student</h3>
+            <p className="modal-hint">Extra students are shown in yellow and are added by trainers.</p>
+            <form onSubmit={handleAddExtraStudent}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name *</label>
+                  <input 
+                    value={extraStudent.first_name}
+                    onChange={(e) => setExtraStudent({...extraStudent, first_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input 
+                    value={extraStudent.last_name}
+                    onChange={(e) => setExtraStudent({...extraStudent, last_name: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Date of Birth *</label>
+                <input 
+                  type="date"
+                  value={extraStudent.date_of_birth}
+                  onChange={(e) => setExtraStudent({...extraStudent, date_of_birth: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Parent Name</label>
+                  <input 
+                    value={extraStudent.parent_name}
+                    onChange={(e) => setExtraStudent({...extraStudent, parent_name: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Parent Contact</label>
+                  <input 
+                    value={extraStudent.parent_contact}
+                    onChange={(e) => setExtraStudent({...extraStudent, parent_contact: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowAddExtra(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Add Student</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {!selectedClass ? (
         <div className="no-data">
@@ -233,9 +314,12 @@ const SchoolAttendance = () => {
               </thead>
               <tbody>
                 {students.map(student => (
-                  <tr key={student.id}>
-                    <td className="sticky-col student-name-cell">
-                      <div className="student-name">{student.first_name} {student.last_name}</div>
+                  <tr key={student.id} className={student.is_extra ? 'extra-student-row' : ''}>
+                    <td className={`sticky-col student-name-cell ${student.is_extra ? 'extra-student' : ''}`}>
+                      <div className="student-name">
+                        {student.first_name} {student.last_name}
+                        {student.is_extra && <span className="extra-badge">EXTRA</span>}
+                      </div>
                     </td>
                     {daysInMonth.map(day => {
                       const dateStr = format(day, 'yyyy-MM-dd');
@@ -262,6 +346,7 @@ const SchoolAttendance = () => {
             <span className="legend-item"><span className="legend-box absent"></span> A = Absent</span>
             <span className="legend-item"><span className="legend-box late"></span> L = Late</span>
             <span className="legend-item"><span className="legend-box weekend-box"></span> Weekend</span>
+            <span className="legend-item"><span className="legend-box extra-box"></span> Extra Student</span>
           </div>
         </div>
       )}

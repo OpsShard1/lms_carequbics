@@ -15,6 +15,9 @@ import studentRoutes from './routes/students.js';
 import timetableRoutes from './routes/timetables.js';
 import attendanceRoutes from './routes/attendance.js';
 import progressRoutes from './routes/progress.js';
+import trainerAssignmentRoutes from './routes/trainer-assignments.js';
+import teacherAssignmentRoutes from './routes/teacher-assignments.js';
+import curriculumRoutes from './routes/curriculum.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +45,9 @@ app.use('/api/students', studentRoutes);
 app.use('/api/timetables', timetableRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/trainer-assignments', trainerAssignmentRoutes);
+app.use('/api/teacher-assignments', teacherAssignmentRoutes);
+app.use('/api/curriculum', curriculumRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

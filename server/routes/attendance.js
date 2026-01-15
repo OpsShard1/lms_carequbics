@@ -96,7 +96,7 @@ router.get('/school/:schoolId/students/:date', authenticate, async (req, res) =>
 });
 
 // Mark school attendance (bulk)
-router.post('/school/mark', authenticate, authorize('developer', 'owner', 'school_teacher', 'trainer'), async (req, res) => {
+router.post('/school/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
 
@@ -136,7 +136,7 @@ router.post('/school/mark', authenticate, authorize('developer', 'owner', 'schoo
 });
 
 // Mark school attendance (bulk - simple, for monthly grid)
-router.post('/school/mark-bulk', authenticate, authorize('developer', 'owner', 'school_teacher', 'trainer'), async (req, res) => {
+router.post('/school/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
 
@@ -244,7 +244,7 @@ router.get('/center/:centerId', authenticate, async (req, res) => {
 });
 
 // Mark center attendance (manual - single record)
-router.post('/center/mark', authenticate, authorize('developer', 'owner', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { center_id, student_id, attendance_date, attendance_time, status, remarks } = req.body;
 
@@ -282,7 +282,7 @@ router.post('/center/mark', authenticate, authorize('developer', 'owner', 'train
 });
 
 // Mark center attendance (bulk - for monthly grid)
-router.post('/center/mark-bulk', authenticate, authorize('developer', 'owner', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { center_id, attendance_date, records } = req.body;
 
@@ -320,7 +320,7 @@ router.post('/center/mark-bulk', authenticate, authorize('developer', 'owner', '
 });
 
 // Delete attendance record
-router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'trainer_head'), async (req, res) => {
   try {
     await pool.query('DELETE FROM attendance WHERE id = ?', [req.params.id]);
     res.json({ message: 'Attendance record deleted' });

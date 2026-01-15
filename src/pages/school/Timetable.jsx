@@ -10,7 +10,8 @@ const DAY_LABELS = {
 };
 
 const SchoolTimetable = () => {
-  const { selectedSchool } = useAuth();
+  const { selectedSchool, user } = useAuth();
+  const canEditTimetable = ['developer', 'school_teacher'].includes(user?.role_name);
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [timetable, setTimetable] = useState(null);
@@ -223,7 +224,9 @@ const SchoolTimetable = () => {
       {selectedClass && !loading && !timetable && !showWizard && (
         <div className="no-timetable">
           <p>📅 No timetable exists for this class yet.</p>
-          <button onClick={startWizard} className="btn-primary btn-large">Create Timetable</button>
+          {canEditTimetable && (
+            <button onClick={startWizard} className="btn-primary btn-large">Create Timetable</button>
+          )}
         </div>
       )}
 
@@ -397,8 +400,12 @@ const SchoolTimetable = () => {
           <div className="timetable-header">
             <h3>📅 {timetable.name}</h3>
             <span>{timetable.periods_per_day} periods/day</span>
-            <button onClick={deleteTimetable} className="btn-danger btn-sm">Delete</button>
-            <button onClick={startWizard} className="btn-secondary btn-sm">Edit</button>
+            {canEditTimetable && (
+              <>
+                <button onClick={deleteTimetable} className="btn-danger btn-sm">Delete</button>
+                <button onClick={startWizard} className="btn-secondary btn-sm">Edit</button>
+              </>
+            )}
           </div>
           
           {/* Visual School-Style Timetable - Fixed 7 days */}

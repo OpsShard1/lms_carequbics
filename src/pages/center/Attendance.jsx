@@ -5,7 +5,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'dat
 import '../../styles/attendance.css';
 
 const CenterAttendance = () => {
-  const { selectedCenter } = useAuth();
+  const { selectedCenter, user } = useAuth();
+  const canMarkAttendance = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [students, setStudents] = useState([]);
   const [attendanceData, setAttendanceData] = useState({});
@@ -61,6 +62,8 @@ const CenterAttendance = () => {
   };
 
   const toggleAttendance = (studentId, date, currentStatus) => {
+    if (!canMarkAttendance) return; // Owner can't mark attendance
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     const key = `${studentId}-${dateStr}`;
     
@@ -83,6 +86,8 @@ const CenterAttendance = () => {
   };
 
   const markColumnPresent = (date) => {
+    if (!canMarkAttendance) return; // Owner can't mark attendance
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     setAttendanceData(prev => {
       const newData = { ...prev };
@@ -179,7 +184,7 @@ const CenterAttendance = () => {
           <span className="stat late">Late: {totalLate}</span>
         </div>
         
-        {students.length > 0 && (
+        {students.length > 0 && canMarkAttendance && (
           <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
             {saving ? 'Saving...' : 'Save Attendance'}
           </button>

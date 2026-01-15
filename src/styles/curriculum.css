@@ -1,0 +1,142 @@
+/* Curriculum Management Page */
+.curriculum-page { max-width: 1400px; }
+
+.curriculum-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Curriculum List */
+.curriculum-list {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  height: fit-content;
+}
+
+.curriculum-list h3 {
+  margin-bottom: 1rem;
+  color: #1a1a2e;
+  font-size: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.curriculum-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+}
+
+.curriculum-item:hover { background: #f1f5f9; }
+
+.curriculum-item.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.curriculum-item.active .btn-danger { background: rgba(255,255,255,0.2); }
+
+.curriculum-name { font-weight: 600; }
+
+/* Curriculum Details */
+.curriculum-details {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  min-height: 400px;
+}
+
+.no-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.details-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.details-header h3 { color: #1a1a2e; margin-bottom: 0.25rem; }
+.details-header p { color: #64748b; margin-bottom: 1rem; }
+
+.details-actions { display: flex; gap: 0.75rem; }
+
+/* Subjects */
+.subjects-list { display: grid; gap: 1rem; }
+
+.subject-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 2px solid #e2e8f0;
+}
+
+.subject-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.subject-header h4 {
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subject-header h4::before { content: '📚'; }
+
+.subject-desc { color: #64748b; font-size: 0.9rem; margin-bottom: 1rem; }
+
+/* Topics */
+.topics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.topic-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  border: 1px solid #e2e8f0;
+}
+
+.topic-item .btn-sm { padding: 0.15rem 0.4rem; font-size: 0.75rem; }
+
+.empty-text, .empty-topics {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+@media (max-width: 900px) {
+  .curriculum-layout { grid-template-columns: 1fr; }
+  .curriculum-list { order: 2; }
+}

@@ -3,16 +3,19 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
 const SchoolStudents = () => {
-  const { selectedSchool, selectSchool } = useAuth();
-  const [schools, setSchools] = useState([]);
+  const { selectedSchool, selectSchool, availableSchools } = useAuth();
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [filterClass, setFilterClass] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadSchools();
-  }, []);
+    // Auto-select first school if none selected
+    if (availableSchools.length > 0 && !selectedSchool) {
+      selectSchool(availableSchools[0]);
+    }
+    setLoading(false);
+  }, [availableSchools, selectedSchool]);
 
   useEffect(() => {
     if (selectedSchool?.id) {
@@ -20,20 +23,6 @@ const SchoolStudents = () => {
       loadClasses();
     }
   }, [selectedSchool]);
-
-  const loadSchools = async () => {
-    try {
-      const res = await api.get('/schools');
-      setSchools(res.data);
-      if (res.data.length > 0 && !selectedSchool) {
-        selectSchool(res.data[0]);
-      }
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to load schools:', err);
-      setLoading(false);
-    }
-  };
 
   const loadStudents = async () => {
     if (!selectedSchool?.id) return;
@@ -79,19 +68,21 @@ const SchoolStudents = () => {
           <p className="subtitle">Students are managed through Classes. Go to Classes to add/edit students.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <select 
-            value={selectedSchool?.id || ''} 
-            onChange={(e) => {
-              const school = schools.find(s => s.id === parseInt(e.target.value));
-              selectSchool(school);
-            }}
-            className="school-selector"
-          >
-            <option value="">Select School</option>
-            {schools.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          {availableSchools.length > 1 && (
+            <select 
+              value={selectedSchool?.id || ''} 
+              onChange={(e) => {
+                const school = availableSchools.find(s => s.id === parseInt(e.target.value));
+                selectSchool(school);
+              }}
+              className="school-selector"
+            >
+              <option value="">Select School</option>
+              {availableSchools.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
