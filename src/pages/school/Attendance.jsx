@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import '../../styles/attendance.css';
 
 const SchoolAttendance = () => {
   const { selectedSchool } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
-  const [periodGroups, setPeriodGroups] = useState({});
-  const [attendanceMap, setAttendanceMap] = useState({});
+  const [students, setStudents] = useState([]);
+  const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Get all days in the selected month
+  const monthStart = startOfMonth(new Date(selectedMonth + '-01'));
+  const monthEnd = endOfMonth(monthStart);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   useEffect(() => {
     if (selectedSchool) loadClasses();
   }, [selectedSchool]);
 
   useEffect(() => {
-    if (selectedSchool && selectedDate) loadStudentsForDate();
-  }, [selectedSchool, selectedDate, selectedClass]);
+    if (selectedClass) {
+      loadStudents();
+      loadMonthAttendance();
+    }
+  }, [selectedClass, selectedMonth]);
 
   const loadClasses = async () => {
     try {
@@ -31,106 +39,104 @@ const SchoolAttendance = () => {
     }
   };
 
-  const loadStudentsForDate = async () => {
-    setLoading(true);
+  const loadStudents = async () => {
     try {
-      const params = selectedClass ? `?classId=${selectedClass}` : '';
-      const res = await api.get(`/attendance/school/${selectedSchool.id}/students/${selectedDate}${params}`);
-      
-      // Group students by period
-      const groups = {};
-      const attMap = {};
-      
-      res.data.forEach(student => {
-        const key = `period-${student.period_number}`;
-        if (!groups[key]) {
-          groups[key] = {
-            period_number: student.period_number,
-            subject: student.subject,
-            start_time: student.start_time,
-            end_time: student.end_time,
-            students: []
-          };
-        }
-        groups[key].students.push(student);
-        
-        // Set existing attendance
-        const attKey = `${student.id}-${student.timetable_entry_id}`;
-        if (student.existing_status) {
-          attMap[attKey] = student.existing_status;
-        }
-      });
-      
-      setPeriodGroups(groups);
-      setAttendanceMap(attMap);
+      const res = await api.get(`/students/class/${selectedClass}`);
+      setStudents(res.data);
     } catch (err) {
       console.error('Failed to load students:', err);
+    }
+  };
+
+  const loadMonthAttendance = async () => {
+    setLoading(true);
+    try {
+      const startDate = format(monthStart, 'yyyy-MM-dd');
+      const endDate = format(monthEnd, 'yyyy-MM-dd');
+      const res = await api.get(`/attendance/school/${selectedSchool.id}/range?startDate=${startDate}&endDate=${endDate}&classId=${selectedClass}`);
+      
+      // Create a map: studentId-date -> status
+      const dataMap = {};
+      res.data.forEach(record => {
+        const dateKey = format(new Date(record.attendance_date), 'yyyy-MM-dd');
+        const key = `${record.student_id}-${dateKey}`;
+        dataMap[key] = record.status;
+      });
+      setAttendanceData(dataMap);
+    } catch (err) {
+      console.error('Failed to load attendance:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleAttendance = (studentId, timetableEntryId, status) => {
-    const key = `${studentId}-${timetableEntryId}`;
-    setAttendanceMap(prev => ({
-      ...prev,
-      [key]: prev[key] === status ? null : status
-    }));
+  const toggleAttendance = (studentId, date, currentStatus) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const key = `${studentId}-${dateStr}`;
+    
+    // Cycle through: none -> present -> absent -> late -> none
+    let newStatus = null;
+    if (!currentStatus) newStatus = 'present';
+    else if (currentStatus === 'present') newStatus = 'absent';
+    else if (currentStatus === 'absent') newStatus = 'late';
+    else newStatus = null;
+
+    setAttendanceData(prev => {
+      const newData = { ...prev };
+      if (newStatus) {
+        newData[key] = newStatus;
+      } else {
+        delete newData[key];
+      }
+      return newData;
+    });
   };
 
-  const markPeriodAllPresent = (periodKey) => {
-    const period = periodGroups[periodKey];
-    if (!period) return;
-    
-    setAttendanceMap(prev => {
-      const newMap = { ...prev };
-      period.students.forEach(s => {
-        newMap[`${s.id}-${s.timetable_entry_id}`] = 'present';
+  const markColumnPresent = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    setAttendanceData(prev => {
+      const newData = { ...prev };
+      students.forEach(s => {
+        newData[`${s.id}-${dateStr}`] = 'present';
       });
-      return newMap;
+      return newData;
     });
   };
 
   const saveAttendance = async () => {
     setSaving(true);
     try {
-      const records = [];
-      
-      Object.entries(attendanceMap).forEach(([key, status]) => {
-        if (status) {
-          const [studentId, timetableEntryId] = key.split('-');
-          // Find the student to get period number
-          let periodNumber = null;
-          Object.values(periodGroups).forEach(group => {
-            const student = group.students.find(s => 
-              s.id === parseInt(studentId) && s.timetable_entry_id === parseInt(timetableEntryId)
-            );
-            if (student) periodNumber = student.period_number;
-          });
-          
-          records.push({
-            student_id: parseInt(studentId),
-            timetable_entry_id: parseInt(timetableEntryId),
-            period_number: periodNumber,
-            status
-          });
-        }
+      // Group by date
+      const recordsByDate = {};
+      Object.entries(attendanceData).forEach(([key, status]) => {
+        const [studentId, date] = key.split('-').reduce((acc, part, idx, arr) => {
+          if (idx === 0) return [part, ''];
+          if (idx === 1) return [acc[0], part];
+          return [acc[0], acc[1] + '-' + part];
+        }, ['', '']);
+        
+        const actualStudentId = key.split('-')[0];
+        const actualDate = key.substring(actualStudentId.length + 1);
+        
+        if (!recordsByDate[actualDate]) recordsByDate[actualDate] = [];
+        recordsByDate[actualDate].push({
+          student_id: parseInt(actualStudentId),
+          status
+        });
       });
 
-      if (records.length === 0) {
-        alert('No attendance to save');
-        return;
+      // Save each date's attendance
+      for (const [date, records] of Object.entries(recordsByDate)) {
+        await api.post('/attendance/school/mark-bulk', {
+          school_id: selectedSchool.id,
+          class_id: selectedClass,
+          attendance_date: date,
+          records
+        });
       }
-
-      await api.post('/attendance/school/mark', {
-        school_id: selectedSchool.id,
-        class_id: selectedClass || null,
-        attendance_date: selectedDate,
-        records
-      });
       
       alert('Attendance saved successfully!');
-      loadStudentsForDate();
+      loadMonthAttendance();
     } catch (err) {
       console.error('Failed to save attendance:', err);
       alert('Failed to save attendance');
@@ -139,119 +145,125 @@ const SchoolAttendance = () => {
     }
   };
 
-  if (!selectedSchool) return <p>Please select a school first.</p>;
+  const getStatusClass = (status) => {
+    if (status === 'present') return 'cell-present';
+    if (status === 'absent') return 'cell-absent';
+    if (status === 'late') return 'cell-late';
+    return '';
+  };
 
-  const dayOfWeek = new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long' });
-  const periodKeys = Object.keys(periodGroups).sort((a, b) => {
-    return periodGroups[a].period_number - periodGroups[b].period_number;
-  });
+  const getStatusLabel = (status) => {
+    if (status === 'present') return 'P';
+    if (status === 'absent') return 'A';
+    if (status === 'late') return 'L';
+    return '';
+  };
+
+  const isWeekend = (date) => {
+    const day = getDay(date);
+    return day === 0 || day === 6;
+  };
+
+  if (!selectedSchool) return <div className="no-data"><p>Please select a school first.</p></div>;
 
   return (
     <div className="attendance-page">
       <div className="page-header">
         <h2>School Attendance</h2>
-        <p className="subtitle">Attendance based on class timetable</p>
+        <p className="subtitle">Monthly attendance view - Click cells to mark P/A/L</p>
       </div>
 
-      <div className="filters">
-        <div className="form-group">
-          <label>Date</label>
-          <input 
-            type="date" 
-            value={selectedDate} 
-            onChange={(e) => setSelectedDate(e.target.value)} 
-          />
+      <div className="attendance-controls">
+        <div className="date-time-picker">
+          <div className="form-group">
+            <label>Month</label>
+            <input 
+              type="month" 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)} 
+            />
+          </div>
+          <div className="form-group">
+            <label>Class</label>
+            <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+              <option value="">-- Select Class --</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name} - Grade {c.grade}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="form-group">
-          <label>Filter by Class</label>
-          <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
-            <option value="">All Classes</option>
-            {classes.map(c => (
-              <option key={c.id} value={c.id}>{c.name} - {c.grade}</option>
-            ))}
-          </select>
-        </div>
+        
+        {selectedClass && students.length > 0 && (
+          <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Attendance'}
+          </button>
+        )}
       </div>
 
-      <div className="day-indicator">
-        <strong>{dayOfWeek}</strong> - {format(new Date(selectedDate), 'dd MMMM yyyy')}
-      </div>
-
-      {loading ? (
-        <p>Loading scheduled classes...</p>
-      ) : periodKeys.length === 0 ? (
+      {!selectedClass ? (
         <div className="no-data">
-          <p>No scheduled classes for this date.</p>
-          <p className="hint">Make sure a timetable exists for the selected class(es) and includes {dayOfWeek}.</p>
+          <p>📚 Select a class to view and mark attendance</p>
+        </div>
+      ) : loading ? (
+        <div className="no-data"><p>Loading...</p></div>
+      ) : students.length === 0 ? (
+        <div className="no-data">
+          <p>No students in this class yet.</p>
         </div>
       ) : (
-        <>
-          {periodKeys.map(periodKey => {
-            const period = periodGroups[periodKey];
-            return (
-              <div key={periodKey} className="period-block">
-                <div className="period-header">
-                  <div className="period-info">
-                    <h3>Period {period.period_number}</h3>
-                    <span className="time">{period.start_time} - {period.end_time}</span>
-                    <span className="subject">{period.subject || 'No subject'}</span>
-                  </div>
-                  <button 
-                    className="btn-sm btn-success"
-                    onClick={() => markPeriodAllPresent(periodKey)}
-                  >
-                    Mark All Present
-                  </button>
-                </div>
-                
-                <div className="students-grid">
-                  {period.students.map(student => {
-                    const attKey = `${student.id}-${student.timetable_entry_id}`;
-                    const status = attendanceMap[attKey];
-                    return (
-                      <div key={attKey} className={`student-row ${status || 'unmarked'}`}>
-                        <div className="student-info">
-                          <span className="name">{student.first_name} {student.last_name}</span>
-                          <span className="class">{student.class_name} ({student.grade})</span>
-                        </div>
-                        <div className="attendance-buttons">
-                          <button 
-                            className={`btn-sm btn-present ${status === 'present' ? 'active' : ''}`}
-                            onClick={() => toggleAttendance(student.id, student.timetable_entry_id, 'present')}
-                          >
-                            P
-                          </button>
-                          <button 
-                            className={`btn-sm btn-absent ${status === 'absent' ? 'active' : ''}`}
-                            onClick={() => toggleAttendance(student.id, student.timetable_entry_id, 'absent')}
-                          >
-                            A
-                          </button>
-                          <button 
-                            className={`btn-sm btn-late ${status === 'late' ? 'active' : ''}`}
-                            onClick={() => toggleAttendance(student.id, student.timetable_entry_id, 'late')}
-                          >
-                            L
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-
-          <div className="save-section">
-            <button 
-              onClick={saveAttendance} 
-              className="btn-primary btn-large"
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save All Attendance'}
-            </button>
+        <div className="monthly-attendance-container">
+          <div className="monthly-grid-wrapper">
+            <table className="monthly-attendance-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col student-header">Student Name</th>
+                  {daysInMonth.map(day => (
+                    <th 
+                      key={day.toISOString()} 
+                      className={`date-header ${isWeekend(day) ? 'weekend' : ''}`}
+                      onClick={() => markColumnPresent(day)}
+                      title="Click to mark all present"
+                    >
+                      <div className="date-num">{format(day, 'd')}</div>
+                      <div className="date-day">{format(day, 'EEE')}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {students.map(student => (
+                  <tr key={student.id}>
+                    <td className="sticky-col student-name-cell">
+                      <div className="student-name">{student.first_name} {student.last_name}</div>
+                    </td>
+                    {daysInMonth.map(day => {
+                      const dateStr = format(day, 'yyyy-MM-dd');
+                      const key = `${student.id}-${dateStr}`;
+                      const status = attendanceData[key];
+                      return (
+                        <td 
+                          key={day.toISOString()}
+                          className={`attendance-cell ${getStatusClass(status)} ${isWeekend(day) ? 'weekend' : ''}`}
+                          onClick={() => toggleAttendance(student.id, day, status)}
+                        >
+                          {getStatusLabel(status)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </>
+          
+          <div className="attendance-legend">
+            <span className="legend-item"><span className="legend-box present"></span> P = Present</span>
+            <span className="legend-item"><span className="legend-box absent"></span> A = Absent</span>
+            <span className="legend-item"><span className="legend-box late"></span> L = Late</span>
+            <span className="legend-item"><span className="legend-box weekend-box"></span> Weekend</span>
+          </div>
+        </div>
       )}
     </div>
   );

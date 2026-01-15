@@ -266,8 +266,139 @@
 .timetable-header h3 { flex: 1; margin: 0; font-size: 1.25rem; color: #1a1a2e; }
 .timetable-header span { background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; color: #64748b; }
 
-.timetable-grid { overflow-x: auto; }
-.timetable-grid .data-table .day-cell { font-weight: 700; color: #667eea; text-transform: capitalize; }
+/* Visual School-Style Timetable */
+.visual-timetable {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.school-timetable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.school-timetable th,
+.school-timetable td {
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+/* Header Styles */
+.school-timetable thead tr {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.school-timetable .period-header {
+  background: linear-gradient(135deg, #4c5fd5, #6b4f9a);
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 120px;
+}
+
+.school-timetable .day-header {
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 140px;
+}
+
+/* Period Column */
+.school-timetable .period-cell {
+  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+  font-weight: 600;
+  border-right: 2px solid #e2e8f0;
+}
+
+.period-cell .period-num {
+  color: #1a1a2e;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.period-cell .period-time {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Schedule Cells */
+.school-timetable .schedule-cell {
+  background: white;
+  transition: all 0.2s;
+  vertical-align: middle;
+  height: 80px;
+}
+
+.school-timetable .schedule-cell.has-class {
+  background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+}
+
+.school-timetable .schedule-cell.has-class:hover {
+  background: linear-gradient(135deg, #c7d2fe, #ddd6fe);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.school-timetable .schedule-cell.empty {
+  background: #fafafa;
+}
+
+.schedule-cell .cell-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.schedule-cell .subject-name {
+  font-weight: 700;
+  color: #4c1d95;
+  font-size: 1rem;
+}
+
+.schedule-cell .room-info {
+  font-size: 0.8rem;
+  color: #6b7280;
+  background: rgba(255,255,255,0.7);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+.schedule-cell .no-class {
+  color: #d1d5db;
+  font-size: 1.2rem;
+}
+
+.no-entries {
+  text-align: center;
+  color: #64748b;
+  padding: 3rem;
+  font-size: 1rem;
+}
+
+/* Zebra striping for rows */
+.school-timetable tbody tr:nth-child(even) .period-cell {
+  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+}
+
+.school-timetable tbody tr:nth-child(even) .schedule-cell.empty {
+  background: #f5f5f5;
+}
+
+.school-timetable tbody tr:nth-child(even) .schedule-cell.has-class {
+  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+}
 
 /* No Timetable State */
 .no-timetable {

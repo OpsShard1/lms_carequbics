@@ -135,6 +135,73 @@ router.post('/school/mark', authenticate, authorize('developer', 'owner', 'schoo
   }
 });
 
+// Mark school attendance (bulk - simple, for monthly grid)
+router.post('/school/mark-bulk', authenticate, authorize('developer', 'owner', 'school_teacher', 'trainer'), async (req, res) => {
+  try {
+    const { school_id, class_id, attendance_date, records } = req.body;
+
+    if (!school_id || !attendance_date || !records || records.length === 0) {
+      return res.status(400).json({ error: 'School, date, and attendance records are required' });
+    }
+
+    for (const record of records) {
+      // Check if attendance already exists for this student on this date
+      const [existing] = await pool.query(`
+        SELECT id FROM attendance 
+        WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'school' AND class_id = ?
+      `, [record.student_id, attendance_date, class_id]);
+
+      if (existing.length > 0) {
+        // Update existing
+        await pool.query(`
+          UPDATE attendance SET status = ?, marked_by = ? WHERE id = ?
+        `, [record.status, req.user.id, existing[0].id]);
+      } else {
+        // Insert new
+        await pool.query(`
+          INSERT INTO attendance 
+          (student_id, attendance_type, school_id, class_id, attendance_date, status, marked_by)
+          VALUES (?, 'school', ?, ?, ?, ?, ?)
+        `, [record.student_id, school_id, class_id, attendance_date, record.status, req.user.id]);
+      }
+    }
+
+    res.json({ message: 'Attendance marked successfully', count: records.length });
+  } catch (error) {
+    console.error('Mark school attendance bulk error:', error);
+    res.status(500).json({ error: 'Failed to mark attendance' });
+  }
+});
+
+// Get school attendance for a date range (for monthly grid)
+router.get('/school/:schoolId/range', authenticate, async (req, res) => {
+  try {
+    const { schoolId } = req.params;
+    const { startDate, endDate, classId } = req.query;
+
+    let query = `
+      SELECT a.id, a.student_id, a.attendance_date, a.status
+      FROM attendance a
+      WHERE a.school_id = ? AND a.attendance_type = 'school'
+        AND a.attendance_date >= ? AND a.attendance_date <= ?
+    `;
+    const params = [schoolId, startDate, endDate];
+
+    if (classId) {
+      query += ' AND a.class_id = ?';
+      params.push(classId);
+    }
+
+    query += ' ORDER BY a.attendance_date, a.student_id';
+
+    const [attendance] = await pool.query(query, params);
+    res.json(attendance);
+  } catch (error) {
+    console.error('Get school attendance range error:', error);
+    res.status(500).json({ error: 'Failed to fetch attendance' });
+  }
+});
+
 // =============================================
 // CENTER ATTENDANCE (Manual)
 // =============================================
@@ -210,6 +277,44 @@ router.post('/center/mark', authenticate, authorize('developer', 'owner', 'train
     res.status(201).json(newAttendance[0]);
   } catch (error) {
     console.error('Mark center attendance error:', error);
+    res.status(500).json({ error: 'Failed to mark attendance' });
+  }
+});
+
+// Mark center attendance (bulk - for monthly grid)
+router.post('/center/mark-bulk', authenticate, authorize('developer', 'owner', 'trainer', 'trainer_head'), async (req, res) => {
+  try {
+    const { center_id, attendance_date, records } = req.body;
+
+    if (!center_id || !attendance_date || !records || records.length === 0) {
+      return res.status(400).json({ error: 'Center, date, and attendance records are required' });
+    }
+
+    for (const record of records) {
+      // Check if attendance already exists for this student on this date
+      const [existing] = await pool.query(`
+        SELECT id FROM attendance 
+        WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'center'
+      `, [record.student_id, attendance_date]);
+
+      if (existing.length > 0) {
+        // Update existing
+        await pool.query(`
+          UPDATE attendance SET status = ?, marked_by = ? WHERE id = ?
+        `, [record.status, req.user.id, existing[0].id]);
+      } else {
+        // Insert new
+        await pool.query(`
+          INSERT INTO attendance 
+          (student_id, attendance_type, center_id, attendance_date, status, marked_by)
+          VALUES (?, 'center', ?, ?, ?, ?)
+        `, [record.student_id, center_id, attendance_date, record.status, req.user.id]);
+      }
+    }
+
+    res.json({ message: 'Attendance marked successfully', count: records.length });
+  } catch (error) {
+    console.error('Mark center attendance bulk error:', error);
     res.status(500).json({ error: 'Failed to mark attendance' });
   }
 });

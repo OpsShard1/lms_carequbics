@@ -1,31 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import '../../styles/attendance.css';
 
 const CenterAttendance = () => {
   const { selectedCenter } = useAuth();
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [students, setStudents] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [selectedTime, setSelectedTime] = useState(format(new Date(), 'HH:mm'));
-  const [attendanceMap, setAttendanceMap] = useState({});
-  const [recentAttendance, setRecentAttendance] = useState([]);
+  const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Get all days in the selected month
+  const monthStart = startOfMonth(new Date(selectedMonth + '-01'));
+  const monthEnd = endOfMonth(monthStart);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   useEffect(() => {
     if (selectedCenter) {
       loadStudents();
-      loadRecentAttendance();
     }
   }, [selectedCenter]);
 
   useEffect(() => {
-    if (selectedCenter && selectedDate) {
-      loadAttendanceForDate();
+    if (selectedCenter && students.length > 0) {
+      loadMonthAttendance();
     }
-  }, [selectedCenter, selectedDate]);
+  }, [selectedCenter, selectedMonth, students]);
 
   const loadStudents = async () => {
     try {
@@ -36,15 +38,21 @@ const CenterAttendance = () => {
     }
   };
 
-  const loadAttendanceForDate = async () => {
+  const loadMonthAttendance = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/attendance/center/${selectedCenter.id}?startDate=${selectedDate}&endDate=${selectedDate}`);
-      const map = {};
-      res.data.forEach(a => {
-        map[a.student_id] = a.status;
+      const startDate = format(monthStart, 'yyyy-MM-dd');
+      const endDate = format(monthEnd, 'yyyy-MM-dd');
+      const res = await api.get(`/attendance/center/${selectedCenter.id}?startDate=${startDate}&endDate=${endDate}`);
+      
+      // Create a map: studentId-date -> status
+      const dataMap = {};
+      res.data.forEach(record => {
+        const dateKey = format(new Date(record.attendance_date), 'yyyy-MM-dd');
+        const key = `${record.student_id}-${dateKey}`;
+        dataMap[key] = record.status;
       });
-      setAttendanceMap(map);
+      setAttendanceData(dataMap);
     } catch (err) {
       console.error('Failed to load attendance:', err);
     } finally {
@@ -52,60 +60,66 @@ const CenterAttendance = () => {
     }
   };
 
-  const loadRecentAttendance = async () => {
-    try {
-      const res = await api.get(`/attendance/center/${selectedCenter.id}`);
-      setRecentAttendance(res.data);
-    } catch (err) {
-      console.error('Failed to load recent attendance:', err);
-    }
-  };
+  const toggleAttendance = (studentId, date, currentStatus) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const key = `${studentId}-${dateStr}`;
+    
+    // Cycle through: none -> present -> absent -> late -> none
+    let newStatus = null;
+    if (!currentStatus) newStatus = 'present';
+    else if (currentStatus === 'present') newStatus = 'absent';
+    else if (currentStatus === 'absent') newStatus = 'late';
+    else newStatus = null;
 
-  const toggleAttendance = (studentId, status) => {
-    setAttendanceMap(prev => ({
-      ...prev,
-      [studentId]: prev[studentId] === status ? null : status
-    }));
-  };
-
-  const markAllPresent = () => {
-    const newMap = {};
-    students.forEach(s => {
-      newMap[s.id] = 'present';
+    setAttendanceData(prev => {
+      const newData = { ...prev };
+      if (newStatus) {
+        newData[key] = newStatus;
+      } else {
+        delete newData[key];
+      }
+      return newData;
     });
-    setAttendanceMap(newMap);
   };
 
-  const markAllAbsent = () => {
-    const newMap = {};
-    students.forEach(s => {
-      newMap[s.id] = 'absent';
+  const markColumnPresent = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    setAttendanceData(prev => {
+      const newData = { ...prev };
+      students.forEach(s => {
+        newData[`${s.id}-${dateStr}`] = 'present';
+      });
+      return newData;
     });
-    setAttendanceMap(newMap);
-  };
-
-  const clearAll = () => {
-    setAttendanceMap({});
   };
 
   const saveAttendance = async () => {
     setSaving(true);
     try {
-      const promises = Object.entries(attendanceMap)
-        .filter(([_, status]) => status)
-        .map(([studentId, status]) => 
-          api.post('/attendance/center/mark', {
-            center_id: selectedCenter.id,
-            student_id: parseInt(studentId),
-            attendance_date: selectedDate,
-            attendance_time: selectedTime,
-            status
-          })
-        );
+      // Group by date
+      const recordsByDate = {};
+      Object.entries(attendanceData).forEach(([key, status]) => {
+        const actualStudentId = key.split('-')[0];
+        const actualDate = key.substring(actualStudentId.length + 1);
+        
+        if (!recordsByDate[actualDate]) recordsByDate[actualDate] = [];
+        recordsByDate[actualDate].push({
+          student_id: parseInt(actualStudentId),
+          status
+        });
+      });
+
+      // Save each date's attendance
+      for (const [date, records] of Object.entries(recordsByDate)) {
+        await api.post('/attendance/center/mark-bulk', {
+          center_id: selectedCenter.id,
+          attendance_date: date,
+          records
+        });
+      }
       
-      await Promise.all(promises);
       alert('Attendance saved successfully!');
-      loadRecentAttendance();
+      loadMonthAttendance();
     } catch (err) {
       console.error('Failed to save attendance:', err);
       alert('Failed to save attendance');
@@ -114,123 +128,125 @@ const CenterAttendance = () => {
     }
   };
 
-  if (!selectedCenter) return <p>Please select a center first.</p>;
+  const getStatusClass = (status) => {
+    if (status === 'present') return 'cell-present';
+    if (status === 'absent') return 'cell-absent';
+    if (status === 'late') return 'cell-late';
+    return '';
+  };
 
-  const markedCount = Object.values(attendanceMap).filter(Boolean).length;
-  const presentCount = Object.values(attendanceMap).filter(s => s === 'present').length;
-  const absentCount = Object.values(attendanceMap).filter(s => s === 'absent').length;
+  const getStatusLabel = (status) => {
+    if (status === 'present') return 'P';
+    if (status === 'absent') return 'A';
+    if (status === 'late') return 'L';
+    return '';
+  };
+
+  const isWeekend = (date) => {
+    const day = getDay(date);
+    return day === 0 || day === 6;
+  };
+
+  // Calculate stats
+  const totalPresent = Object.values(attendanceData).filter(s => s === 'present').length;
+  const totalAbsent = Object.values(attendanceData).filter(s => s === 'absent').length;
+  const totalLate = Object.values(attendanceData).filter(s => s === 'late').length;
+
+  if (!selectedCenter) return <div className="no-data"><p>Please select a center first.</p></div>;
 
   return (
     <div className="attendance-page">
       <div className="page-header">
-        <h2>Center Attendance (Manual)</h2>
-        <p className="subtitle">Mark attendance for any date and time - not tied to any timetable</p>
+        <h2>Center Attendance</h2>
+        <p className="subtitle">Monthly attendance view - Click cells to mark P/A/L</p>
       </div>
 
       <div className="attendance-controls">
         <div className="date-time-picker">
           <div className="form-group">
-            <label>Date</label>
+            <label>Month</label>
             <input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)} 
-            />
-          </div>
-          <div className="form-group">
-            <label>Time</label>
-            <input 
-              type="time" 
-              value={selectedTime} 
-              onChange={(e) => setSelectedTime(e.target.value)} 
+              type="month" 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)} 
             />
           </div>
         </div>
-
-        <div className="bulk-actions">
-          <button onClick={markAllPresent} className="btn-success">Mark All Present</button>
-          <button onClick={markAllAbsent} className="btn-danger">Mark All Absent</button>
-          <button onClick={clearAll} className="btn-secondary">Clear All</button>
+        
+        <div className="attendance-stats">
+          <span className="stat present">Present: {totalPresent}</span>
+          <span className="stat absent">Absent: {totalAbsent}</span>
+          <span className="stat late">Late: {totalLate}</span>
         </div>
+        
+        {students.length > 0 && (
+          <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Attendance'}
+          </button>
+        )}
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <div className="no-data"><p>Loading...</p></div>
+      ) : students.length === 0 ? (
+        <div className="no-data">
+          <p>No students registered in this center yet.</p>
+        </div>
       ) : (
-        <>
-          <div className="attendance-summary">
-            <span>Total: {students.length}</span>
-            <span className="present">Present: {presentCount}</span>
-            <span className="absent">Absent: {absentCount}</span>
-            <span>Unmarked: {students.length - markedCount}</span>
+        <div className="monthly-attendance-container">
+          <div className="monthly-grid-wrapper">
+            <table className="monthly-attendance-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col student-header">Student Name</th>
+                  {daysInMonth.map(day => (
+                    <th 
+                      key={day.toISOString()} 
+                      className={`date-header ${isWeekend(day) ? 'weekend' : ''}`}
+                      onClick={() => markColumnPresent(day)}
+                      title="Click to mark all present"
+                    >
+                      <div className="date-num">{format(day, 'd')}</div>
+                      <div className="date-day">{format(day, 'EEE')}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {students.map(student => (
+                  <tr key={student.id}>
+                    <td className="sticky-col student-name-cell">
+                      <div className="student-name">{student.first_name} {student.last_name}</div>
+                      <div className="student-school">{student.school_name_external || ''}</div>
+                    </td>
+                    {daysInMonth.map(day => {
+                      const dateStr = format(day, 'yyyy-MM-dd');
+                      const key = `${student.id}-${dateStr}`;
+                      const status = attendanceData[key];
+                      return (
+                        <td 
+                          key={day.toISOString()}
+                          className={`attendance-cell ${getStatusClass(status)} ${isWeekend(day) ? 'weekend' : ''}`}
+                          onClick={() => toggleAttendance(student.id, day, status)}
+                        >
+                          {getStatusLabel(status)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          <div className="students-attendance-grid">
-            {students.map(student => (
-              <div key={student.id} className={`student-card ${attendanceMap[student.id] || 'unmarked'}`}>
-                <div className="student-info">
-                  <span className="student-name">{student.first_name} {student.last_name}</span>
-                  <span className="student-school">{student.school_name_external || 'No school'}</span>
-                </div>
-                <div className="attendance-buttons">
-                  <button 
-                    className={`btn-sm ${attendanceMap[student.id] === 'present' ? 'active' : ''}`}
-                    onClick={() => toggleAttendance(student.id, 'present')}
-                  >
-                    P
-                  </button>
-                  <button 
-                    className={`btn-sm ${attendanceMap[student.id] === 'absent' ? 'active' : ''}`}
-                    onClick={() => toggleAttendance(student.id, 'absent')}
-                  >
-                    A
-                  </button>
-                  <button 
-                    className={`btn-sm ${attendanceMap[student.id] === 'late' ? 'active' : ''}`}
-                    onClick={() => toggleAttendance(student.id, 'late')}
-                  >
-                    L
-                  </button>
-                </div>
-              </div>
-            ))}
+          
+          <div className="attendance-legend">
+            <span className="legend-item"><span className="legend-box present"></span> P = Present</span>
+            <span className="legend-item"><span className="legend-box absent"></span> A = Absent</span>
+            <span className="legend-item"><span className="legend-box late"></span> L = Late</span>
+            <span className="legend-item"><span className="legend-box weekend-box"></span> Weekend</span>
           </div>
-
-          <div className="save-section">
-            <button 
-              onClick={saveAttendance} 
-              className="btn-primary btn-large"
-              disabled={saving || markedCount === 0}
-            >
-              {saving ? 'Saving...' : `Save Attendance (${markedCount} students)`}
-            </button>
-          </div>
-        </>
+        </div>
       )}
-
-      <div className="recent-attendance">
-        <h3>Recent Attendance Records</h3>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentAttendance.slice(0, 20).map(a => (
-              <tr key={a.id}>
-                <td>{a.first_name} {a.last_name}</td>
-                <td>{format(new Date(a.attendance_date), 'dd MMM yyyy')}</td>
-                <td>{a.attendance_time || '-'}</td>
-                <td><span className={`status-badge ${a.status}`}>{a.status}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 };

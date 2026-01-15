@@ -391,7 +391,7 @@ const SchoolTimetable = () => {
         </div>
       )}
 
-      {/* Timetable View */}
+      {/* Timetable View - Visual School Table */}
       {timetable && !showWizard && (
         <div className="timetable-view">
           <div className="timetable-header">
@@ -401,33 +401,76 @@ const SchoolTimetable = () => {
             <button onClick={startWizard} className="btn-secondary btn-sm">Edit</button>
           </div>
           
-          <div className="timetable-grid">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Day</th>
-                  <th>Period</th>
-                  <th>Time</th>
-                  <th>Subject</th>
-                  <th>Room</th>
-                </tr>
-              </thead>
-              <tbody>
-                {timetable.entries?.length === 0 ? (
-                  <tr><td colSpan="5" style={{textAlign: 'center', color: '#64748b'}}>No entries yet</td></tr>
-                ) : (
-                  timetable.entries?.map(e => (
-                    <tr key={e.id}>
-                      <td className="day-cell">{DAY_LABELS[e.day_of_week]}</td>
-                      <td>Period {e.period_number}</td>
-                      <td>{e.start_time} - {e.end_time}</td>
-                      <td>{e.subject || <span style={{color: '#94a3b8'}}>-</span>}</td>
-                      <td>{e.room_number || <span style={{color: '#94a3b8'}}>-</span>}</td>
+          {/* Visual School-Style Timetable - Fixed 7 days */}
+          <div className="visual-timetable">
+            {(() => {
+              // Always show all 7 days
+              const allDays = DAYS;
+              
+              // Get all periods from 1 to periods_per_day
+              const periods = Array.from({ length: timetable.periods_per_day }, (_, i) => i + 1);
+              
+              // Create a lookup map for quick access
+              const entryMap = {};
+              timetable.entries?.forEach(e => {
+                entryMap[`${e.day_of_week}-${e.period_number}`] = e;
+              });
+
+              // Get default timing for each period (from any entry or generate default)
+              const getTimingForPeriod = (periodNum) => {
+                const entry = timetable.entries?.find(e => e.period_number === periodNum);
+                if (entry) return { start: entry.start_time, end: entry.end_time };
+                // Default timing if no entry exists
+                const startHour = 8 + periodNum;
+                return { 
+                  start: `${String(startHour).padStart(2, '0')}:00`, 
+                  end: `${String(startHour).padStart(2, '0')}:45` 
+                };
+              };
+
+              return (
+                <table className="school-timetable">
+                  <thead>
+                    <tr>
+                      <th className="period-header">Period</th>
+                      {allDays.map(day => (
+                        <th key={day} className="day-header">{DAY_LABELS[day]}</th>
+                      ))}
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {periods.map(periodNum => {
+                      const timing = getTimingForPeriod(periodNum);
+                      return (
+                        <tr key={periodNum}>
+                          <td className="period-cell">
+                            <div className="period-num">Period {periodNum}</div>
+                            <div className="period-time">{timing.start} - {timing.end}</div>
+                          </td>
+                          {allDays.map(day => {
+                            const entry = entryMap[`${day}-${periodNum}`];
+                            return (
+                              <td key={day} className={`schedule-cell ${entry ? 'has-class' : 'empty'}`}>
+                                {entry ? (
+                                  <div className="cell-content">
+                                    <div className="subject-name">{entry.subject || 'Class'}</div>
+                                    {entry.room_number && (
+                                      <div className="room-info">🚪 Room {entry.room_number}</div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="no-class">—</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
         </div>
       )}
