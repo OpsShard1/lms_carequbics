@@ -1,0 +1,556 @@
+/* Parent Progress Page */
+.parent-progress-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.error-container h2 {
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.error-container p {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+/* Header */
+.parent-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.back-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.parent-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Content */
+.parent-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Student Info Card */
+.student-info-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 1.5rem;
+}
+
+.student-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.student-details h2 {
+  margin: 0 0 0.5rem;
+  color: #1a1a2e;
+  font-size: 1.5rem;
+}
+
+.student-meta {
+  display: flex;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.curriculum-badge {
+  display: inline-block;
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Attendance Card */
+.attendance-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 1.5rem;
+}
+
+.attendance-card h3 {
+  margin: 0;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+}
+
+/* Attendance Header with Month Selector */
+.attendance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.month-nav-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.month-nav-btn:hover {
+  background: #e2e8f0;
+  color: #1a1a2e;
+}
+
+.current-month {
+  font-weight: 600;
+  color: #1a1a2e;
+  min-width: 140px;
+  text-align: center;
+}
+
+/* Attendance Overall */
+.attendance-overall {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+/* Attendance Calendar */
+.attendance-calendar {
+  margin-bottom: 1rem;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.calendar-day-name {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0.5rem 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  position: relative;
+  min-height: 45px;
+}
+
+.calendar-cell.empty {
+  background: transparent;
+}
+
+.calendar-cell .cell-day {
+  font-weight: 500;
+  color: #475569;
+}
+
+.calendar-cell .cell-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.calendar-cell.att-present {
+  background: #dcfce7;
+}
+
+.calendar-cell.att-present .cell-day,
+.calendar-cell.att-present .cell-status {
+  color: #16a34a;
+}
+
+.calendar-cell.att-absent {
+  background: #fef2f2;
+}
+
+.calendar-cell.att-absent .cell-day,
+.calendar-cell.att-absent .cell-status {
+  color: #dc2626;
+}
+
+.calendar-cell.att-late {
+  background: #fef3c7;
+}
+
+.calendar-cell.att-late .cell-day,
+.calendar-cell.att-late .cell-status {
+  color: #d97706;
+}
+
+/* Attendance Legend */
+.attendance-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-dot.present { background: #16a34a; }
+.legend-dot.absent { background: #dc2626; }
+.legend-dot.late { background: #d97706; }
+
+.attendance-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.stat-item.present { background: #f0fdf4; }
+.stat-item.absent { background: #fef2f2; }
+.stat-item.percentage { background: #eff6ff; }
+
+.stat-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.stat-item.present .stat-value { color: #16a34a; }
+.stat-item.absent .stat-value { color: #dc2626; }
+.stat-item.percentage .stat-value { color: #2563eb; }
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+/* No Curriculum/Progress Cards */
+.no-curriculum-card,
+.no-progress-card {
+  background: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.no-curriculum-card .icon,
+.no-progress-card .icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.no-curriculum-card h3,
+.no-progress-card h3 {
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.no-curriculum-card p,
+.no-progress-card p {
+  color: #64748b;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Curriculum Progress Section */
+.curriculum-progress-section {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.curriculum-progress-section h3 {
+  margin: 0 0 1.5rem;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+}
+
+/* Subject Card */
+.subject-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.subject-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.subject-header:hover {
+  background: #f1f5f9;
+}
+
+.subject-info {
+  flex: 1;
+}
+
+.subject-info h4 {
+  margin: 0;
+  color: #1a1a2e;
+  font-size: 1rem;
+}
+
+.topic-count {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.subject-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: 1rem;
+}
+
+.progress-bar {
+  width: 100px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6366f1;
+  min-width: 40px;
+}
+
+.expand-icon {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+/* Topics List */
+.topics-list {
+  padding: 0.5rem;
+  background: white;
+}
+
+.topic-item {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+}
+
+.topic-item.completed { background: #f0fdf4; border-left: 3px solid #16a34a; }
+.topic-item.in_progress { background: #fffbeb; border-left: 3px solid #f59e0b; }
+.topic-item.not_started { background: #f8fafc; border-left: 3px solid #cbd5e1; }
+
+.topic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.topic-name {
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.completed { background: #dcfce7; color: #16a34a; }
+.status-badge.in-progress { background: #fef3c7; color: #d97706; }
+.status-badge.not-started { background: #f1f5f9; color: #64748b; }
+
+/* Skills Grid */
+.topic-skills {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.topic-skills h5 {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.skill-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.skill-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.skill-item.skill-positive .skill-icon { background: #dcfce7; color: #16a34a; }
+.skill-item.skill-negative .skill-icon { background: #fef2f2; color: #dc2626; }
+.skill-item.skill-neutral .skill-icon { background: #f1f5f9; color: #64748b; }
+
+.skill-label {
+  color: #475569;
+}
+
+.topic-remarks {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .parent-content { padding: 1rem; }
+  .student-info-card { flex-direction: column; text-align: center; }
+  .attendance-stats { grid-template-columns: repeat(2, 1fr); }
+  .skills-grid { grid-template-columns: 1fr; }
+  .subject-progress { display: none; }
+}

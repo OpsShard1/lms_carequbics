@@ -1,0 +1,72 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Logging helper
+function logError(message) {
+  const logPath = path.join(__dirname, 'server_error.log');
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+}
+
+// Global error handlers
+process.on('uncaughtException', (err) => {
+  logError(`Uncaught Exception: ${err.message}\n${err.stack}`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logError(`Unhandled Rejection: ${reason}`);
+});
+
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'https://lmstest.carequbics.com',
+  credentials: true
+}));
+app.use(express.json());
+
+// Database connection
+const db = require('./database/connection');
+
+// Test database connection on startup
+db.testConnection();
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/schools', require('./routes/schools'));
+app.use('/api/centers', require('./routes/centers'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/classes', require('./routes/classes'));
+app.use('/api/students', require('./routes/students'));
+app.use('/api/timetables', require('./routes/timetables'));
+app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/progress', require('./routes/progress'));
+app.use('/api/trainer-assignments', require('./routes/trainer-assignments'));
+app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
+app.use('/api/curriculum', require('./routes/curriculum'));
+
+// Health check
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'LMS API is running' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  logError(`Error: ${err.message}\n${err.stack}`);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+app.listen(PORT, () => {
+  console.log(`LMS API running on port ${PORT}`);
+});

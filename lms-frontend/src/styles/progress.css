@@ -1,0 +1,439 @@
+/* Progress Page */
+.progress-page { max-width: 1400px; }
+
+.progress-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  height: calc(100vh - 200px);
+}
+
+/* Student Panel */
+.student-panel {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.search-box {
+  padding: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.student-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.student-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.5rem;
+}
+
+.student-item:hover { background: #f8fafc; }
+
+.student-item.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.student-item.active .school { color: rgba(255,255,255,0.8); }
+
+.student-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.student-item.active .student-avatar {
+  background: rgba(255,255,255,0.2);
+}
+
+.student-avatar.large {
+  width: 56px;
+  height: 56px;
+  font-size: 1.1rem;
+}
+
+.student-info { display: flex; flex-direction: column; }
+.student-info .name { font-weight: 600; font-size: 0.95rem; }
+.student-info .school { font-size: 0.8rem; color: #64748b; }
+
+.loading-text, .empty-text {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2rem;
+}
+
+/* Progress Panel */
+.progress-panel {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #64748b;
+}
+
+.no-selection .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+.selected-student-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.selected-student-header h3 { margin: 0; color: #1a1a2e; }
+.selected-student-header p { margin: 0; color: #64748b; font-size: 0.9rem; }
+
+/* Curriculum Assignment */
+.curriculum-assignment {
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 2px solid #a78bfa;
+}
+
+.curriculum-assignment > label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6d28d9;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.assignment-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.assignment-row select {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #a78bfa;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: white;
+  font-weight: 500;
+}
+
+.assignment-row select:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+.saving-indicator {
+  color: #7c3aed;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.curriculum-readonly {
+  padding: 0.5rem 0.75rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.no-curriculum-hint {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.no-curriculum-hint p {
+  color: #92400e;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Curriculum Selectors */
+.curriculum-selectors {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.selector-group label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.selector-group select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+}
+
+.selector-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.selector-group select:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+/* Progress Form */
+.progress-form {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Status Selector */
+.status-selector {
+  margin-bottom: 1.5rem;
+}
+
+.status-selector > label {
+  display: block;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 0.75rem;
+}
+
+.status-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.status-btn {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.status-btn:hover { background: #f8fafc; }
+
+.status-btn.active.not_started {
+  background: #f1f5f9;
+  border-color: #64748b;
+  color: #475569;
+}
+
+.status-btn.active.in_progress {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.status-btn.active.completed {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-color: #10b981;
+  color: #065f46;
+}
+
+/* Skills Section */
+.skills-section {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.skills-section h4 {
+  margin: 0 0 0.25rem;
+  color: #1a1a2e;
+}
+
+.skills-hint {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.skill-row:last-child { border-bottom: none; }
+
+.skill-row label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.skill-slider {
+  display: flex;
+  gap: 0.25rem;
+  background: white;
+  padding: 0.25rem;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+
+.skill-btn {
+  width: 40px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.15s;
+}
+
+.skill-btn:hover { background: #f1f5f9; }
+
+.skill-btn.negative.active {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.skill-btn.neutral.active {
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: white;
+}
+
+.skill-btn.positive.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.skill-value {
+  min-width: 70px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+.skill-value.negative { background: #fee2e2; color: #991b1b; }
+.skill-value.neutral { background: #f1f5f9; color: #475569; }
+.skill-value.positive { background: #d1fae5; color: #065f46; }
+
+/* Remarks */
+.remarks-section {
+  margin-bottom: 1.5rem;
+}
+
+.remarks-section label {
+  display: block;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.remarks-section textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.remarks-section textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.save-btn {
+  width: 100%;
+}
+
+.select-topic-hint, .loading-progress {
+  text-align: center;
+  color: #64748b;
+  padding: 3rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .progress-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .student-panel { max-height: 300px; }
+  .curriculum-selectors { grid-template-columns: 1fr; }
+}
