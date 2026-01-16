@@ -422,3 +422,102 @@
   .wizard-container { padding: 1.5rem; }
   .wizard-step h3 { font-size: 1.25rem; }
 }
+
+
+/* Trainer Consolidated View */
+.school-timetable.trainer-view .schedule-cell.has-class {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5) !important;
+}
+
+.school-timetable.trainer-view .schedule-cell.has-class:hover {
+  background: linear-gradient(135deg, #bbf7d0, #a7f3d0) !important;
+}
+
+.school-timetable.trainer-view .schedule-cell.multiple-classes {
+  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+}
+
+.school-timetable.trainer-view .schedule-cell.multiple-classes:hover {
+  background: linear-gradient(135deg, #fde68a, #fcd34d) !important;
+}
+
+/* Override zebra striping for trainer view */
+.school-timetable.trainer-view tbody tr:nth-child(even) .schedule-cell.has-class {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5) !important;
+}
+
+.school-timetable.trainer-view tbody tr:nth-child(even) .schedule-cell.multiple-classes {
+  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+}
+
+/* Multi-class cell content */
+.cell-content.multi-class {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.class-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.8);
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.class-chip .class-name {
+  font-weight: 700;
+  color: #166534;
+  font-size: 0.9rem;
+}
+
+.class-chip .class-subject {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.schedule-cell.multiple-classes .class-chip .class-name {
+  color: #92400e;
+}
+
+/* Timetable Legend */
+.timetable-legend {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.timetable-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.timetable-legend .legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.timetable-legend .legend-color.single {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+  border: 1px solid #86efac;
+}
+
+.timetable-legend .legend-color.multiple {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #fcd34d;
+}
+
+.no-timetable .hint {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-top: 0.5rem;
+}

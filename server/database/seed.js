@@ -245,31 +245,63 @@ async function seedDatabase() {
       }
     }
 
-    // Add sample timetable for first class
+    // Add sample timetables for multiple classes (with overlapping periods for trainer view)
     const [existingTimetables] = await connection.query('SELECT COUNT(*) as count FROM timetables');
-    if (existingTimetables[0].count === 0 && classes.length > 0) {
-      const classId = classes[0].id;
+    if (existingTimetables[0].count === 0 && classes.length >= 3) {
       const schoolId = classes[0].school_id;
       
-      const [timetableResult] = await connection.query(`
+      // Timetable for Class 1-A
+      const [tt1Result] = await connection.query(`
         INSERT INTO timetables (school_id, class_id, name, periods_per_day) VALUES (?, ?, 'Class 1-A Timetable', 6)
-      `, [schoolId, classId]);
+      `, [schoolId, classes[0].id]);
       
-      const timetableId = timetableResult.insertId;
-      
-      // Add timetable entries for Monday and Wednesday
       await connection.query(`
         INSERT INTO timetable_entries (timetable_id, day_of_week, period_number, start_time, end_time, subject, room_number) VALUES
-        (?, 'monday', 1, '09:00', '09:45', 'Mathematics', '101'),
-        (?, 'monday', 2, '10:00', '10:45', 'English', '101'),
-        (?, 'monday', 3, '11:00', '11:45', 'Science', '101'),
-        (?, 'wednesday', 1, '09:00', '09:45', 'Mathematics', '101'),
-        (?, 'wednesday', 2, '10:00', '10:45', 'Hindi', '101'),
-        (?, 'friday', 1, '09:00', '09:45', 'Art', '101'),
-        (?, 'friday', 2, '10:00', '10:45', 'Physical Education', '101')
-      `, [timetableId, timetableId, timetableId, timetableId, timetableId, timetableId, timetableId]);
+        (?, 'monday', 1, '09:00', '09:45', 'Robotics', 'Lab 1'),
+        (?, 'monday', 2, '10:00', '10:45', 'Electronics', 'Lab 1'),
+        (?, 'monday', 3, '11:00', '11:45', 'Coding', 'Lab 1'),
+        (?, 'wednesday', 1, '09:00', '09:45', 'Robotics', 'Lab 1'),
+        (?, 'wednesday', 2, '10:00', '10:45', 'AI Basics', 'Lab 1'),
+        (?, 'friday', 1, '09:00', '09:45', 'Drone', 'Lab 1'),
+        (?, 'friday', 2, '10:00', '10:45', 'Project Work', 'Lab 1')
+      `, [tt1Result.insertId, tt1Result.insertId, tt1Result.insertId, tt1Result.insertId, tt1Result.insertId, tt1Result.insertId, tt1Result.insertId]);
       
-      console.log('✅ Added sample timetable with entries');
+      // Timetable for Class 1-B (overlaps with Class 1-A on Monday Period 1 and Wednesday Period 1)
+      const [tt2Result] = await connection.query(`
+        INSERT INTO timetables (school_id, class_id, name, periods_per_day) VALUES (?, ?, 'Class 1-B Timetable', 6)
+      `, [schoolId, classes[1].id]);
+      
+      await connection.query(`
+        INSERT INTO timetable_entries (timetable_id, day_of_week, period_number, start_time, end_time, subject, room_number) VALUES
+        (?, 'monday', 1, '09:00', '09:45', 'Electronics', 'Lab 2'),
+        (?, 'monday', 3, '11:00', '11:45', 'Robotics', 'Lab 2'),
+        (?, 'tuesday', 1, '09:00', '09:45', 'Coding', 'Lab 2'),
+        (?, 'tuesday', 2, '10:00', '10:45', 'AI Basics', 'Lab 2'),
+        (?, 'wednesday', 1, '09:00', '09:45', 'Drone', 'Lab 2'),
+        (?, 'thursday', 1, '09:00', '09:45', 'Robotics', 'Lab 2'),
+        (?, 'friday', 1, '09:00', '09:45', 'Electronics', 'Lab 2')
+      `, [tt2Result.insertId, tt2Result.insertId, tt2Result.insertId, tt2Result.insertId, tt2Result.insertId, tt2Result.insertId, tt2Result.insertId]);
+      
+      // Timetable for Class 2-A (overlaps on Monday Period 1 - now 3 classes at same time!)
+      const [tt3Result] = await connection.query(`
+        INSERT INTO timetables (school_id, class_id, name, periods_per_day) VALUES (?, ?, 'Class 2-A Timetable', 6)
+      `, [schoolId, classes[2].id]);
+      
+      await connection.query(`
+        INSERT INTO timetable_entries (timetable_id, day_of_week, period_number, start_time, end_time, subject, room_number) VALUES
+        (?, 'monday', 1, '09:00', '09:45', 'Coding', 'Lab 3'),
+        (?, 'monday', 2, '10:00', '10:45', 'Robotics', 'Lab 3'),
+        (?, 'tuesday', 2, '10:00', '10:45', 'Electronics', 'Lab 3'),
+        (?, 'wednesday', 2, '10:00', '10:45', 'Drone', 'Lab 3'),
+        (?, 'thursday', 2, '10:00', '10:45', 'AI Basics', 'Lab 3'),
+        (?, 'friday', 1, '09:00', '09:45', 'Project Work', 'Lab 3'),
+        (?, 'friday', 2, '10:00', '10:45', 'Coding', 'Lab 3')
+      `, [tt3Result.insertId, tt3Result.insertId, tt3Result.insertId, tt3Result.insertId, tt3Result.insertId, tt3Result.insertId, tt3Result.insertId]);
+      
+      console.log('✅ Added 3 class timetables with overlapping periods');
+      console.log('   - Monday Period 1: 3 classes (1-A, 1-B, 2-A)');
+      console.log('   - Wednesday Period 1: 2 classes (1-A, 1-B)');
+      console.log('   - Friday Period 1: 3 classes (1-A, 1-B, 2-A)');
     }
 
     // Add sample progress for center students

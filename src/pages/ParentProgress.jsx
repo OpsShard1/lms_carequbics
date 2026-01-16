@@ -1,154 +1,346 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { format } from 'date-fns';
 import '../styles/parent-progress.css';
 
+const SKILL_LABELS = {
+  concept_understanding: 'Concept Understanding',
+  application_of_knowledge: 'Application of Knowledge',
+  hands_on_skill: 'Hands-on Skill',
+  communication_skill: 'Communication Skill',
+  consistency: 'Consistency',
+  idea_generation: 'Idea Generation',
+  iteration_improvement: 'Iteration & Improvement'
+};
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 const ParentProgress = () => {
-  const [studentName, setStudentName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [result, setResult] = useState(null);
+  const [student, setStudent] = useState(null);
+  const [curriculum, setCurriculum] = useState(null);
+  const [progressData, setProgressData] = useState([]);
+  const [attendance, setAttendance] = useState(null);
+  const [expandedSubject, setExpandedSubject] = useState(null);
+  
+  // Month selection state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setResult(null);
+  const studentName = searchParams.get('name');
+  const dateOfBirth = searchParams.get('dob');
+
+  useEffect(() => {
+    if (studentName && dateOfBirth) {
+      loadStudentProgress();
+    } else {
+      navigate('/login');
+    }
+  }, [studentName, dateOfBirth, selectedMonth, selectedYear]);
+
+  const loadStudentProgress = async () => {
     setLoading(true);
-
+    setError('');
     try {
       const res = await api.post('/progress/parent/view', {
         student_name: studentName,
-        date_of_birth: dateOfBirth
+        date_of_birth: dateOfBirth,
+        month: selectedMonth,
+        year: selectedYear
       });
-      setResult(res.data);
+      setStudent(res.data.student);
+      setCurriculum(res.data.curriculum);
+      setProgressData(res.data.progress);
+      setAttendance(res.data.attendance);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to find student. Please check the name and date of birth.');
+      setError(err.response?.data?.error || 'Student not found. Please check the name and date of birth.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completed': return '✓';
-      case 'in_progress': return '◐';
-      default: return '○';
+  const handlePrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
     }
   };
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'completed': return 'status-completed';
-      case 'in_progress': return 'status-progress';
-      default: return 'status-not-started';
+  const handleNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
     }
   };
+
+  const getSkillIcon = (value) => {
+    if (value === 1) return '✓';
+    if (value === -1) return '✗';
+    return '○';
+  };
+
+  const getSkillClass = (value) => {
+    if (value === 1) return 'skill-positive';
+    if (value === -1) return 'skill-negative';
+    return 'skill-neutral';
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'completed': return <span className="status-badge completed">Completed</span>;
+      case 'in_progress': return <span className="status-badge in-progress">In Progress</span>;
+      default: return <span className="status-badge not-started">Not Started</span>;
+    }
+  };
+
+  const calculateSubjectProgress = (topics) => {
+    if (!topics || topics.length === 0) return 0;
+    const completed = topics.filter(t => t.status === 'completed').length;
+    return Math.round((completed / topics.length) * 100);
+  };
+
+  // Generate calendar grid for the month
+  const generateCalendarDays = () => {
+    if (!attendance) return [];
+    
+    const year = selectedYear;
+    const month = selectedMonth - 1; // Convert to 0-indexed
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+    const startDayOfWeek = firstDayOfMonth.getDay();
+    
+    // Create attendance map for quick lookup
+    const attendanceMap = {};
+    (attendance.records || []).forEach(record => {
+      attendanceMap[record.date] = record.status;
+    });
+    
+    const days = [];
+    
+    // Add empty cells for days before the 1st
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push({ day: null, status: null });
+    }
+    
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      days.push({
+        day,
+        date: dateStr,
+        status: attendanceMap[dateStr] || null
+      });
+    }
+    
+    return days;
+  };
+
+  const getAttendanceCellClass = (status) => {
+    if (!status) return '';
+    switch (status) {
+      case 'present': return 'att-present';
+      case 'absent': return 'att-absent';
+      case 'late': return 'att-late';
+      default: return '';
+    }
+  };
+
+  const getAttendanceLabel = (status) => {
+    if (!status) return '';
+    switch (status) {
+      case 'present': return 'P';
+      case 'absent': return 'A';
+      case 'late': return 'L';
+      default: return '';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="parent-progress-page">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading progress...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="parent-progress-page">
+        <div className="error-container">
+          <div className="error-icon">😕</div>
+          <h2>Student Not Found</h2>
+          <p>{error}</p>
+          <button onClick={() => navigate('/login')} className="btn-primary">
+            ← Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="parent-progress-page">
-      <div className="parent-progress-container">
-        <div className="header-section">
-          <h1>Check Your Child's Progress</h1>
-          <p>Enter your child's details to view their attendance and learning progress</p>
+      <div className="parent-header">
+        <button onClick={() => navigate('/login')} className="back-btn">
+          ← Back
+        </button>
+        <h1>Student Progress Report</h1>
+      </div>
+
+      <div className="parent-content">
+        {/* Student Info Card */}
+        <div className="student-info-card">
+          <div className="student-avatar-large">
+            {student?.first_name?.[0]}{student?.last_name?.[0] || ''}
+          </div>
+          <div className="student-details">
+            <h2>{student?.first_name} {student?.last_name}</h2>
+            <p className="student-meta">
+              {student?.school_name_external && <span>🏫 {student.school_name_external}</span>}
+              {student?.student_class && <span>📚 {student.student_class}</span>}
+            </p>
+            {curriculum && (
+              <p className="curriculum-badge">
+                📖 {curriculum.name}
+              </p>
+            )}
+          </div>
         </div>
 
-        {!result ? (
-          <form onSubmit={handleSubmit} className="lookup-form">
-            {error && <div className="error-message">{error}</div>}
+        {/* Attendance Calendar */}
+        {attendance && (
+          <div className="attendance-card">
+            <div className="attendance-header">
+              <h3>📅 Attendance</h3>
+              <div className="month-selector">
+                <button onClick={handlePrevMonth} className="month-nav-btn">◀</button>
+                <span className="current-month">{MONTH_NAMES[selectedMonth - 1]} {selectedYear}</span>
+                <button onClick={handleNextMonth} className="month-nav-btn">▶</button>
+              </div>
+            </div>
             
-            <div className="form-group">
-              <label>Child's Name</label>
-              <input
-                type="text"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                placeholder="Enter full name"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Date of Birth</label>
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn-primary btn-large" disabled={loading}>
-              {loading ? 'Searching...' : 'View Progress'}
-            </button>
-          </form>
-        ) : (
-          <div className="progress-report">
-            <div className="report-header">
-              <h2>Progress Report</h2>
-              <h3>{result.student.name}</h3>
-              <button onClick={() => setResult(null)} className="btn-secondary">
-                ← Back to Search
-              </button>
-            </div>
-
-            <div className="attendance-summary">
-              <h4>Attendance Summary</h4>
-              <div className="summary-cards">
-                <div className="summary-card total">
-                  <span className="number">{result.attendance.total_classes}</span>
-                  <span className="label">Total Classes</span>
-                </div>
-                <div className="summary-card present">
-                  <span className="number">{result.attendance.present}</span>
-                  <span className="label">Present</span>
-                </div>
-                <div className="summary-card absent">
-                  <span className="number">{result.attendance.absent}</span>
-                  <span className="label">Absent</span>
-                </div>
-                <div className="summary-card percentage">
-                  <span className="number">{result.attendance.percentage}%</span>
-                  <span className="label">Attendance Rate</span>
-                </div>
+            <div className="attendance-calendar">
+              <div className="calendar-header">
+                {DAY_NAMES.map(day => (
+                  <div key={day} className="calendar-day-name">{day}</div>
+                ))}
+              </div>
+              <div className="calendar-grid">
+                {generateCalendarDays().map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`calendar-cell ${item.day ? '' : 'empty'} ${getAttendanceCellClass(item.status)}`}
+                  >
+                    {item.day && (
+                      <>
+                        <span className="cell-day">{item.day}</span>
+                        {item.status && <span className="cell-status">{getAttendanceLabel(item.status)}</span>}
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="chapter-progress">
-              <h4>Chapter Progress</h4>
-              {result.progress.length === 0 ? (
-                <p className="no-data">No progress records yet.</p>
-              ) : (
-                <div className="progress-list">
-                  {result.progress.map((p, idx) => (
-                    <div key={idx} className={`progress-item ${getStatusClass(p.completion_status)}`}>
-                      <div className="progress-main">
-                        <span className="status-icon">{getStatusIcon(p.completion_status)}</span>
-                        <div className="chapter-info">
-                          <span className="chapter-name">
-                            {p.chapter_number ? `Ch ${p.chapter_number}: ` : ''}{p.chapter_name}
-                          </span>
-                          <span className="chapter-status">{p.completion_status.replace('_', ' ')}</span>
+            <div className="attendance-legend">
+              <div className="legend-item"><span className="legend-dot present"></span> Present ({attendance.present || 0})</div>
+              <div className="legend-item"><span className="legend-dot absent"></span> Absent ({attendance.absent || 0})</div>
+              <div className="legend-item"><span className="legend-dot late"></span> Late ({attendance.late || 0})</div>
+              <div className="legend-item"><strong>This Month: {attendance.percentage || 0}%</strong></div>
+            </div>
+            
+            <div className="attendance-overall">
+              Overall Attendance: <strong>{attendance.presentAllTime || 0}</strong> / {attendance.totalAllTime || 0} days (<strong>{attendance.percentageAllTime || 0}%</strong>)
+            </div>
+          </div>
+        )}
+
+        {/* Curriculum Progress */}
+        {!curriculum ? (
+          <div className="no-curriculum-card">
+            <div className="icon">📚</div>
+            <h3>No Curriculum Assigned</h3>
+            <p>This student hasn't been assigned to a curriculum yet. Progress tracking will be available once a curriculum is assigned.</p>
+          </div>
+        ) : progressData.length === 0 ? (
+          <div className="no-progress-card">
+            <div className="icon">📝</div>
+            <h3>No Progress Recorded Yet</h3>
+            <p>The student is enrolled in {curriculum.name} but no topic progress has been recorded yet.</p>
+          </div>
+        ) : (
+          <div className="curriculum-progress-section">
+            <h3>📖 Learning Progress - {curriculum.name}</h3>
+            
+            {progressData.map(subject => (
+              <div key={subject.id} className="subject-card">
+                <div 
+                  className="subject-header"
+                  onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}
+                >
+                  <div className="subject-info">
+                    <h4>{subject.name}</h4>
+                    <span className="topic-count">{subject.topics?.length || 0} topics</span>
+                  </div>
+                  <div className="subject-progress">
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill"
+                        style={{ width: `${calculateSubjectProgress(subject.topics)}%` }}
+                      ></div>
+                    </div>
+                    <span className="progress-text">{calculateSubjectProgress(subject.topics)}%</span>
+                  </div>
+                  <span className="expand-icon">{expandedSubject === subject.id ? '▼' : '▶'}</span>
+                </div>
+
+                {expandedSubject === subject.id && (
+                  <div className="topics-list">
+                    {subject.topics?.map(topic => (
+                      <div key={topic.id} className={`topic-item ${topic.status}`}>
+                        <div className="topic-header">
+                          <span className="topic-name">{topic.name}</span>
+                          {getStatusBadge(topic.status)}
                         </div>
-                        {p.evaluation_score && (
-                          <span className="score">{p.evaluation_score}%</span>
+                        
+                        {topic.status !== 'not_started' && (
+                          <div className="topic-skills">
+                            <h5>Skill Assessment</h5>
+                            <div className="skills-grid">
+                              {Object.entries(SKILL_LABELS).map(([key, label]) => (
+                                <div key={key} className={`skill-item ${getSkillClass(topic[key])}`}>
+                                  <span className="skill-icon">{getSkillIcon(topic[key])}</span>
+                                  <span className="skill-label">{label}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {topic.remarks && (
+                              <div className="topic-remarks">
+                                <strong>Trainer's Notes:</strong> {topic.remarks}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
-                      {p.remarks && (
-                        <div className="remarks">
-                          <em>"{p.remarks}"</em>
-                        </div>
-                      )}
-                      {p.completed_at && (
-                        <div className="completed-date">
-                          Completed: {format(new Date(p.completed_at), 'dd MMM yyyy')}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -25,7 +25,8 @@ router.get('/school/:schoolId', authenticate, async (req, res) => {
 router.get('/center/:centerId', authenticate, async (req, res) => {
   try {
     const [students] = await pool.query(`
-      SELECT s.*, c.name as curriculum_name
+      SELECT s.*, c.name as curriculum_name,
+             DATE_FORMAT(s.date_of_birth, '%Y-%m-%d') as date_of_birth
       FROM students s
       LEFT JOIN curriculums c ON s.curriculum_id = c.id
       WHERE s.center_id = ? AND s.student_type = 'center' AND s.is_active = true

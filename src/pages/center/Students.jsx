@@ -73,11 +73,19 @@ const CenterStudents = () => {
     }
   };
 
+  // Format date for display (DD/MM/YYYY)
+  const formatDateForDisplay = (dateStr) => {
+    if (!dateStr) return '-';
+    // dateStr is already in YYYY-MM-DD format from server
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   const handleEdit = (student) => {
     setForm({
       first_name: student.first_name || '',
       last_name: student.last_name || '',
-      date_of_birth: student.date_of_birth ? student.date_of_birth.split('T')[0] : '',
+      date_of_birth: student.date_of_birth || '', // Already in YYYY-MM-DD format
       age: student.age || '',
       gender: student.gender || '',
       student_class: student.student_class || '',
@@ -195,12 +203,13 @@ const CenterStudents = () => {
 
       <table className="data-table">
         <thead>
-          <tr><th>Name</th><th>School</th><th>Curriculum</th><th>Program</th><th>Contact</th><th>Actions</th></tr>
+          <tr><th>Name</th><th>DOB</th><th>School</th><th>Curriculum</th><th>Program</th><th>Contact</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {students.map(s => (
             <tr key={s.id}>
               <td>{s.first_name} {s.last_name}</td>
+              <td>{formatDateForDisplay(s.date_of_birth)}</td>
               <td>{s.school_name_external || '-'}</td>
               <td>
                 {canChangeCurriculum ? (

@@ -4,6 +4,42 @@ import { authenticate, authorize, checkSectionAccess } from '../middleware/auth.
 
 const router = express.Router();
 
+// Get consolidated timetable for trainer (all classes in a school)
+router.get('/school/:schoolId/consolidated', authenticate, async (req, res) => {
+  try {
+    // Get all timetable entries for all classes in this school
+    const [entries] = await pool.query(`
+      SELECT 
+        te.*, 
+        t.class_id,
+        t.periods_per_day,
+        c.name as class_name, 
+        c.grade, 
+        c.section
+      FROM timetable_entries te
+      JOIN timetables t ON te.timetable_id = t.id
+      JOIN classes c ON t.class_id = c.id
+      WHERE t.school_id = ? AND t.is_active = true
+      ORDER BY te.day_of_week, te.period_number, c.grade, c.section
+    `, [req.params.schoolId]);
+
+    // Get max periods from all timetables
+    const [maxPeriods] = await pool.query(`
+      SELECT MAX(periods_per_day) as max_periods
+      FROM timetables
+      WHERE school_id = ? AND is_active = true
+    `, [req.params.schoolId]);
+
+    res.json({
+      entries,
+      maxPeriods: maxPeriods[0]?.max_periods || 8
+    });
+  } catch (error) {
+    console.error('Get consolidated timetable error:', error);
+    res.status(500).json({ error: 'Failed to fetch consolidated timetable' });
+  }
+});
+
 // Get timetables for a school
 router.get('/school/:schoolId', authenticate, checkSectionAccess('school'), async (req, res) => {
   try {

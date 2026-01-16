@@ -11,11 +11,15 @@ const DAY_LABELS = {
 
 const SchoolTimetable = () => {
   const { selectedSchool, user } = useAuth();
+  const isTrainer = ['trainer', 'trainer_head'].includes(user?.role_name);
   const canEditTimetable = ['developer', 'school_teacher'].includes(user?.role_name);
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [timetable, setTimetable] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Trainer consolidated view
+  const [consolidatedData, setConsolidatedData] = useState(null);
   
   // Wizard state
   const [showWizard, setShowWizard] = useState(false);
@@ -26,8 +30,14 @@ const SchoolTimetable = () => {
   const [entries, setEntries] = useState({});
 
   useEffect(() => {
-    if (selectedSchool) loadClasses();
-  }, [selectedSchool]);
+    if (selectedSchool) {
+      if (isTrainer) {
+        loadConsolidatedTimetable();
+      } else {
+        loadClasses();
+      }
+    }
+  }, [selectedSchool, isTrainer]);
 
   useEffect(() => {
     if (selectedClass) loadTimetable();
@@ -39,6 +49,18 @@ const SchoolTimetable = () => {
       setClasses(res.data);
     } catch (err) {
       console.error('Failed to load classes:', err);
+    }
+  };
+
+  const loadConsolidatedTimetable = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/timetables/school/${selectedSchool.id}/consolidated`);
+      setConsolidatedData(res.data);
+    } catch (err) {
+      console.error('Failed to load consolidated timetable:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -202,6 +224,119 @@ const SchoolTimetable = () => {
 
   if (!selectedSchool) return <div className="no-data"><p>Please select a school first.</p></div>;
 
+  // Trainer Consolidated View
+  if (isTrainer) {
+    return (
+      <div className="timetable-page">
+        <div className="page-header">
+          <div>
+            <h2>Class Schedule</h2>
+            <p className="subtitle">Classes coming to you at {selectedSchool.name}</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="loading">Loading schedule...</div>
+        ) : !consolidatedData || consolidatedData.entries.length === 0 ? (
+          <div className="no-timetable">
+            <p>📅 No class schedules have been created yet.</p>
+            <p className="hint">School teachers need to create timetables for classes first.</p>
+          </div>
+        ) : (
+          <div className="timetable-view">
+            <div className="timetable-header">
+              <h3>📅 Weekly Class Schedule</h3>
+              <span>All classes visiting the trainer</span>
+            </div>
+            
+            <div className="visual-timetable">
+              {(() => {
+                const allDays = DAYS;
+                const periods = Array.from({ length: consolidatedData.maxPeriods }, (_, i) => i + 1);
+                
+                // Group entries by day and period
+                const entryMap = {};
+                consolidatedData.entries.forEach(e => {
+                  const key = `${e.day_of_week}-${e.period_number}`;
+                  if (!entryMap[key]) entryMap[key] = [];
+                  entryMap[key].push(e);
+                });
+
+                // Get timing for period from any entry
+                const getTimingForPeriod = (periodNum) => {
+                  const entry = consolidatedData.entries.find(e => e.period_number === periodNum);
+                  if (entry) return { start: entry.start_time, end: entry.end_time };
+                  const startHour = 8 + periodNum;
+                  return { 
+                    start: `${String(startHour).padStart(2, '0')}:00`, 
+                    end: `${String(startHour).padStart(2, '0')}:45` 
+                  };
+                };
+
+                return (
+                  <table className="school-timetable trainer-view">
+                    <thead>
+                      <tr>
+                        <th className="period-header">Period</th>
+                        {allDays.map(day => (
+                          <th key={day} className="day-header">{DAY_LABELS[day]}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {periods.map(periodNum => {
+                        const timing = getTimingForPeriod(periodNum);
+                        return (
+                          <tr key={periodNum}>
+                            <td className="period-cell">
+                              <div className="period-num">Period {periodNum}</div>
+                              <div className="period-time">{timing.start} - {timing.end}</div>
+                            </td>
+                            {allDays.map(day => {
+                              const classesAtSlot = entryMap[`${day}-${periodNum}`] || [];
+                              return (
+                                <td key={day} className={`schedule-cell ${classesAtSlot.length > 0 ? 'has-class' : 'empty'} ${classesAtSlot.length > 1 ? 'multiple-classes' : ''}`}>
+                                  {classesAtSlot.length > 0 ? (
+                                    <div className="cell-content multi-class">
+                                      {classesAtSlot.map((entry, idx) => (
+                                        <div key={idx} className="class-chip">
+                                          <span className="class-name">{entry.class_name}</span>
+                                          {entry.subject && <span className="class-subject">{entry.subject}</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="no-class">—</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+            
+            <div className="timetable-legend">
+              <div className="legend-item">
+                <span className="legend-color single"></span>
+                <span>Single class</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color multiple"></span>
+                <span>Multiple classes at same time</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Regular view for school teachers and others
   return (
     <div className="timetable-page">
       <div className="page-header">

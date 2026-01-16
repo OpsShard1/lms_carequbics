@@ -103,21 +103,65 @@ router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_hea
 // Get student progress for parent (public endpoint)
 router.post('/parent/view', async (req, res) => {
   try {
-    const { student_name, date_of_birth } = req.body;
+    const { student_name, date_of_birth, month, year } = req.body;
 
     if (!student_name || !date_of_birth) {
       return res.status(400).json({ error: 'Student name and date of birth are required' });
     }
 
+    // Use provided month/year or default to current
+    const now = new Date();
+    const selectedYear = year || now.getFullYear();
+    const selectedMonth = month || (now.getMonth() + 1); // 1-indexed
+
     // Find student by name and DOB
-    const [students] = await pool.query(`
-      SELECT id, first_name, last_name, center_id
-      FROM students 
-      WHERE CONCAT(first_name, ' ', COALESCE(last_name, '')) LIKE ? 
-        AND date_of_birth = ? 
-        AND student_type = 'center'
-        AND is_active = true
-    `, [`%${student_name}%`, date_of_birth]);
+    // Try exact match first, then partial match
+    const nameParts = student_name.trim().toLowerCase().split(/\s+/);
+    
+    let students;
+    
+    // Try matching by first name and last name separately
+    if (nameParts.length >= 2) {
+      [students] = await pool.query(`
+        SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id,
+               s.school_name_external, s.student_class,
+               c.name as center_name
+        FROM students s
+        LEFT JOIN centers c ON s.center_id = c.id
+        WHERE LOWER(s.first_name) = ? 
+          AND LOWER(COALESCE(s.last_name, '')) = ?
+          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.student_type = 'center'
+          AND s.is_active = true
+      `, [nameParts[0], nameParts.slice(1).join(' '), date_of_birth]);
+    } else {
+      [students] = await pool.query(`
+        SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id,
+               s.school_name_external, s.student_class,
+               c.name as center_name
+        FROM students s
+        LEFT JOIN centers c ON s.center_id = c.id
+        WHERE LOWER(s.first_name) = ?
+          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.student_type = 'center'
+          AND s.is_active = true
+      `, [nameParts[0], date_of_birth]);
+    }
+    
+    // If no exact match, try partial match
+    if (students.length === 0) {
+      [students] = await pool.query(`
+        SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id,
+               s.school_name_external, s.student_class,
+               c.name as center_name
+        FROM students s
+        LEFT JOIN centers c ON s.center_id = c.id
+        WHERE (LOWER(s.first_name) LIKE ? OR LOWER(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) LIKE ?)
+          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.student_type = 'center'
+          AND s.is_active = true
+      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, date_of_birth]);
+    }
 
     if (students.length === 0) {
       return res.status(404).json({ error: 'Student not found. Please check the name and date of birth.' });
@@ -125,34 +169,129 @@ router.post('/parent/view', async (req, res) => {
 
     const student = students[0];
 
-    // Get attendance summary
+    // Get curriculum info if assigned
+    let curriculum = null;
+    if (student.curriculum_id) {
+      const [curriculums] = await pool.query(
+        'SELECT id, name, description FROM curriculums WHERE id = ? AND is_active = true',
+        [student.curriculum_id]
+      );
+      if (curriculums.length > 0) {
+        curriculum = curriculums[0];
+      }
+    }
+
+    // Get attendance for selected month (daily records)
+    const firstDay = new Date(selectedYear, selectedMonth - 1, 1);
+    const lastDay = new Date(selectedYear, selectedMonth, 0);
+    
+    const [attendanceRecords] = await pool.query(`
+      SELECT DATE_FORMAT(attendance_date, '%Y-%m-%d') as date, status
+      FROM attendance
+      WHERE student_id = ?
+        AND attendance_date >= ?
+        AND attendance_date <= ?
+      ORDER BY attendance_date
+    `, [student.id, firstDay.toISOString().split('T')[0], lastDay.toISOString().split('T')[0]]);
+
+    // Get attendance summary (all time)
     const [attendanceSummary] = await pool.query(`
       SELECT 
-        COUNT(*) as total_classes,
+        COUNT(*) as total,
         SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present,
-        SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent
+        SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent,
+        SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late
       FROM attendance
       WHERE student_id = ?
     `, [student.id]);
 
-    // Get progress
-    const [progress] = await pool.query(`
-      SELECT chapter_name, chapter_number, completion_status, evaluation_score, remarks, completed_at
-      FROM student_progress
+    // Get monthly summary for selected month
+    const [monthlySummary] = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present,
+        SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent,
+        SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late
+      FROM attendance
       WHERE student_id = ?
-      ORDER BY chapter_number
-    `, [student.id]);
+        AND attendance_date >= ?
+        AND attendance_date <= ?
+    `, [student.id, firstDay.toISOString().split('T')[0], lastDay.toISOString().split('T')[0]]);
+
+    const attendanceData = attendanceSummary[0];
+    const monthlyData = monthlySummary[0];
+    const attendance = {
+      // All time stats
+      totalAllTime: attendanceData.total || 0,
+      presentAllTime: attendanceData.present || 0,
+      percentageAllTime: attendanceData.total > 0 
+        ? Math.round((attendanceData.present / attendanceData.total) * 100)
+        : 0,
+      // Monthly stats
+      total: monthlyData.total || 0,
+      present: monthlyData.present || 0,
+      absent: monthlyData.absent || 0,
+      late: monthlyData.late || 0,
+      percentage: monthlyData.total > 0 
+        ? Math.round((monthlyData.present / monthlyData.total) * 100)
+        : 0,
+      year: selectedYear,
+      month: selectedMonth,
+      records: attendanceRecords
+    };
+
+    // Get curriculum-based progress if curriculum is assigned
+    let progress = [];
+    if (curriculum) {
+      // Get all subjects for this curriculum
+      const [subjects] = await pool.query(`
+        SELECT id, name, description, sort_order
+        FROM curriculum_subjects
+        WHERE curriculum_id = ? AND is_active = true
+        ORDER BY sort_order, name
+      `, [curriculum.id]);
+
+      // For each subject, get topics with progress
+      for (const subject of subjects) {
+        const [topics] = await pool.query(`
+          SELECT 
+            ct.id, ct.name, ct.description, ct.sort_order,
+            COALESCE(stp.status, 'not_started') as status,
+            COALESCE(stp.concept_understanding, 0) as concept_understanding,
+            COALESCE(stp.application_of_knowledge, 0) as application_of_knowledge,
+            COALESCE(stp.hands_on_skill, 0) as hands_on_skill,
+            COALESCE(stp.communication_skill, 0) as communication_skill,
+            COALESCE(stp.consistency, 0) as consistency,
+            COALESCE(stp.idea_generation, 0) as idea_generation,
+            COALESCE(stp.iteration_improvement, 0) as iteration_improvement,
+            stp.remarks,
+            stp.completed_at
+          FROM curriculum_topics ct
+          LEFT JOIN student_topic_progress stp ON ct.id = stp.topic_id AND stp.student_id = ?
+          WHERE ct.subject_id = ? AND ct.is_active = true
+          ORDER BY ct.sort_order, ct.name
+        `, [student.id, subject.id]);
+
+        progress.push({
+          id: subject.id,
+          name: subject.name,
+          description: subject.description,
+          topics: topics
+        });
+      }
+    }
 
     res.json({
       student: {
-        name: `${student.first_name} ${student.last_name || ''}`.trim()
+        id: student.id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        school_name_external: student.school_name_external,
+        student_class: student.student_class,
+        center_name: student.center_name
       },
-      attendance: {
-        ...attendanceSummary[0],
-        percentage: attendanceSummary[0].total_classes > 0 
-          ? ((attendanceSummary[0].present / attendanceSummary[0].total_classes) * 100).toFixed(1)
-          : 0
-      },
+      curriculum,
+      attendance,
       progress
     });
   } catch (error) {
