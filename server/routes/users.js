@@ -22,10 +22,10 @@ router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), a
   }
 });
 
-// Get all roles
+// Get all roles (excluding parent - parents use the public portal instead)
 router.get('/roles', authenticate, async (req, res) => {
   try {
-    const [roles] = await pool.query('SELECT * FROM roles ORDER BY id');
+    const [roles] = await pool.query("SELECT * FROM roles WHERE name != 'parent' ORDER BY id");
     res.json(roles);
   } catch (error) {
     console.error('Get roles error:', error);
