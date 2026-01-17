@@ -11,6 +11,7 @@ import SchoolTimetable from './pages/school/Timetable';
 import SchoolAttendance from './pages/school/Attendance';
 import CenterDashboard from './pages/center/Dashboard';
 import CenterStudents from './pages/center/Students';
+import StudentProfile from './pages/center/StudentProfile';
 import CenterAttendance from './pages/center/Attendance';
 import CenterProgress from './pages/center/Progress';
 import CurriculumManagement from './pages/center/Curriculum';
@@ -19,6 +20,7 @@ import AdminSchools from './pages/admin/Schools';
 import AdminCenters from './pages/admin/Centers';
 import TrainerAssignments from './pages/admin/TrainerAssignments';
 import TeacherAssignments from './pages/admin/TeacherAssignments';
+import Settings from './pages/admin/Settings';
 import './App.css';
 
 const HomeRedirect = () => {
@@ -57,6 +59,7 @@ function App() {
             {/* Center Routes */}
             <Route path="center/dashboard" element={<CenterDashboard />} />
             <Route path="center/students" element={<CenterStudents />} />
+            <Route path="center/student/:studentId" element={<StudentProfile />} />
             <Route path="center/attendance" element={<CenterAttendance />} />
             <Route path="center/progress" element={<CenterProgress />} />
             <Route path="center/curriculum" element={<CurriculumManagement />} />
@@ -66,6 +69,7 @@ function App() {
             <Route path="admin/centers" element={<AdminCenters />} />
             <Route path="admin/trainer-assignments" element={<TrainerAssignments />} />
             <Route path="admin/teacher-assignments" element={<TeacherAssignments />} />
+            <Route path="admin/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -85,7 +85,6 @@ const Login = () => {
             <button type="submit" disabled={loading} className="btn-primary btn-full">
               {loading ? 'Logging in...' : 'Login'}
             </button>
-            <p className="login-hint">Default: admin@lms.com / admin123</p>
           </form>
         ) : (
           <form onSubmit={handleParentLogin}>

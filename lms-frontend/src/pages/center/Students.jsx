@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import '../../styles/student-registration.css';
 
 const CenterStudents = () => {
   const { selectedCenter, user } = useAuth();
+  const navigate = useNavigate();
   const canChangeCurriculum = ['developer', 'trainer_head'].includes(user?.role_name);
   const canEditStudents = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
   const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [curriculums, setCurriculums] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -28,6 +33,7 @@ const CenterStudents = () => {
   const loadStudents = async () => {
     const res = await api.get(`/students/center/${selectedCenter.id}`);
     setStudents(res.data);
+    setFilteredStudents(res.data);
   };
 
   const loadCurriculums = async () => {
@@ -116,89 +122,298 @@ const CenterStudents = () => {
     }
   };
 
+  const handleDelete = async (student) => {
+    if (!window.confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/students/${student.id}`);
+      alert('Student deleted successfully');
+      loadStudents();
+    } catch (err) {
+      alert('Failed to delete student');
+    }
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setFilteredStudents(students);
+      return;
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    const filtered = students.filter(student => {
+      const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+      const schoolName = (student.school_name_external || '').toLowerCase();
+      const parentName = (student.parent_name || '').toLowerCase();
+      const contact = (student.parent_contact || '').toLowerCase();
+      
+      return fullName.includes(lowerQuery) || 
+             schoolName.includes(lowerQuery) || 
+             parentName.includes(lowerQuery) ||
+             contact.includes(lowerQuery);
+    });
+    setFilteredStudents(filtered);
+  };
+
   if (!selectedCenter) return <p>Please select a center first.</p>;
 
   return (
     <div className="students-page">
       <div className="page-header">
         <h2>Center Students</h2>
-        {canEditStudents && (
-          <button onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }} className="btn-primary">
-            {showForm ? 'Cancel' : 'Register Student'}
-          </button>
-        )}
+        <div className="header-actions">
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search by name, school, parent, or contact..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => handleSearch('')} 
+                className="clear-search"
+                title="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          {canEditStudents && (
+            <button onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }} className="btn-primary">
+              {showForm ? 'Cancel' : 'Register Student'}
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="form-card registration-form">
-          <h3>{editingStudent ? 'Edit Student' : 'Personal Information'}</h3>
-          <div className="form-row">
-            <input placeholder="First Name *" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} required />
-            <input placeholder="Last Name" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} />
+        <div className="modal-overlay" onClick={() => { setShowForm(false); resetForm(); }}>
+          <form onSubmit={handleSubmit} className="student-registration-form modal-form" onClick={(e) => e.stopPropagation()}>
+            <div className="form-header">
+            <h3>{editingStudent ? 'Edit Student' : 'Student Registration'}</h3>
+            <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="close-btn">×</button>
           </div>
-          <div className="form-row">
-            <input type="date" value={form.date_of_birth} onChange={(e) => setForm({...form, date_of_birth: e.target.value})} required />
-            <input type="number" placeholder="Age" value={form.age} onChange={(e) => setForm({...form, age: e.target.value})} />
-            <select value={form.gender} onChange={(e) => setForm({...form, gender: e.target.value})}>
-              <option value="">Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
+
+          <div className="form-section">
+            <h4>Personal Information</h4>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>First Name <span className="required">*</span></label>
+                <input 
+                  type="text"
+                  placeholder="Enter first name" 
+                  value={form.first_name} 
+                  onChange={(e) => setForm({...form, first_name: e.target.value})} 
+                  required 
+                />
+              </div>
+              <div className="form-field">
+                <label>Last Name</label>
+                <input 
+                  type="text"
+                  placeholder="Enter last name" 
+                  value={form.last_name} 
+                  onChange={(e) => setForm({...form, last_name: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Date of Birth <span className="required">*</span></label>
+                <input 
+                  type="date" 
+                  value={form.date_of_birth} 
+                  onChange={(e) => setForm({...form, date_of_birth: e.target.value})} 
+                  required 
+                />
+              </div>
+              <div className="form-field">
+                <label>Age</label>
+                <input 
+                  type="number" 
+                  placeholder="Age" 
+                  value={form.age} 
+                  onChange={(e) => setForm({...form, age: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Gender</label>
+                <select value={form.gender} onChange={(e) => setForm({...form, gender: e.target.value})}>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <input placeholder="School Name" value={form.school_name_external} onChange={(e) => setForm({...form, school_name_external: e.target.value})} />
-          <input placeholder="Class/Grade (e.g., Class 5, Grade 7)" value={form.student_class} onChange={(e) => setForm({...form, student_class: e.target.value})} />
+
+          <div className="form-section">
+            <h4>School Information</h4>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>School Name</label>
+                <input 
+                  type="text"
+                  placeholder="Enter school name" 
+                  value={form.school_name_external} 
+                  onChange={(e) => setForm({...form, school_name_external: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Class/Grade</label>
+                <input 
+                  type="text"
+                  placeholder="e.g., Class 5, Grade 7" 
+                  value={form.student_class} 
+                  onChange={(e) => setForm({...form, student_class: e.target.value})} 
+                />
+              </div>
+            </div>
+          </div>
 
           {canChangeCurriculum && (
-            <>
-              <h3>Curriculum Assignment</h3>
-              <select value={form.curriculum_id} onChange={(e) => setForm({...form, curriculum_id: e.target.value})} style={{width: '100%', padding: '0.75rem', marginBottom: '1rem'}}>
-                <option value="">-- Select Curriculum --</option>
-                {curriculums.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </>
+            <div className="form-section">
+              <h4>Curriculum Assignment</h4>
+              <div className="form-grid">
+                <div className="form-field full-width">
+                  <label>Select Curriculum</label>
+                  <select 
+                    value={form.curriculum_id} 
+                    onChange={(e) => setForm({...form, curriculum_id: e.target.value})}
+                  >
+                    <option value="">-- No Curriculum --</option>
+                    {curriculums.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
           )}
 
-          <h3>Parent Information</h3>
-          <div className="form-row">
-            <input placeholder="Parent Name" value={form.parent_name} onChange={(e) => setForm({...form, parent_name: e.target.value})} />
-            <input placeholder="Contact Number" value={form.parent_contact} onChange={(e) => setForm({...form, parent_contact: e.target.value})} />
+          <div className="form-section">
+            <h4>Parent/Guardian Information</h4>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Parent Name</label>
+                <input 
+                  type="text"
+                  placeholder="Enter parent name" 
+                  value={form.parent_name} 
+                  onChange={(e) => setForm({...form, parent_name: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Contact Number</label>
+                <input 
+                  type="tel"
+                  placeholder="Enter contact number" 
+                  value={form.parent_contact} 
+                  onChange={(e) => setForm({...form, parent_contact: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Alternate Contact</label>
+                <input 
+                  type="tel"
+                  placeholder="Enter alternate contact" 
+                  value={form.parent_alternate_contact} 
+                  onChange={(e) => setForm({...form, parent_alternate_contact: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Email</label>
+                <input 
+                  type="email" 
+                  placeholder="Enter email address" 
+                  value={form.parent_email} 
+                  onChange={(e) => setForm({...form, parent_email: e.target.value})} 
+                />
+              </div>
+              <div className="form-field full-width">
+                <label>Address</label>
+                <textarea 
+                  placeholder="Enter full address" 
+                  value={form.parent_address} 
+                  onChange={(e) => setForm({...form, parent_address: e.target.value})}
+                  rows="2"
+                />
+              </div>
+              <div className="form-field">
+                <label>Qualification</label>
+                <input 
+                  type="text"
+                  placeholder="Parent qualification" 
+                  value={form.parent_qualification} 
+                  onChange={(e) => setForm({...form, parent_qualification: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Occupation</label>
+                <input 
+                  type="text"
+                  placeholder="Parent occupation" 
+                  value={form.parent_occupation} 
+                  onChange={(e) => setForm({...form, parent_occupation: e.target.value})} 
+                />
+              </div>
+            </div>
           </div>
-          <div className="form-row">
-            <input placeholder="Alternate Contact" value={form.parent_alternate_contact} onChange={(e) => setForm({...form, parent_alternate_contact: e.target.value})} />
-            <input type="email" placeholder="Email" value={form.parent_email} onChange={(e) => setForm({...form, parent_email: e.target.value})} />
-          </div>
-          <textarea placeholder="Address" value={form.parent_address} onChange={(e) => setForm({...form, parent_address: e.target.value})} />
 
-          <h3>Background Information</h3>
-          <div className="form-row">
-            <input placeholder="Qualification" value={form.parent_qualification} onChange={(e) => setForm({...form, parent_qualification: e.target.value})} />
-            <input placeholder="Occupation" value={form.parent_occupation} onChange={(e) => setForm({...form, parent_occupation: e.target.value})} />
+          <div className="form-section">
+            <h4>Program Details</h4>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Referral Source</label>
+                <input 
+                  type="text"
+                  placeholder="How did you hear about us?" 
+                  value={form.referral_source} 
+                  onChange={(e) => setForm({...form, referral_source: e.target.value})} 
+                />
+              </div>
+              <div className="form-field">
+                <label>Program Type</label>
+                <select value={form.program_type} onChange={(e) => setForm({...form, program_type: e.target.value})}>
+                  <option value="long_term">Long-term Course</option>
+                  <option value="short_term">Short-term Course</option>
+                  <option value="holiday_program">Holiday Program</option>
+                  <option value="birthday_events">Birthday Events</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Class Format</label>
+                <select value={form.class_format} onChange={(e) => setForm({...form, class_format: e.target.value})}>
+                  <option value="weekday">Weekday</option>
+                  <option value="weekend">Weekend</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label className="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    checked={form.attended_before} 
+                    onChange={(e) => setForm({...form, attended_before: e.target.checked})} 
+                  />
+                  <span>Has attended before</span>
+                </label>
+              </div>
+            </div>
           </div>
-          <input placeholder="How did you hear about us?" value={form.referral_source} onChange={(e) => setForm({...form, referral_source: e.target.value})} />
 
-          <h3>Program Details</h3>
-          <div className="form-row">
-            <select value={form.program_type} onChange={(e) => setForm({...form, program_type: e.target.value})}>
-              <option value="long_term">Long-term Course</option>
-              <option value="short_term">Short-term Course</option>
-              <option value="holiday_program">Holiday Program</option>
-              <option value="birthday_events">Birthday Events</option>
-            </select>
-            <select value={form.class_format} onChange={(e) => setForm({...form, class_format: e.target.value})}>
-              <option value="weekday">Weekday</option>
-              <option value="weekend">Weekend</option>
-            </select>
+          <div className="form-actions">
+            <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              {editingStudent ? 'Update Student' : 'Register Student'}
+            </button>
           </div>
-          <label>
-            <input type="checkbox" checked={form.attended_before} onChange={(e) => setForm({...form, attended_before: e.target.checked})} />
-            Has attended before
-          </label>
-
-          <button type="submit" className="btn-primary">{editingStudent ? 'Update Student' : 'Register Student'}</button>
         </form>
+      </div>
       )}
 
       <table className="data-table">
@@ -206,12 +421,23 @@ const CenterStudents = () => {
           <tr><th>Name</th><th>DOB</th><th>School</th><th>Curriculum</th><th>Program</th><th>Contact</th><th>Actions</th></tr>
         </thead>
         <tbody>
-          {students.map(s => (
-            <tr key={s.id}>
+          {filteredStudents.length === 0 ? (
+            <tr>
+              <td colSpan="7" style={{textAlign: 'center', padding: '40px', color: '#6b7280'}}>
+                {searchQuery ? 'No students found matching your search' : 'No students found'}
+              </td>
+            </tr>
+          ) : (
+            filteredStudents.map(s => (
+            <tr 
+              key={s.id} 
+              onClick={() => navigate(`/center/student/${s.id}`)}
+              className="clickable-row"
+            >
               <td>{s.first_name} {s.last_name}</td>
               <td>{formatDateForDisplay(s.date_of_birth)}</td>
               <td>{s.school_name_external || '-'}</td>
-              <td>
+              <td onClick={(e) => e.stopPropagation()}>
                 {canChangeCurriculum ? (
                   <select 
                     value={s.curriculum_id || ''} 
@@ -229,13 +455,16 @@ const CenterStudents = () => {
               </td>
               <td>{s.program_type?.replace('_', ' ')}</td>
               <td>{s.parent_contact || '-'}</td>
-              <td>
+              <td onClick={(e) => e.stopPropagation()}>
                 {canEditStudents ? (
-                  <button onClick={() => handleEdit(s)} className="btn-sm btn-secondary">Edit</button>
+                  <div style={{display: 'flex', gap: '8px'}}>
+                    <button onClick={() => handleEdit(s)} className="btn-sm btn-secondary">Edit</button>
+                    <button onClick={() => handleDelete(s)} className="btn-sm btn-danger">Delete</button>
+                  </div>
                 ) : '-'}
               </td>
             </tr>
-          ))}
+          )))}
         </tbody>
       </table>
     </div>

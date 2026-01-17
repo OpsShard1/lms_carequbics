@@ -50,6 +50,7 @@ app.use('/api/progress', require('./routes/progress'));
 app.use('/api/trainer-assignments', require('./routes/trainer-assignments'));
 app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
 app.use('/api/curriculum', require('./routes/curriculum'));
+app.use('/api/settings', require('./routes/settings'));
 
 // Health check
 app.get('/', (req, res) => {

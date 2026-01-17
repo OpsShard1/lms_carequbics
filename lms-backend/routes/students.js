@@ -72,10 +72,12 @@ router.post('/school', authenticate, authorize('developer', 'school_teacher'), a
     const classIdValue = class_id && class_id !== '' ? class_id : null;
     const ageValue = age && age !== '' ? age : null;
     const genderValue = gender && gender !== '' ? gender : null;
+    // Use provided enrollment_date or default to current date
+    const enrollmentDate = enrollment_date || new Date().toISOString().split('T')[0];
     const [result] = await pool.query(`
       INSERT INTO students (first_name, last_name, date_of_birth, age, gender, student_type, school_id, class_id, parent_name, parent_contact, parent_email, parent_address, enrollment_date, is_extra, added_by)
       VALUES (?, ?, ?, ?, ?, 'school', ?, ?, ?, ?, ?, ?, ?, false, ?)
-    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, school_id, classIdValue, parent_name || null, parent_contact || null, parent_email || null, parent_address || null, enrollment_date || null, req.user.id]);
+    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, school_id, classIdValue, parent_name || null, parent_contact || null, parent_email || null, parent_address || null, enrollmentDate, req.user.id]);
     const [newStudent] = await pool.query('SELECT * FROM students WHERE id = ?', [result.insertId]);
     res.status(201).json(newStudent[0]);
   } catch (error) {
@@ -106,18 +108,19 @@ router.post('/school/extra', authenticate, authorize('developer', 'trainer', 'tr
 
 router.post('/center', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
-    const { first_name, last_name, date_of_birth, age, gender, center_id, school_name_external, class_id, curriculum_id, parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address, parent_qualification, parent_occupation, referral_source, program_type, attended_before, class_format, enrollment_date } = req.body;
+    const { first_name, last_name, date_of_birth, age, gender, center_id, school_name_external, student_class, curriculum_id, parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address, parent_qualification, parent_occupation, referral_source, program_type, attended_before, class_format, enrollment_date } = req.body;
     if (!first_name || !date_of_birth || !center_id) {
       return res.status(400).json({ error: 'First name, date of birth, and center are required' });
     }
-    const classIdValue = class_id && class_id !== '' ? class_id : null;
     const curriculumIdValue = curriculum_id && curriculum_id !== '' ? curriculum_id : null;
     const ageValue = age && age !== '' ? age : null;
     const genderValue = gender && gender !== '' ? gender : null;
+    // Use provided enrollment_date or default to current date
+    const enrollmentDate = enrollment_date || new Date().toISOString().split('T')[0];
     const [result] = await pool.query(`
-      INSERT INTO students (first_name, last_name, date_of_birth, age, gender, student_type, center_id, school_name_external, class_id, curriculum_id, parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address, parent_qualification, parent_occupation, referral_source, program_type, attended_before, class_format, enrollment_date)
+      INSERT INTO students (first_name, last_name, date_of_birth, age, gender, student_type, center_id, school_name_external, student_class, curriculum_id, parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address, parent_qualification, parent_occupation, referral_source, program_type, attended_before, class_format, enrollment_date)
       VALUES (?, ?, ?, ?, ?, 'center', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, center_id, school_name_external || null, classIdValue, curriculumIdValue, parent_name || null, parent_contact || null, parent_alternate_contact || null, parent_email || null, parent_address || null, parent_qualification || null, parent_occupation || null, referral_source || null, program_type || null, attended_before || false, class_format || null, enrollment_date || null]);
+    `, [first_name, last_name || null, date_of_birth, ageValue, genderValue, center_id, school_name_external || null, student_class || null, curriculumIdValue, parent_name || null, parent_contact || null, parent_alternate_contact || null, parent_email || null, parent_address || null, parent_qualification || null, parent_occupation || null, referral_source || null, program_type || null, attended_before || false, class_format || null, enrollmentDate]);
     const [newStudent] = await pool.query('SELECT * FROM students WHERE id = ?', [result.insertId]);
     res.status(201).json(newStudent[0]);
   } catch (error) {
