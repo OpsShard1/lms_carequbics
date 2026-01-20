@@ -553,4 +553,83 @@
   .attendance-stats { grid-template-columns: repeat(2, 1fr); }
   .skills-grid { grid-template-columns: 1fr; }
   .subject-progress { display: none; }
+  
+  .parent-progress-page {
+    padding: 12px;
+  }
+  
+  .student-info {
+    padding: 16px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .attendance-summary {
+    padding: 16px;
+  }
+  
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .calendar-section {
+    padding: 16px;
+  }
+  
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .month-selector {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .calendar-grid {
+    gap: 4px;
+  }
+  
+  .day-cell {
+    font-size: 11px;
+    padding: 6px 4px;
+  }
+  
+  .progress-section {
+    padding: 16px;
+  }
+  
+  .subject-card {
+    padding: 16px;
+  }
+  
+  .subject-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .topic-scores {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .score-item {
+    font-size: 11px;
+  }
+  
+  .student-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .student-name {
+    font-size: 18px;
+  }
+  
+  .student-details {
+    font-size: 12px;
+  }
 }

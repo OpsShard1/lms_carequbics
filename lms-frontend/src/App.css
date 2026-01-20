@@ -16,7 +16,7 @@ body {
 /* Page Header */
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e2e8f0; }
 .page-header h2 { color: #1a1a2e; font-size: 1.75rem; font-weight: 700; }
-.subtitle { color: #64748b; font-size: 0.9rem; margin-top: 0.25rem; }
+.subtitle { color: #64748b; font-size: 0.9rem; margin-top: 0.25rem; word-wrap: break-word; overflow-wrap: break-word; }
 
 /* Common Form Styles */
 .form-group { margin-bottom: 1.25rem; }
@@ -80,6 +80,97 @@ body {
 @media (max-width: 768px) {
   .content { padding: 1rem; }
   .form-row { grid-template-columns: 1fr; }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .page-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .filters {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .filters .form-group {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Make all tables scrollable */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  
+  .data-table {
+    min-width: 600px;
+    display: table;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  
+  .data-table th:first-child,
+  .data-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+  
+  .data-table thead th:first-child {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    z-index: 2;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+  
+  .modal {
+    width: 95%;
+    padding: 1.5rem;
+    max-height: 85vh;
+  }
+  
+  .modal h3 {
+    font-size: 1.125rem;
+  }
+  
+  .form-card {
+    padding: 1.5rem;
+  }
+  
+  .btn-sm {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
 }
 
 

@@ -44,21 +44,23 @@ const AdminCenters = () => {
         </form>
       )}
 
-      <table className="data-table">
-        <thead>
-          <tr><th>Name</th><th>Address</th><th>Contact</th><th>Email</th></tr>
-        </thead>
-        <tbody>
-          {centers.map(c => (
-            <tr key={c.id}>
-              <td>{c.name}</td>
-              <td>{c.address || '-'}</td>
-              <td>{c.contact_number || '-'}</td>
-              <td>{c.email || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr><th>Name</th><th>Address</th><th>Contact</th><th>Email</th></tr>
+          </thead>
+          <tbody>
+            {centers.map(c => (
+              <tr key={c.id}>
+                <td>{c.name}</td>
+                <td>{c.address || '-'}</td>
+                <td>{c.contact_number || '-'}</td>
+                <td>{c.email || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

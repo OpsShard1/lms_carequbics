@@ -241,6 +241,69 @@
 @media (max-width: 768px) {
   .attendance-controls { flex-direction: column; align-items: stretch; }
   .date-time-picker { flex-direction: column; }
+  
+  .attendance-page {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .attendance-controls button {
+    width: 100%;
+  }
+  
+  .attendance-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  
+  .attendance-table {
+    min-width: 600px;
+    display: table;
+  }
+  
+  .attendance-table th,
+  .attendance-table td {
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+  
+  .status-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .legend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .legend-item {
+    font-size: 11px;
+  }
+  
+  .calendar-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .calendar-table {
+    min-width: 100%;
+  }
+  
+  .calendar-day {
+    min-width: 40px;
+    height: 40px;
+    font-size: 11px;
+  }
+}
   .attendance-stats { justify-content: center; }
   .monthly-attendance-table .student-header,
   .monthly-attendance-table .student-name-cell { min-width: 150px; }

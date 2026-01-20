@@ -261,9 +261,10 @@
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 2px solid #e2e8f0;
+  flex-wrap: wrap;
 }
 
-.timetable-header h3 { flex: 1; margin: 0; font-size: 1.25rem; color: #1a1a2e; }
+.timetable-header h3 { flex: 1; margin: 0; font-size: 1.25rem; color: #1a1a2e; min-width: 200px; }
 .timetable-header span { background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; color: #64748b; }
 
 /* Visual School-Style Timetable */
@@ -416,11 +417,103 @@
   .wizard-progress { flex-wrap: wrap; gap: 0.5rem; }
   .wizard-progress .step-connector { display: none; }
   .schedule-grid { grid-template-columns: 1fr; }
+  .timetable-actions { 
+    flex-direction: column; 
+    gap: 0.75rem; 
+  }
+  .timetable-actions button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 600px) {
   .wizard-container { padding: 1.5rem; }
   .wizard-step h3 { font-size: 1.25rem; }
+  
+  .timetable-page {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .timetable-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .timetable-actions button {
+    width: 100%;
+  }
+  
+  .timetable-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  
+  .timetable-grid table,
+  .school-timetable {
+    min-width: 800px;
+    display: table;
+  }
+  
+  .period-cell {
+    min-width: 120px;
+    font-size: 11px;
+    padding: 8px;
+  }
+  
+  .period-subject {
+    font-size: 12px;
+  }
+  
+  .period-teacher {
+    font-size: 10px;
+  }
+  
+  .wizard-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .wizard-actions button {
+    width: 100%;
+  }
+  
+  .class-selection-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .period-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .no-timetable {
+    padding: 30px 20px;
+  }
+  
+  .timetable-legend {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .class-chip {
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .class-chip .class-name {
+    font-size: 0.8rem;
+  }
+  
+  .class-chip .class-subject {
+    font-size: 0.7rem;
+  }
 }
 
 
@@ -520,4 +613,48 @@
   font-size: 0.9rem;
   color: #94a3b8;
   margin-top: 0.5rem;
+}
+
+  
+  .page-header h2 {
+    font-size: 1.25rem;
+    word-wrap: break-word;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .timetable-header {
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .timetable-header h3 {
+    font-size: 1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .timetable-header span {
+    font-size: 0.75rem;
+    word-wrap: break-word;
+    padding: 0.4rem 0.75rem;
+    width: fit-content;
+  }
+  
+  .timetable-header button {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .timetable-view {
+    padding: 1rem;
+  }
 }

@@ -64,22 +64,24 @@ const AdminUsers = () => {
         </form>
       )}
 
-      <table className="data-table">
-        <thead>
-          <tr><th>Name</th><th>Email</th><th>Role</th><th>Section</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id}>
-              <td>{u.first_name} {u.last_name}</td>
-              <td>{u.email}</td>
-              <td>{u.role_name}</td>
-              <td>{u.section_type}</td>
-              <td><span className={`status-badge ${u.is_active ? 'active' : 'inactive'}`}>{u.is_active ? 'Active' : 'Inactive'}</span></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Section</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id}>
+                <td>{u.first_name} {u.last_name}</td>
+                <td>{u.email}</td>
+                <td>{u.role_name}</td>
+                <td>{u.section_type}</td>
+                <td><span className={`status-badge ${u.is_active ? 'active' : 'inactive'}`}>{u.is_active ? 'Active' : 'Inactive'}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

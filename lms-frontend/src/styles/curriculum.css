@@ -137,6 +137,74 @@
 }
 
 @media (max-width: 900px) {
-  .curriculum-layout { grid-template-columns: 1fr; }
-  .curriculum-list { order: 2; }
+  .curriculum-layout { 
+    grid-template-columns: 1fr; 
+  }
+  .curriculum-list { 
+    order: 2; 
+  }
+  
+  .curriculum-page {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .page-header button {
+    width: 100%;
+  }
+  
+  .curriculum-form {
+    padding: 16px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+  
+  .subject-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .topic-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .curriculum-card {
+    padding: 16px;
+  }
+  
+  .curriculum-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .curriculum-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .subject-item {
+    padding: 12px;
+  }
+  
+  .subject-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .topic-item {
+    padding: 10px;
+  }
 }
+

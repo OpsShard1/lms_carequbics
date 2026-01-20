@@ -181,3 +181,64 @@
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 16px;
+  }
+
+  .settings-page .page-header h2 {
+    font-size: 20px;
+  }
+
+  .settings-note {
+    font-size: 13px;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+  }
+
+  .settings-actions button {
+    width: 100%;
+  }
+
+  .settings-group {
+    padding: 16px;
+  }
+
+  .settings-group h3 {
+    font-size: 15px;
+  }
+
+  .group-description {
+    font-size: 12px;
+  }
+
+  .setting-item {
+    padding: 10px;
+  }
+
+  .toggle-label {
+    gap: 12px;
+  }
+
+  .setting-name {
+    font-size: 13px;
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+  }
+
+  .slider:before {
+    height: 18px;
+    width: 18px;
+  }
+
+  .toggle-switch input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+}

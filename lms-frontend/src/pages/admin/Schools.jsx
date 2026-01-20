@@ -44,21 +44,23 @@ const AdminSchools = () => {
         </form>
       )}
 
-      <table className="data-table">
-        <thead>
-          <tr><th>Name</th><th>Address</th><th>Contact</th><th>Email</th></tr>
-        </thead>
-        <tbody>
-          {schools.map(s => (
-            <tr key={s.id}>
-              <td>{s.name}</td>
-              <td>{s.address || '-'}</td>
-              <td>{s.contact_number || '-'}</td>
-              <td>{s.email || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr><th>Name</th><th>Address</th><th>Contact</th><th>Email</th></tr>
+          </thead>
+          <tbody>
+            {schools.map(s => (
+              <tr key={s.id}>
+                <td>{s.name}</td>
+                <td>{s.address || '-'}</td>
+                <td>{s.contact_number || '-'}</td>
+                <td>{s.email || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

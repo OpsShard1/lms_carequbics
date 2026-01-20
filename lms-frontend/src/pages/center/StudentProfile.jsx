@@ -284,6 +284,15 @@ const StudentProfile = () => {
                   <span className="value">{formatDate(student.enrollment_date)}</span>
                 </div>
               </div>
+
+              {student.special_remarks && (
+                <div className="info-card">
+                  <h3>Special Remarks</h3>
+                  <div className="info-row">
+                    <p className="remarks-text">{student.special_remarks}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -306,9 +306,14 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
   .modal-form {
     max-height: 95vh;
-    margin: 10px;
+    margin: 10px auto;
   }
 
   .student-registration-form .form-grid {
@@ -322,6 +327,10 @@
   .student-registration-form .form-header {
     padding: 16px;
   }
+
+  .student-registration-form .form-header h3 {
+    font-size: 16px;
+  }
   
   .student-registration-form .form-actions {
     padding: 16px;
@@ -330,5 +339,73 @@
   
   .student-registration-form .form-actions button {
     width: 100%;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .search-box {
+    max-width: 100%;
+  }
+
+  .header-actions .btn-primary {
+    width: 100%;
+  }
+
+  /* Make tables scrollable on mobile */
+  .students-page {
+    overflow-x: hidden;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+
+  .data-table {
+    display: table;
+    min-width: 700px;
+    white-space: nowrap;
+  }
+
+  .data-table th,
+  .data-table td {
+    font-size: 11px;
+    padding: 8px 6px;
+    white-space: nowrap;
+  }
+
+  .data-table th:first-child,
+  .data-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+
+  .data-table thead th:first-child {
+    background: #f9fafb;
+    z-index: 2;
+  }
+
+  .btn-sm {
+    padding: 4px 6px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .clickable-row:hover {
+    transform: none;
   }
 }

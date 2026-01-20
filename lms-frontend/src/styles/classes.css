@@ -123,8 +123,72 @@
 
 @media (max-width: 600px) {
   .add-student-row { grid-template-columns: 1fr; }
+  
+  .classes-page {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .page-header button {
+    width: 100%;
+  }
+  
+  .class-form {
+    padding: 16px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
   .classes-grid { grid-template-columns: 1fr; }
+  
+  .class-card {
+    padding: 16px;
+  }
+  
+  .class-header h3 {
+    font-size: 16px;
+  }
+  
+  .class-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .class-actions button {
+    width: 100%;
+  }
+  
+  .students-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+  
+  .students-table {
+    min-width: 500px;
+  }
+  
+  .students-table th,
+  .students-table td {
+    font-size: 12px;
+    padding: 8px 6px;
+  }
 }

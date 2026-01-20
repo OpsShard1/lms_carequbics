@@ -436,4 +436,109 @@
   }
   .student-panel { max-height: 300px; }
   .curriculum-selectors { grid-template-columns: 1fr; }
+  
+  .progress-page {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .student-selector,
+  .curriculum-selector {
+    width: 100%;
+  }
+  
+  .score-inputs {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+  
+  .topic-item {
+    padding: 12px;
+  }
+  
+  .topic-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .topic-scores {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  
+  .subject-card {
+    padding: 16px;
+  }
+  
+  .subject-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .progress-content {
+    padding: 16px;
+  }
+  
+  /* Fix skill assessment section */
+  .skill-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px 0;
+  }
+  
+  .skill-row label {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  
+  .skill-slider {
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .skill-btn {
+    width: 36px;
+    height: 32px;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  
+  .skill-value {
+    min-width: 60px;
+    font-size: 0.75rem;
+  }
+  
+  .status-buttons {
+    flex-direction: column;
+  }
+  
+  .status-btn {
+    width: 100%;
+  }
+  
+  .assignment-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .assignment-row select {
+    width: 100%;
+  }
 }

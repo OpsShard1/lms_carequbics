@@ -9,6 +9,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarSettings, setSidebarSettings] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Load sidebar visibility settings
   useEffect(() => {
@@ -68,6 +69,11 @@ const Layout = () => {
   const handleSectionSwitch = (section) => {
     switchSection(section);
     navigate(section === 'school' ? '/school/dashboard' : '/center/dashboard');
+    setIsMobileMenuOpen(false); // Close mobile menu after switching
+  };
+
+  const handleNavClick = () => {
+    setIsMobileMenuOpen(false); // Close mobile menu when navigating
   };
 
   const schoolMenuItems = [
@@ -128,6 +134,13 @@ const Layout = () => {
     <div className="app-layout">
       <header className="header">
         <div className="header-left">
+          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <span className="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
           <h1 className="logo">LMS</h1>
           {(showSchoolButton && showCenterButton) && (
             <div className="section-switcher">
@@ -159,12 +172,51 @@ const Layout = () => {
         </div>
       </header>
 
+      {/* Mobile overlay */}
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+
       <div className="main-container">
-        <nav className="sidebar">
+        <nav className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          {/* Mobile header inside sidebar */}
+          <div className="mobile-sidebar-header">
+            <div className="mobile-user-info">
+              <div className="mobile-user-name">{user?.first_name}</div>
+              <div className="mobile-user-role">{user?.role_name}</div>
+            </div>
+            {(showSchoolButton && showCenterButton) && (
+              <div className="mobile-section-switcher">
+                {showSchoolButton && (
+                  <button 
+                    className={`mobile-section-btn ${effectiveSection === 'school' ? 'active' : ''}`}
+                    onClick={() => handleSectionSwitch('school')}
+                  >
+                    School
+                  </button>
+                )}
+                {showCenterButton && (
+                  <button 
+                    className={`mobile-section-btn ${effectiveSection === 'center' ? 'active' : ''}`}
+                    onClick={() => handleSectionSwitch('center')}
+                  >
+                    Center
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <ul className="nav-menu">
             {filteredMenu.map(item => (
               <li key={item.path}>
-                <Link to={item.path} className={isActive(item.path) ? 'active' : ''}>{item.label}</Link>
+                <Link 
+                  to={item.path} 
+                  className={isActive(item.path) ? 'active' : ''}
+                  onClick={handleNavClick}
+                >
+                  {item.label}
+                </Link>
               </li>
             ))}
             {filteredAdmin.length > 0 && (
@@ -172,7 +224,13 @@ const Layout = () => {
                 <li className="nav-divider">Admin</li>
                 {filteredAdmin.map(item => (
                   <li key={item.path}>
-                    <Link to={item.path} className={isActive(item.path) ? 'active' : ''}>{item.label}</Link>
+                    <Link 
+                      to={item.path} 
+                      className={isActive(item.path) ? 'active' : ''}
+                      onClick={handleNavClick}
+                    >
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </>

@@ -20,7 +20,8 @@ const CenterStudents = () => {
     student_class: '', school_name_external: '', curriculum_id: '',
     parent_name: '', parent_contact: '', parent_alternate_contact: '',
     parent_email: '', parent_address: '', parent_qualification: '', parent_occupation: '',
-    referral_source: '', program_type: 'long_term', attended_before: false, class_format: 'weekday'
+    referral_source: '', program_type: 'long_term', attended_before: false, class_format: 'weekday',
+    special_remarks: ''
   });
 
   useEffect(() => {
@@ -51,7 +52,8 @@ const CenterStudents = () => {
       student_class: '', school_name_external: '', curriculum_id: '',
       parent_name: '', parent_contact: '', parent_alternate_contact: '',
       parent_email: '', parent_address: '', parent_qualification: '', parent_occupation: '',
-      referral_source: '', program_type: 'long_term', attended_before: false, class_format: 'weekday'
+      referral_source: '', program_type: 'long_term', attended_before: false, class_format: 'weekday',
+      special_remarks: ''
     });
     setEditingStudent(null);
   };
@@ -107,7 +109,8 @@ const CenterStudents = () => {
       referral_source: student.referral_source || '',
       program_type: student.program_type || 'long_term',
       attended_before: student.attended_before || false,
-      class_format: student.class_format || 'weekday'
+      class_format: student.class_format || 'weekday',
+      special_remarks: student.special_remarks || ''
     });
     setEditingStudent(student);
     setShowForm(true);
@@ -401,6 +404,15 @@ const CenterStudents = () => {
                   <span>Has attended before</span>
                 </label>
               </div>
+              <div className="form-field full-width">
+                <label>Special Remarks</label>
+                <textarea 
+                  placeholder="Any special notes or remarks about the student..." 
+                  value={form.special_remarks} 
+                  onChange={(e) => setForm({...form, special_remarks: e.target.value})}
+                  rows="3"
+                />
+              </div>
             </div>
           </div>
 
@@ -416,57 +428,59 @@ const CenterStudents = () => {
       </div>
       )}
 
-      <table className="data-table">
-        <thead>
-          <tr><th>Name</th><th>DOB</th><th>School</th><th>Curriculum</th><th>Program</th><th>Contact</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          {filteredStudents.length === 0 ? (
-            <tr>
-              <td colSpan="7" style={{textAlign: 'center', padding: '40px', color: '#6b7280'}}>
-                {searchQuery ? 'No students found matching your search' : 'No students found'}
-              </td>
-            </tr>
-          ) : (
-            filteredStudents.map(s => (
-            <tr 
-              key={s.id} 
-              onClick={() => navigate(`/center/student/${s.id}`)}
-              className="clickable-row"
-            >
-              <td>{s.first_name} {s.last_name}</td>
-              <td>{formatDateForDisplay(s.date_of_birth)}</td>
-              <td>{s.school_name_external || '-'}</td>
-              <td onClick={(e) => e.stopPropagation()}>
-                {canChangeCurriculum ? (
-                  <select 
-                    value={s.curriculum_id || ''} 
-                    onChange={(e) => handleCurriculumChange(s.id, e.target.value)}
-                    style={{padding: '0.35rem', borderRadius: '6px', border: '1px solid #e2e8f0'}}
-                  >
-                    <option value="">No Curriculum</option>
-                    {curriculums.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <span>{curriculums.find(c => c.id === s.curriculum_id)?.name || '-'}</span>
-                )}
-              </td>
-              <td>{s.program_type?.replace('_', ' ')}</td>
-              <td>{s.parent_contact || '-'}</td>
-              <td onClick={(e) => e.stopPropagation()}>
-                {canEditStudents ? (
-                  <div style={{display: 'flex', gap: '8px'}}>
-                    <button onClick={() => handleEdit(s)} className="btn-sm btn-secondary">Edit</button>
-                    <button onClick={() => handleDelete(s)} className="btn-sm btn-danger">Delete</button>
-                  </div>
-                ) : '-'}
-              </td>
-            </tr>
-          )))}
-        </tbody>
-      </table>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr><th>Name</th><th>DOB</th><th>School</th><th>Curriculum</th><th>Program</th><th>Contact</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {filteredStudents.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{textAlign: 'center', padding: '40px', color: '#6b7280'}}>
+                  {searchQuery ? 'No students found matching your search' : 'No students found'}
+                </td>
+              </tr>
+            ) : (
+              filteredStudents.map(s => (
+              <tr 
+                key={s.id} 
+                onClick={() => navigate(`/center/student/${s.id}`)}
+                className="clickable-row"
+              >
+                <td>{s.first_name} {s.last_name}</td>
+                <td>{formatDateForDisplay(s.date_of_birth)}</td>
+                <td>{s.school_name_external || '-'}</td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  {canChangeCurriculum ? (
+                    <select 
+                      value={s.curriculum_id || ''} 
+                      onChange={(e) => handleCurriculumChange(s.id, e.target.value)}
+                      style={{padding: '0.35rem', borderRadius: '6px', border: '1px solid #e2e8f0'}}
+                    >
+                      <option value="">No Curriculum</option>
+                      {curriculums.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span>{curriculums.find(c => c.id === s.curriculum_id)?.name || '-'}</span>
+                  )}
+                </td>
+                <td>{s.program_type?.replace('_', ' ')}</td>
+                <td>{s.parent_contact || '-'}</td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  {canEditStudents ? (
+                    <div style={{display: 'flex', gap: '8px'}}>
+                      <button onClick={() => handleEdit(s)} className="btn-sm btn-secondary">Edit</button>
+                      <button onClick={() => handleDelete(s)} className="btn-sm btn-danger">Delete</button>
+                    </div>
+                  ) : '-'}
+                </td>
+              </tr>
+            )))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
