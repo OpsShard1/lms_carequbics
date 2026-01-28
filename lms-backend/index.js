@@ -25,8 +25,25 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'https://lmstest.carequbics.com',
+  'https://lmstest.carequbics.com',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://lmstest.carequbics.com',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -50,7 +67,9 @@ app.use('/api/progress', require('./routes/progress'));
 app.use('/api/trainer-assignments', require('./routes/trainer-assignments'));
 app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
 app.use('/api/curriculum', require('./routes/curriculum'));
+app.use('/api/school-curriculum', require('./routes/school-curriculum'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/fees', require('./routes/fees'));
 
 // Health check
 app.get('/', (req, res) => {

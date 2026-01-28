@@ -32,8 +32,11 @@ router.get('/:id/full', authenticate, async (req, res) => {
 
 router.post('/', authenticate, authorize('developer', 'trainer_head'), async (req, res) => {
   try {
-    const { name, description } = req.body;
-    const [result] = await pool.query('INSERT INTO curriculums (name, description, created_by) VALUES (?, ?, ?)', [name, description, req.user.id]);
+    const { name, description, fees } = req.body;
+    const [result] = await pool.query(
+      'INSERT INTO curriculums (name, description, fees, created_by) VALUES (?, ?, ?, ?)', 
+      [name, description, fees || 0, req.user.id]
+    );
     const [newCurriculum] = await pool.query('SELECT * FROM curriculums WHERE id = ?', [result.insertId]);
     res.status(201).json(newCurriculum[0]);
   } catch (error) {

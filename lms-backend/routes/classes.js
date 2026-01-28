@@ -7,9 +7,14 @@ const router = express.Router();
 router.get('/school/:schoolId', authenticate, checkSectionAccess('school'), async (req, res) => {
   try {
     const [classes] = await pool.query(`
-      SELECT c.*, u.first_name as teacher_first_name, u.last_name as teacher_last_name
-      FROM classes c LEFT JOIN users u ON c.teacher_id = u.id
-      WHERE c.school_id = ? AND c.is_active = true ORDER BY c.grade, c.section
+      SELECT c.*, u.first_name as teacher_first_name, u.last_name as teacher_last_name,
+             COUNT(DISTINCT s.id) as student_count
+      FROM classes c 
+      LEFT JOIN users u ON c.teacher_id = u.id
+      LEFT JOIN students s ON c.id = s.class_id AND s.is_active = true
+      WHERE c.school_id = ? AND c.is_active = true 
+      GROUP BY c.id
+      ORDER BY c.grade, c.section
     `, [req.params.schoolId]);
     res.json(classes);
   } catch (error) {

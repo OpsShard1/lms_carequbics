@@ -41,7 +41,7 @@ router.get('/school/:schoolId/students/:date', authenticate, async (req, res) =>
   }
 });
 
-router.post('/school/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/school/mark', authenticate, authorize('developer', 'trainer'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
     if (!school_id || !attendance_date || !records || records.length === 0) {
@@ -62,7 +62,7 @@ router.post('/school/mark', authenticate, authorize('developer', 'trainer', 'tra
   }
 });
 
-router.post('/school/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/school/mark-bulk', authenticate, authorize('developer', 'trainer'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
     if (!school_id || !attendance_date || !records || records.length === 0) {
@@ -117,7 +117,7 @@ router.get('/center/:centerId', authenticate, async (req, res) => {
   }
 });
 
-router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center/mark', authenticate, authorize('developer', 'trainer'), async (req, res) => {
   try {
     const { center_id, student_id, attendance_date, attendance_time, status, remarks } = req.body;
     if (!center_id || !student_id || !attendance_date || !status) {
@@ -140,7 +140,7 @@ router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'tra
   }
 });
 
-router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer'), async (req, res) => {
   try {
     const { center_id, attendance_date, records } = req.body;
     if (!center_id || !attendance_date || !records || records.length === 0) {
@@ -181,7 +181,8 @@ router.get('/summary/student/:studentId', authenticate, async (req, res) => {
     if (endDate) { query += ' AND attendance_date <= ?'; params.push(endDate); }
     const [summary] = await pool.query(query, params);
     const result = summary[0];
-    result.attendance_percentage = result.total_records > 0 ? ((result.present_count + result.late_count) / result.total_records * 100).toFixed(2) : 0;
+    const attendancePercentage = result.total_records > 0 ? ((result.present_count + result.late_count) / result.total_records) * 100 : 0;
+    result.attendance_percentage = Math.round(attendancePercentage);
     res.json(result);
   } catch (error) {
     console.error('Get attendance summary error:', error);

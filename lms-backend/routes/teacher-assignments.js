@@ -4,7 +4,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     const [assignments] = await pool.query(`SELECT ua.*, u.first_name as teacher_first_name, u.last_name as teacher_last_name, u.email as teacher_email, s.name as school_name FROM user_assignments ua JOIN users u ON ua.user_id = u.id JOIN roles r ON u.role_id = r.id LEFT JOIN schools s ON ua.school_id = s.id WHERE r.name = 'school_teacher' AND ua.school_id IS NOT NULL ORDER BY u.first_name, s.name`);
     res.json(assignments);
@@ -14,7 +14,7 @@ router.get('/', authenticate, authorize('developer', 'owner'), async (req, res) 
   }
 });
 
-router.get('/teachers', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.get('/teachers', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     const [teachers] = await pool.query(`SELECT u.id, u.first_name, u.last_name, u.email FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'school_teacher' AND u.is_active = true ORDER BY u.first_name`);
     res.json(teachers);
@@ -34,7 +34,7 @@ router.get('/my-schools', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     const { teacher_id, school_id } = req.body;
     if (!teacher_id || !school_id) {
@@ -53,7 +53,7 @@ router.post('/', authenticate, authorize('developer', 'owner'), async (req, res)
   }
 });
 
-router.delete('/:id', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     await pool.query('DELETE FROM user_assignments WHERE id = ?', [req.params.id]);
     res.json({ message: 'Assignment removed' });

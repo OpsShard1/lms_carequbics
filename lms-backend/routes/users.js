@@ -53,12 +53,26 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     const { email, password, first_name, last_name, phone, role_id, section_type, assignments } = req.body;
     if (!email || !password || !first_name || !role_id) {
       return res.status(400).json({ error: 'Email, password, first name, and role are required' });
     }
+    
+    // Check role restrictions for trainer_head
+    if (req.user.role_name === 'trainer_head') {
+      const [roleCheck] = await pool.query('SELECT name FROM roles WHERE id = ?', [role_id]);
+      if (roleCheck.length === 0) {
+        return res.status(400).json({ error: 'Invalid role' });
+      }
+      const roleName = roleCheck[0].name;
+      // trainer_head can only create school_teacher and trainer users
+      if (!['school_teacher', 'trainer'].includes(roleName)) {
+        return res.status(403).json({ error: 'You can only create school_teacher and trainer accounts' });
+      }
+    }
+    
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
       return res.status(400).json({ error: 'Email already exists' });
@@ -88,9 +102,32 @@ router.post('/', authenticate, authorize('developer', 'owner'), async (req, res)
   }
 });
 
-router.put('/:id', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.put('/:id', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     const { email, first_name, last_name, phone, role_id, section_type, is_active, assignments } = req.body;
+    
+    // Check role restrictions for trainer_head
+    if (req.user.role_name === 'trainer_head') {
+      // Get the current user's role
+      const [currentUser] = await pool.query('SELECT u.role_id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [req.params.id]);
+      if (currentUser.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // trainer_head can only edit school_teacher and trainer users
+      if (!['school_teacher', 'trainer'].includes(currentUser[0].role_name)) {
+        return res.status(403).json({ error: 'You can only edit school_teacher and trainer accounts' });
+      }
+      
+      // If changing role, check the new role
+      if (role_id && role_id !== currentUser[0].role_id) {
+        const [newRoleCheck] = await pool.query('SELECT name FROM roles WHERE id = ?', [role_id]);
+        if (newRoleCheck.length === 0 || !['school_teacher', 'trainer'].includes(newRoleCheck[0].name)) {
+          return res.status(403).json({ error: 'You can only assign school_teacher and trainer roles' });
+        }
+      }
+    }
+    
     await pool.query(
       'UPDATE users SET email = ?, first_name = ?, last_name = ?, phone = ?, role_id = ?, section_type = ?, is_active = ? WHERE id = ?',
       [email, first_name, last_name, phone, role_id, section_type, is_active, req.params.id]
@@ -116,8 +153,21 @@ router.put('/:id', authenticate, authorize('developer', 'owner'), async (req, re
   }
 });
 
-router.delete('/:id', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
+    // Check role restrictions for trainer_head
+    if (req.user.role_name === 'trainer_head') {
+      const [userToDelete] = await pool.query('SELECT u.role_id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [req.params.id]);
+      if (userToDelete.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // trainer_head can only delete school_teacher and trainer users
+      if (!['school_teacher', 'trainer'].includes(userToDelete[0].role_name)) {
+        return res.status(403).json({ error: 'You can only delete school_teacher and trainer accounts' });
+      }
+    }
+    
     await pool.query('UPDATE users SET is_active = false WHERE id = ?', [req.params.id]);
     res.json({ message: 'User deleted successfully' });
   } catch (error) {

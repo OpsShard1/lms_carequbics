@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "migrate:timetable": "node database/run-migration.js",
+    "seed:timetable": "node database/seed-timetable.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
