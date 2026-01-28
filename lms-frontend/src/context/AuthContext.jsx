@@ -176,8 +176,8 @@ export const AuthProvider = ({ children }) => {
   const canAccessSection = (section) => {
     if (!user) return false;
     
-    // For trainers, check if they have assignments in that section
-    if (user.role_name === 'trainer') {
+    // For trainers and trainer_head, check if they have assignments/access in that section
+    if (user.role_name === 'trainer' || user.role_name === 'trainer_head') {
       if (section === 'school') return availableSchools.length > 0;
       if (section === 'center') return availableCenters.length > 0;
       return false;
@@ -188,7 +188,7 @@ export const AuthProvider = ({ children }) => {
       return section === 'school' && availableSchools.length > 0;
     }
     
-    // For other roles, use section_type
+    // For other roles (developer, owner), use section_type
     return user.section_type === 'both' || user.section_type === section;
   };
 

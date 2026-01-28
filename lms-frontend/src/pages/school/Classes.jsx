@@ -4,16 +4,20 @@ import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const SchoolClasses = () => {
-  const { selectedSchool, selectSchool, availableSchools } = useAuth();
+  const { selectedSchool, selectSchool, availableSchools, user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Permission check - trainer_head cannot create/edit classes
+  const canEditClasses = ['developer', 'owner', 'school_teacher'].includes(user?.role_name);
+  
   // Form states
-  const [showForm, setShowForm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [form, setForm] = useState({ name: '', grade: '', section: '', room_number: '' });
   
-  // Students in class
+  // Students in class (only for edit modal)
   const [students, setStudents] = useState([]);
   const [newStudent, setNewStudent] = useState({ first_name: '', last_name: '', date_of_birth: '', gender: '', parent_name: '', parent_contact: '' });
 
@@ -28,8 +32,16 @@ const SchoolClasses = () => {
   useEffect(() => {
     if (selectedSchool?.id) {
       loadClasses();
+      // Reset form and editing state when school changes
+      setShowCreateModal(false);
+      setShowEditModal(false);
+      setEditingClass(null);
+      setForm({ name: '', grade: '', section: '', room_number: '' });
+      setStudents([]);
+    } else {
+      setClasses([]);
     }
-  }, [selectedSchool]);
+  }, [selectedSchool?.id]);
 
   const loadClasses = async () => {
     if (!selectedSchool?.id) return;
@@ -42,10 +54,8 @@ const SchoolClasses = () => {
   };
 
   const startNewClass = () => {
-    setEditingClass(null);
     setForm({ name: '', grade: '', section: '', room_number: '' });
-    setStudents([]);
-    setShowForm(true);
+    setShowCreateModal(true);
   };
 
   const startEditClass = async (classItem) => {
@@ -66,7 +76,7 @@ const SchoolClasses = () => {
       setStudents([]);
     }
     
-    setShowForm(true);
+    setShowEditModal(true);
   };
 
   const addStudentToList = () => {
@@ -90,7 +100,7 @@ const SchoolClasses = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!selectedSchool?.id) {
       alert('Please select a school first');
@@ -98,17 +108,23 @@ const SchoolClasses = () => {
     }
 
     try {
-      let classId;
-      
-      if (editingClass) {
-        // Update class
-        await api.put(`/classes/${editingClass.id}`, { ...form, is_active: true });
-        classId = editingClass.id;
-      } else {
-        // Create class
-        const classRes = await api.post('/classes', { ...form, school_id: selectedSchool.id });
-        classId = classRes.data.id;
-      }
+      await api.post('/classes', { ...form, school_id: selectedSchool.id });
+      setShowCreateModal(false);
+      setForm({ name: '', grade: '', section: '', room_number: '' });
+      loadClasses();
+      alert('Class created successfully!');
+    } catch (err) {
+      alert('Failed to create class: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleUpdateClass = async (e) => {
+    e.preventDefault();
+    if (!editingClass) return;
+
+    try {
+      // Update class details
+      await api.put(`/classes/${editingClass.id}`, { ...form, is_active: true });
 
       // Handle students
       for (const student of students) {
@@ -117,7 +133,7 @@ const SchoolClasses = () => {
           await api.post('/students/school', {
             ...student,
             school_id: selectedSchool.id,
-            class_id: classId
+            class_id: editingClass.id
           });
         } else if (student.toRemove) {
           // Remove student from class (set class_id to null)
@@ -125,13 +141,13 @@ const SchoolClasses = () => {
         }
       }
 
-      setShowForm(false);
+      setShowEditModal(false);
       setEditingClass(null);
       setStudents([]);
       loadClasses();
-      alert(editingClass ? 'Class updated successfully!' : 'Class created with students!');
+      alert('Class updated successfully!');
     } catch (err) {
-      alert('Failed to save: ' + (err.response?.data?.error || err.message));
+      alert('Failed to update class: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -167,9 +183,11 @@ const SchoolClasses = () => {
               ))}
             </select>
           )}
-          <button onClick={startNewClass} className="btn-primary" disabled={!selectedSchool}>
-            Create Class
-          </button>
+          {canEditClasses && (
+            <button onClick={startNewClass} className="btn-primary" disabled={!selectedSchool}>
+              Create Class
+            </button>
+          )}
         </div>
       </div>
 
@@ -178,27 +196,132 @@ const SchoolClasses = () => {
           <h3>Select a School</h3>
           <p>Please select a school to view and manage classes.</p>
         </div>
-      ) : showForm ? (
-        <div className="class-form-container">
-          <div className="form-card">
-            <h3>{editingClass ? `Edit Class: ${editingClass.name}` : 'Create New Class'}</h3>
-            
-            <form onSubmit={handleSubmit}>
+      ) : classes.length === 0 ? (
+        <div className="no-data">
+          <p>No classes found.</p>
+          <p className="hint">Click "Create Class" to add a class.</p>
+        </div>
+      ) : (
+        <div className="classes-grid">
+          {classes.map(c => (
+            <div key={c.id} className="class-card">
+              <div className="class-header">
+                <h3>{c.name}</h3>
+                <span className="grade-badge">Grade {c.grade || '-'}</span>
+              </div>
+              <div className="class-details">
+                <p><strong>Section:</strong> {c.section || '-'}</p>
+                <p><strong>Room:</strong> {c.room_number || '-'}</p>
+                <p><strong>Students:</strong> {c.student_count || 0}</p>
+              </div>
+              <div className="class-actions">
+                {canEditClasses && (
+                  <>
+                    <button onClick={() => startEditClass(c)} className="btn-secondary btn-sm">Edit / Manage Students</button>
+                    <button onClick={() => deleteClass(c.id)} className="btn-danger btn-sm">Delete</button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Class Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Create New Class</h3>
+            <form onSubmit={handleCreateClass}>
+              <div className="form-group">
+                <label>Class Name *</label>
+                <input 
+                  placeholder="e.g., Grade 5A" 
+                  value={form.name} 
+                  onChange={(e) => setForm({...form, name: e.target.value})} 
+                  required 
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Grade</label>
+                  <input 
+                    placeholder="e.g., 1, 2, 3" 
+                    value={form.grade} 
+                    onChange={(e) => setForm({...form, grade: e.target.value})} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Section</label>
+                  <input 
+                    placeholder="e.g., A, B" 
+                    value={form.section} 
+                    onChange={(e) => setForm({...form, section: e.target.value})} 
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Room Number</label>
+                <input 
+                  placeholder="e.g., 101" 
+                  value={form.room_number} 
+                  onChange={(e) => setForm({...form, room_number: e.target.value})} 
+                />
+              </div>
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Create Class</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Class Modal */}
+      {showEditModal && editingClass && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit Class: {editingClass.name}</h3>
+            <form onSubmit={handleUpdateClass}>
               <div className="form-section">
                 <h4>Class Details</h4>
                 <div className="form-row">
-                  <input placeholder="Class Name *" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required />
-                  <input placeholder="Grade (e.g., 1, 2, 3)" value={form.grade} onChange={(e) => setForm({...form, grade: e.target.value})} />
+                  <div className="form-group">
+                    <label>Class Name *</label>
+                    <input 
+                      value={form.name} 
+                      onChange={(e) => setForm({...form, name: e.target.value})} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Grade</label>
+                    <input 
+                      value={form.grade} 
+                      onChange={(e) => setForm({...form, grade: e.target.value})} 
+                    />
+                  </div>
                 </div>
                 <div className="form-row">
-                  <input placeholder="Section (e.g., A, B)" value={form.section} onChange={(e) => setForm({...form, section: e.target.value})} />
-                  <input placeholder="Room Number" value={form.room_number} onChange={(e) => setForm({...form, room_number: e.target.value})} />
+                  <div className="form-group">
+                    <label>Section</label>
+                    <input 
+                      value={form.section} 
+                      onChange={(e) => setForm({...form, section: e.target.value})} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Room Number</label>
+                    <input 
+                      value={form.room_number} 
+                      onChange={(e) => setForm({...form, room_number: e.target.value})} 
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="form-section">
-                <h4>Students ({students.filter(s => !s.toRemove).length})</h4>
-                <p className="hint">Add students to this class. They will automatically follow the class timetable.</p>
+                <h4>Manage Students ({students.filter(s => !s.toRemove).length})</h4>
                 
                 <div className="add-student-row">
                   <input placeholder="First Name *" value={newStudent.first_name} onChange={(e) => setNewStudent({...newStudent, first_name: e.target.value})} />
@@ -255,42 +378,12 @@ const SchoolClasses = () => {
               </div>
 
               <div className="form-actions">
-                <button type="button" onClick={() => { setShowForm(false); setEditingClass(null); }} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary">
-                  {editingClass ? 'Update Class' : 'Create Class with Students'}
-                </button>
+                <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Update Class</button>
               </div>
             </form>
           </div>
         </div>
-      ) : (
-        <>
-          {classes.length === 0 ? (
-            <div className="no-data">
-              <p>No classes found.</p>
-              <p className="hint">Click "Create Class" to add a class with students.</p>
-            </div>
-          ) : (
-            <div className="classes-grid">
-              {classes.map(c => (
-                <div key={c.id} className="class-card">
-                  <div className="class-header">
-                    <h3>{c.name}</h3>
-                    <span className="grade-badge">Grade {c.grade || '-'}</span>
-                  </div>
-                  <div className="class-details">
-                    <p><strong>Section:</strong> {c.section || '-'}</p>
-                    <p><strong>Room:</strong> {c.room_number || '-'}</p>
-                  </div>
-                  <div className="class-actions">
-                    <button onClick={() => startEditClass(c)} className="btn-secondary btn-sm">Edit / Manage Students</button>
-                    <button onClick={() => deleteClass(c.id)} className="btn-danger btn-sm">Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
       )}
     </div>
   );

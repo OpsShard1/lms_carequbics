@@ -6,7 +6,7 @@ import '../../styles/attendance.css';
 
 const SchoolAttendance = () => {
   const { selectedSchool, canAddExtraStudents, user } = useAuth();
-  const canMarkAttendance = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
+  const canMarkAttendance = ['developer', 'trainer'].includes(user?.role_name);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');

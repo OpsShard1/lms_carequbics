@@ -6,7 +6,7 @@ import '../../styles/attendance.css';
 
 const CenterAttendance = () => {
   const { selectedCenter, user } = useAuth();
-  const canMarkAttendance = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
+  const canMarkAttendance = ['developer', 'trainer'].includes(user?.role_name);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [students, setStudents] = useState([]);
   const [attendanceData, setAttendanceData] = useState({});

@@ -389,7 +389,7 @@
 
 .subject-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem 1.25rem;
   background: #f8fafc;
   cursor: pointer;
@@ -402,6 +402,14 @@
 
 .subject-info {
   flex: 1;
+  min-width: 0;
+}
+
+.subject-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .subject-info h4 {
@@ -413,21 +421,27 @@
 .topic-count {
   font-size: 0.8rem;
   color: #64748b;
+  display: block;
+  margin-left: 20px;
 }
 
 .subject-progress {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-right: 1rem;
+  flex-shrink: 0;
+  margin-left: 1rem;
+  margin-top: 0.25rem;
 }
 
-.progress-bar {
+.subject-progress .progress-bar {
   width: 100px;
   height: 8px;
   background: #e2e8f0;
   border-radius: 4px;
   overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
 }
 
 .progress-fill {
@@ -442,11 +456,18 @@
   font-weight: 600;
   color: #6366f1;
   min-width: 40px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .expand-icon {
   color: #94a3b8;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: left;
+  line-height: 1;
 }
 
 /* Topics List */
@@ -460,6 +481,8 @@
   border-radius: 8px;
   margin-bottom: 0.5rem;
   background: #f8fafc;
+  display: flex;
+  flex-direction: column;
 }
 
 .topic-item.completed { background: #f0fdf4; border-left: 3px solid #16a34a; }
@@ -471,6 +494,21 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.topic-header:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.expand-icon-small {
+  display: inline-block;
+  margin-right: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.7rem;
 }
 
 .topic-name {
@@ -544,6 +582,22 @@
   border-radius: 6px;
   font-size: 0.85rem;
   color: #475569;
+}
+
+.topic-not-covered {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  text-align: center;
+  border: 2px dashed #cbd5e1;
+}
+
+.topic-not-covered p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 /* Responsive */

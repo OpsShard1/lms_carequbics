@@ -192,3 +192,105 @@
     padding: 8px 6px;
   }
 }
+
+/* Large Modal for Edit Class */
+.modal-large {
+  max-width: 95vw !important;
+  width: 1600px !important;
+  max-height: 95vh !important;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.modal-large .form-section {
+  margin-bottom: 1.5rem;
+}
+
+.modal-large .form-section h4 {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.modal-large .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.modal-large .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-large .form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+}
+
+.modal-large .add-student-row {
+  grid-template-columns: 1.5fr 1.5fr 1.2fr 0.8fr 1.2fr 1.2fr auto;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.modal-large .students-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 1rem;
+}
+
+.modal-large .data-table {
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.modal-large .data-table th,
+.modal-large .data-table td {
+  padding: 0.75rem 0.5rem;
+}
+
+@media (max-width: 1600px) {
+  .modal-large {
+    max-width: 95vw !important;
+    width: 95vw !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .modal-large .add-student-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .modal-large .add-student-row button {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 900px) {
+  .modal-large {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0;
+    padding: 1.5rem;
+  }
+  
+  .modal-large .add-student-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .modal-large .add-student-row button {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-large .add-student-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-large .add-student-row button {
+    grid-column: span 1;
+  }
+}

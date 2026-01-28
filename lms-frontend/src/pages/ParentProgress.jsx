@@ -26,7 +26,8 @@ const ParentProgress = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [progressData, setProgressData] = useState([]);
   const [attendance, setAttendance] = useState(null);
-  const [expandedSubject, setExpandedSubject] = useState(null);
+  const [expandedSubjects, setExpandedSubjects] = useState([]);
+  const [expandedTopics, setExpandedTopics] = useState([]);
   
   // Month selection state
   const now = new Date();
@@ -290,10 +291,19 @@ const ParentProgress = () => {
               <div key={subject.id} className="subject-card">
                 <div 
                   className="subject-header"
-                  onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}
+                  onClick={() => {
+                    if (expandedSubjects.includes(subject.id)) {
+                      setExpandedSubjects(expandedSubjects.filter(id => id !== subject.id));
+                    } else {
+                      setExpandedSubjects([...expandedSubjects, subject.id]);
+                    }
+                  }}
                 >
                   <div className="subject-info">
-                    <h4>{subject.name}</h4>
+                    <div className="subject-title-row">
+                      <span className="expand-icon">{expandedSubjects.includes(subject.id) ? '▼' : '▶'}</span>
+                      <h4>{subject.name}</h4>
+                    </div>
                     <span className="topic-count">{subject.topics?.length || 0} topics</span>
                   </div>
                   <div className="subject-progress">
@@ -305,35 +315,53 @@ const ParentProgress = () => {
                     </div>
                     <span className="progress-text">{calculateSubjectProgress(subject.topics)}%</span>
                   </div>
-                  <span className="expand-icon">{expandedSubject === subject.id ? '▼' : '▶'}</span>
                 </div>
 
-                {expandedSubject === subject.id && (
+                {expandedSubjects.includes(subject.id) && (
                   <div className="topics-list">
                     {subject.topics?.map(topic => (
                       <div key={topic.id} className={`topic-item ${topic.status}`}>
-                        <div className="topic-header">
-                          <span className="topic-name">{topic.name}</span>
+                        <div 
+                          className="topic-header"
+                          onClick={() => {
+                            if (expandedTopics.includes(topic.id)) {
+                              setExpandedTopics(expandedTopics.filter(id => id !== topic.id));
+                            } else {
+                              setExpandedTopics([...expandedTopics, topic.id]);
+                            }
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <span className="topic-name">
+                            <span className="expand-icon-small">{expandedTopics.includes(topic.id) ? '▼' : '▶'}</span>
+                            {topic.name}
+                          </span>
                           {getStatusBadge(topic.status)}
                         </div>
                         
-                        {topic.status !== 'not_started' && (
-                          <div className="topic-skills">
-                            <h5>Skill Assessment</h5>
-                            <div className="skills-grid">
-                              {Object.entries(SKILL_LABELS).map(([key, label]) => (
-                                <div key={key} className={`skill-item ${getSkillClass(topic[key])}`}>
-                                  <span className="skill-icon">{getSkillIcon(topic[key])}</span>
-                                  <span className="skill-label">{label}</span>
-                                </div>
-                              ))}
-                            </div>
-                            {topic.remarks && (
-                              <div className="topic-remarks">
-                                <strong>Trainer's Notes:</strong> {topic.remarks}
+                        {expandedTopics.includes(topic.id) && (
+                          topic.status !== 'not_started' ? (
+                            <div className="topic-skills">
+                              <h5>Skill Assessment</h5>
+                              <div className="skills-grid">
+                                {Object.entries(SKILL_LABELS).map(([key, label]) => (
+                                  <div key={key} className={`skill-item ${getSkillClass(topic[key])}`}>
+                                    <span className="skill-icon">{getSkillIcon(topic[key])}</span>
+                                    <span className="skill-label">{label}</span>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-                          </div>
+                              {topic.remarks && (
+                                <div className="topic-remarks">
+                                  <strong>Trainer's Notes:</strong> {topic.remarks}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="topic-not-covered">
+                              <p>📚 This topic has not been covered yet.</p>
+                            </div>
+                          )
                         )}
                       </div>
                     ))}

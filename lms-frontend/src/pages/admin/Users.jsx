@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
 const AdminUsers = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -22,13 +24,38 @@ const AdminUsers = () => {
     setRoles(res.data);
   };
 
+  // Filter roles based on user permissions
+  const getAvailableRoles = () => {
+    if (user?.role_name === 'trainer_head') {
+      // trainer_head can only create school_teacher and trainer
+      return roles.filter(r => ['school_teacher', 'trainer'].includes(r.name));
+    }
+    return roles;
+  };
+
+  // Filter users based on permissions
+  const getVisibleUsers = () => {
+    if (user?.role_name === 'trainer_head') {
+      // trainer_head can only see school_teacher and trainer users
+      return users.filter(u => ['school_teacher', 'trainer'].includes(u.role_name));
+    }
+    return users;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await api.post('/users', form);
-    setShowForm(false);
-    setForm({ email: '', password: '', first_name: '', last_name: '', role_id: '', section_type: 'school' });
-    loadUsers();
+    try {
+      await api.post('/users', form);
+      setShowForm(false);
+      setForm({ email: '', password: '', first_name: '', last_name: '', role_id: '', section_type: 'school' });
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to create user');
+    }
   };
+
+  const availableRoles = getAvailableRoles();
+  const visibleUsers = getVisibleUsers();
 
   return (
     <div className="users-page">
@@ -52,7 +79,7 @@ const AdminUsers = () => {
           <div className="form-row">
             <select value={form.role_id} onChange={(e) => setForm({...form, role_id: e.target.value})} required>
               <option value="">Select Role</option>
-              {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {availableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
             <select value={form.section_type} onChange={(e) => setForm({...form, section_type: e.target.value})}>
               <option value="school">School Only</option>
@@ -70,7 +97,7 @@ const AdminUsers = () => {
             <tr><th>Name</th><th>Email</th><th>Role</th><th>Section</th><th>Status</th></tr>
           </thead>
           <tbody>
-            {users.map(u => (
+            {visibleUsers.map(u => (
               <tr key={u.id}>
                 <td>{u.first_name} {u.last_name}</td>
                 <td>{u.email}</td>

@@ -16,9 +16,11 @@ const CurriculumManagement = () => {
   const [showTopicForm, setShowTopicForm] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
   
-  const [curriculumForm, setCurriculumForm] = useState({ name: '', description: '' });
+  const [curriculumForm, setCurriculumForm] = useState({ name: '', description: '', fees: '' });
   const [subjectForm, setSubjectForm] = useState({ name: '', description: '', sort_order: 0 });
   const [topicForm, setTopicForm] = useState({ name: '', description: '', sort_order: 0, subject_id: '' });
+  const [showFeesModal, setShowFeesModal] = useState(false);
+  const [feesForm, setFeesForm] = useState({ curriculum_id: '', fees: '' });
 
   useEffect(() => {
     loadCurriculums();
@@ -49,7 +51,7 @@ const CurriculumManagement = () => {
     try {
       await api.post('/curriculum', curriculumForm);
       setShowCurriculumForm(false);
-      setCurriculumForm({ name: '', description: '' });
+      setCurriculumForm({ name: '', description: '', fees: '' });
       loadCurriculums();
     } catch (err) {
       alert('Failed to create curriculum');
@@ -115,6 +117,31 @@ const CurriculumManagement = () => {
     }
   };
 
+  const openFeesModal = (curriculum) => {
+    setFeesForm({
+      curriculum_id: curriculum.id,
+      fees: curriculum.fees || ''
+    });
+    setShowFeesModal(true);
+  };
+
+  const handleUpdateFees = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/fees/curriculum/${feesForm.curriculum_id}/fees`, {
+        fees: parseFloat(feesForm.fees) || 0
+      });
+      alert('Fees updated successfully');
+      setShowFeesModal(false);
+      loadCurriculums();
+      if (selectedCurriculum?.id === feesForm.curriculum_id) {
+        loadCurriculumFull(feesForm.curriculum_id);
+      }
+    } catch (err) {
+      alert('Failed to update fees');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -144,12 +171,23 @@ const CurriculumManagement = () => {
                 className={`curriculum-item ${selectedCurriculum?.id === c.id ? 'active' : ''}`}
                 onClick={() => loadCurriculumFull(c.id)}
               >
-                <span className="curriculum-name">{c.name}</span>
+                <div className="curriculum-info">
+                  <span className="curriculum-name">{c.name}</span>
+                  <span className="curriculum-fees">₹{parseFloat(c.fees || 0).toLocaleString('en-IN')}</span>
+                </div>
                 {canEditCurriculum && (
-                  <button 
-                    className="btn-sm btn-danger"
-                    onClick={(e) => { e.stopPropagation(); handleDeleteCurriculum(c.id); }}
-                  >×</button>
+                  <div className="curriculum-actions">
+                    <button 
+                      className="btn-sm btn-secondary"
+                      onClick={(e) => { e.stopPropagation(); openFeesModal(c); }}
+                      title="Update Fees"
+                    >₹</button>
+                    <button 
+                      className="btn-sm btn-danger"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteCurriculum(c.id); }}
+                      title="Delete"
+                    >×</button>
+                  </div>
                 )}
               </div>
             ))
@@ -165,8 +203,14 @@ const CurriculumManagement = () => {
           ) : (
             <>
               <div className="details-header">
-                <h3>{selectedCurriculum.name}</h3>
-                <p>{selectedCurriculum.description}</p>
+                <div className="header-content">
+                  <h3>{selectedCurriculum.name}</h3>
+                  <p>{selectedCurriculum.description}</p>
+                  <div className="curriculum-fees-display">
+                    <span className="fees-label">Course Fees:</span>
+                    <span className="fees-amount">₹{parseFloat(selectedCurriculum.fees || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
                 {canEditCurriculum && (
                   <div className="details-actions">
                     <button onClick={() => setShowSubjectForm(true)} className="btn-primary btn-sm">
@@ -201,7 +245,7 @@ const CurriculumManagement = () => {
                           <p className="empty-topics">No topics yet</p>
                         ) : (
                           subject.topics?.map(topic => (
-                            <div key={topic.id} className="topic-item">
+                            <div key={topic.id} className="curriculum-topic-item">
                               <span>{topic.name}</span>
                               {canEditCurriculum && (
                                 <button 
@@ -244,6 +288,17 @@ const CurriculumManagement = () => {
                   onChange={(e) => setCurriculumForm({...curriculumForm, description: e.target.value})}
                   placeholder="Brief description..."
                   rows={3}
+                />
+              </div>
+              <div className="form-group">
+                <label>Course Fees (₹)</label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={curriculumForm.fees}
+                  onChange={(e) => setCurriculumForm({...curriculumForm, fees: e.target.value})}
+                  placeholder="e.g., 5000"
                 />
               </div>
               <div className="form-actions">
@@ -334,6 +389,36 @@ const CurriculumManagement = () => {
               <div className="form-actions">
                 <button type="button" onClick={() => setShowTopicForm(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary">Add Topic</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Update Fees Modal */}
+      {showFeesModal && (
+        <div className="modal-overlay" onClick={() => setShowFeesModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Update Course Fees</h3>
+            <form onSubmit={handleUpdateFees}>
+              <div className="form-group">
+                <label>Course Fees (₹) *</label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={feesForm.fees}
+                  onChange={(e) => setFeesForm({...feesForm, fees: e.target.value})}
+                  placeholder="e.g., 5000"
+                  required
+                />
+                <small style={{ color: '#6b7280', marginTop: '8px', display: 'block' }}>
+                  This will be the default fees for all students enrolled in this curriculum
+                </small>
+              </div>
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowFeesModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Update Fees</button>
               </div>
             </form>
           </div>

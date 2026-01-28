@@ -7,6 +7,8 @@ import ParentProgress from './pages/ParentProgress';
 import SchoolDashboard from './pages/school/Dashboard';
 import SchoolClasses from './pages/school/Classes';
 import SchoolStudents from './pages/school/Students';
+import SchoolCurriculum from './pages/school/Curriculum';
+import SchoolClassProgress from './pages/school/ClassProgress';
 import SchoolTimetable from './pages/school/Timetable';
 import SchoolAttendance from './pages/school/Attendance';
 import CenterDashboard from './pages/center/Dashboard';
@@ -15,6 +17,8 @@ import StudentProfile from './pages/center/StudentProfile';
 import CenterAttendance from './pages/center/Attendance';
 import CenterProgress from './pages/center/Progress';
 import CurriculumManagement from './pages/center/Curriculum';
+import CenterFees from './pages/center/Fees';
+import FeesDetail from './pages/center/FeesDetail';
 import AdminUsers from './pages/admin/Users';
 import AdminSchools from './pages/admin/Schools';
 import AdminCenters from './pages/admin/Centers';
@@ -54,6 +58,8 @@ function App() {
             <Route path="school/dashboard" element={<SchoolDashboard />} />
             <Route path="school/classes" element={<SchoolClasses />} />
             <Route path="school/students" element={<SchoolStudents />} />
+            <Route path="school/curriculum" element={<SchoolCurriculum />} />
+            <Route path="school/class-progress" element={<SchoolClassProgress />} />
             <Route path="school/timetable" element={<SchoolTimetable />} />
             <Route path="school/attendance" element={<SchoolAttendance />} />
             {/* Center Routes */}
@@ -63,6 +69,8 @@ function App() {
             <Route path="center/attendance" element={<CenterAttendance />} />
             <Route path="center/progress" element={<CenterProgress />} />
             <Route path="center/curriculum" element={<CurriculumManagement />} />
+            <Route path="center/fees" element={<CenterFees />} />
+            <Route path="center/fees/:studentId" element={<FeesDetail />} />
             {/* Admin Routes */}
             <Route path="admin/users" element={<AdminUsers />} />
             <Route path="admin/schools" element={<AdminSchools />} />

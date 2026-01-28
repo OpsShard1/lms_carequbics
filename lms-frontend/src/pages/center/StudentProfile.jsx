@@ -3,6 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import '../../styles/student-profile.css';
 
+const SKILL_LABELS = {
+  concept_understanding: 'Concept Understanding',
+  application_of_knowledge: 'Application of Knowledge',
+  hands_on_skill: 'Hands-on Skill',
+  communication_skill: 'Communication Skill',
+  consistency: 'Consistency',
+  idea_generation: 'Idea Generation',
+  iteration_improvement: 'Iteration & Improvement'
+};
+
 const StudentProfile = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
@@ -16,6 +26,8 @@ const StudentProfile = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [expandedSubjects, setExpandedSubjects] = useState([]);
+  const [expandedTopics, setExpandedTopics] = useState([]);
 
   useEffect(() => {
     loadStudentData();
@@ -142,6 +154,18 @@ const StudentProfile = () => {
     };
     const badge = badges[status] || { class: 'badge-secondary', label: status };
     return <span className={`badge ${badge.class}`}>{badge.label}</span>;
+  };
+
+  const getSkillIcon = (value) => {
+    if (value === 1) return '✓';
+    if (value === -1) return '✗';
+    return '○';
+  };
+
+  const getSkillClass = (value) => {
+    if (value === 1) return 'skill-positive';
+    if (value === -1) return 'skill-negative';
+    return 'skill-neutral';
   };
 
   if (loading) {
@@ -369,7 +393,15 @@ const StudentProfile = () => {
                   </div>
                   <div className="summary-item">
                     <span className="summary-label">Attendance Rate:</span>
-                    <span className="summary-value">{attendanceSummary.attendance_percentage || 0}%</span>
+                    <span className="summary-value">
+                      {(() => {
+                        const total = Number(attendanceSummary.total_records) || 0;
+                        const present = Number(attendanceSummary.present_count) || 0;
+                        const late = Number(attendanceSummary.late_count) || 0;
+                        const percentage = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+                        return percentage;
+                      })()}%
+                    </span>
                   </div>
                 </div>
               </div>
@@ -390,34 +422,85 @@ const StudentProfile = () => {
 
                   return (
                     <div key={subject.id} className="subject-card">
-                      <div className="subject-header">
-                        <h4>{subject.name}</h4>
-                        <span className="progress-badge">{completedTopics}/{totalTopics} Topics</span>
+                      <div 
+                        className="subject-header"
+                        onClick={() => {
+                          if (expandedSubjects.includes(subject.id)) {
+                            setExpandedSubjects(expandedSubjects.filter(id => id !== subject.id));
+                          } else {
+                            setExpandedSubjects([...expandedSubjects, subject.id]);
+                          }
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="subject-info">
+                          <h4>
+                            <span className="expand-icon">{expandedSubjects.includes(subject.id) ? '▼' : '▶'}</span>
+                            {subject.name}
+                          </h4>
+                          <span className="progress-badge">{completedTopics}/{totalTopics} Topics ({progressPercent}%)</span>
+                        </div>
+                        <div className="subject-progress">
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{width: `${progressPercent}%`}}></div>
+                          </div>
+                        </div>
                       </div>
                       {subject.description && <p className="subject-desc">{subject.description}</p>}
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{width: `${progressPercent}%`}}></div>
-                      </div>
-                      <div className="topics-list">
-                        {subject.topics && subject.topics.map(topic => {
-                          const topicProgress = subjectProgress.find(p => p.topic_id === topic.id);
-                          return (
-                            <div key={topic.id} className="topic-item">
-                              <div className="topic-info">
-                                <span className="topic-name">{topic.name}</span>
-                                {getProgressBadge(topicProgress?.status || 'not_started')}
-                              </div>
-                              {topicProgress && topicProgress.status === 'completed' && (
-                                <div className="topic-scores">
-                                  <span className="score-item">Concept: {topicProgress.concept_understanding || 0}/5</span>
-                                  <span className="score-item">Application: {topicProgress.application_of_knowledge || 0}/5</span>
-                                  <span className="score-item">Hands-on: {topicProgress.hands_on_skill || 0}/5</span>
+                      
+                      {expandedSubjects.includes(subject.id) && (
+                        <div className="topics-list">
+                          {subject.topics && subject.topics.map(topic => {
+                            const topicProgress = subjectProgress.find(p => p.topic_id === topic.id);
+                            return (
+                              <div key={topic.id} className={`topic-item ${topicProgress?.status || 'not_started'}`}>
+                                <div 
+                                  className="topic-header-row"
+                                  onClick={() => {
+                                    if (expandedTopics.includes(topic.id)) {
+                                      setExpandedTopics(expandedTopics.filter(id => id !== topic.id));
+                                    } else {
+                                      setExpandedTopics([...expandedTopics, topic.id]);
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  <span className="topic-name">
+                                    <span className="expand-icon-small">{expandedTopics.includes(topic.id) ? '▼' : '▶'}</span>
+                                    {topic.name}
+                                  </span>
+                                  {getProgressBadge(topicProgress?.status || 'not_started')}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                                
+                                {expandedTopics.includes(topic.id) && (
+                                  topicProgress && topicProgress.status !== 'not_started' ? (
+                                    <div className="topic-details">
+                                      <h5 className="skills-title">Skill Assessment</h5>
+                                      <div className="skills-grid">
+                                        {Object.entries(SKILL_LABELS).map(([key, label]) => (
+                                          <div key={key} className={`skill-item ${getSkillClass(topicProgress[key] || 0)}`}>
+                                            <span className="skill-icon">{getSkillIcon(topicProgress[key] || 0)}</span>
+                                            <span className="skill-label">{label}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      {topicProgress.remarks && (
+                                        <div className="topic-remarks">
+                                          <strong>Trainer's Notes:</strong> {topicProgress.remarks}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="topic-not-covered">
+                                      <p>📚 This topic has not been covered yet.</p>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
