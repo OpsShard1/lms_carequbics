@@ -175,12 +175,12 @@ router.delete('/projects/:id', authenticate, authorize('developer', 'trainer_hea
 });
 
 // Assign curriculum to class
-router.post('/assign', authenticate, authorize('developer', 'trainer_head'), async (req, res) => {
+router.post('/assign', authenticate, authorize('developer', 'trainer_head', 'trainer'), async (req, res) => {
   try {
     const { class_id, curriculum_id } = req.body;
     const [result] = await pool.query(
-      'INSERT INTO class_curriculum_assignments (class_id, curriculum_id, assigned_by) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE is_active = true, assigned_by = ?',
-      [class_id, curriculum_id, req.user.id, req.user.id]
+      'INSERT INTO class_curriculum_assignments (class_id, curriculum_id, assigned_by) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE is_active = true, assigned_by = ?, curriculum_id = ?',
+      [class_id, curriculum_id, req.user.id, req.user.id, curriculum_id]
     );
     res.status(201).json({ message: 'Curriculum assigned to class' });
   } catch (error) {

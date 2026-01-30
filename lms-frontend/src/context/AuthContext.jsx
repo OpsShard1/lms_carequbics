@@ -89,8 +89,23 @@ export const AuthProvider = ({ children }) => {
         // Teachers only have school section
         setCurrentSection('school');
         localStorage.setItem('currentSection', 'school');
-      } else if (['developer', 'owner', 'trainer_head'].includes(userData.role_name)) {
-        // Admin roles get ALL schools and centers
+      } else if (userData.role_name && userData.role_name.includes('principal')) {
+        // Principals get their assigned schools from user_assignments
+        const schoolsRes = await api.get('/teacher-assignments/my-schools');
+        const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+        setAvailableSchools(schools);
+        setAvailableCenters([]); // Principals don't have center access
+        
+        // Auto-select first school
+        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+          selectSchool(schools[0]);
+        }
+        
+        // Principals only have school section
+        setCurrentSection('school');
+        localStorage.setItem('currentSection', 'school');
+      } else if (['developer', 'owner'].includes(userData.role_name)) {
+        // Developer and owner get ALL schools and centers
         const [schoolsRes, centersRes] = await Promise.all([
           api.get('/schools'),
           api.get('/centers')
@@ -107,8 +122,50 @@ export const AuthProvider = ({ children }) => {
         if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
           selectCenter(centers[0]);
         }
+      } else if (userData.role_name === 'trainer_head') {
+        // Trainer_head gets schools/centers based on their section_type
+        let schools = [];
+        let centers = [];
+        
+        if (userData.section_type === 'school' || userData.section_type === 'both') {
+          const schoolsRes = await api.get('/schools');
+          schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+        }
+        
+        if (userData.section_type === 'center' || userData.section_type === 'both') {
+          const centersRes = await api.get('/centers');
+          centers = Array.isArray(centersRes.data) ? centersRes.data : [];
+        }
+        
+        setAvailableSchools(schools);
+        setAvailableCenters(centers);
+        
+        // Auto-select first if not already selected
+        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+          selectSchool(schools[0]);
+        }
+        if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
+          selectCenter(centers[0]);
+        }
+        
+        // Set default section based on section_type
+        if (!localStorage.getItem('currentSection')) {
+          if (userData.section_type === 'school') {
+            setCurrentSection('school');
+            localStorage.setItem('currentSection', 'school');
+          } else if (userData.section_type === 'center') {
+            setCurrentSection('center');
+            localStorage.setItem('currentSection', 'center');
+          } else if (userData.section_type === 'both' && schools.length > 0) {
+            setCurrentSection('school');
+            localStorage.setItem('currentSection', 'school');
+          } else if (userData.section_type === 'both' && centers.length > 0) {
+            setCurrentSection('center');
+            localStorage.setItem('currentSection', 'center');
+          }
+        }
       } else {
-        // Other roles (principal) get from their user_assignments
+        // Other roles get from their user_assignments
         const schoolAssignments = userData.assignments?.filter(a => a.school_id) || [];
         const centerAssignments = userData.assignments?.filter(a => a.center_id) || [];
         
@@ -185,6 +242,11 @@ export const AuthProvider = ({ children }) => {
     
     // School teachers only have school access
     if (user.role_name === 'school_teacher') {
+      return section === 'school' && availableSchools.length > 0;
+    }
+    
+    // Principals only have school access
+    if (user.role_name && user.role_name.includes('principal')) {
       return section === 'school' && availableSchools.length > 0;
     }
     

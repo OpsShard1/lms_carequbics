@@ -64,6 +64,15 @@
 
 .btn-full {
   width: 100%;
+  text-align: center;
+  justify-content: center;
+}
+
+.login-card button[type="submit"] {
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
 }
 
 .login-hint { 

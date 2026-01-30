@@ -115,7 +115,14 @@
 .class-details p { margin: 0.5rem 0; color: #64748b; font-size: 0.9rem; }
 .class-details strong { color: #1a1a2e; }
 
-.class-actions { display: flex; gap: 0.5rem; }
+.class-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.form-hint {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
 
 @media (max-width: 900px) {
   .add-student-row { grid-template-columns: repeat(2, 1fr); }

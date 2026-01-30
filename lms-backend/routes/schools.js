@@ -27,7 +27,7 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('developer', 'owner'), async (req, res) => {
+router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
   try {
     const { name, address, contact_number, email } = req.body;
     if (!name) {

@@ -26,8 +26,9 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Middleware
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'https://lmstest.carequbics.com',
+  process.env.FRONTEND_URL || 'https://lms.carequbics.com',
   'https://lmstest.carequbics.com',
+  'https://lms.carequbics.com',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000'
@@ -66,6 +67,7 @@ app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/progress', require('./routes/progress'));
 app.use('/api/trainer-assignments', require('./routes/trainer-assignments'));
 app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
+app.use('/api/school-assignments', require('./routes/school-assignments'));
 app.use('/api/curriculum', require('./routes/curriculum'));
 app.use('/api/school-curriculum', require('./routes/school-curriculum'));
 app.use('/api/settings', require('./routes/settings'));

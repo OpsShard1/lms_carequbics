@@ -24,9 +24,15 @@ router.get('/teachers', authenticate, authorize('developer', 'owner', 'trainer_h
   }
 });
 
+// Get schools assigned to current principal
 router.get('/my-schools', authenticate, async (req, res) => {
   try {
-    const [schools] = await pool.query(`SELECT DISTINCT s.* FROM schools s JOIN user_assignments ua ON ua.school_id = s.id WHERE ua.user_id = ? AND s.is_active = true`, [req.user.id]);
+    const [schools] = await pool.query(`
+      SELECT DISTINCT s.* 
+      FROM schools s 
+      JOIN user_assignments ua ON ua.school_id = s.id 
+      WHERE ua.user_id = ? AND s.is_active = true
+    `, [req.user.id]);
     res.json(schools);
   } catch (error) {
     console.error('Get my schools error:', error);

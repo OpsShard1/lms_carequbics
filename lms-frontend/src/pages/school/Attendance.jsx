@@ -5,8 +5,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'dat
 import '../../styles/attendance.css';
 
 const SchoolAttendance = () => {
-  const { selectedSchool, canAddExtraStudents, user } = useAuth();
-  const canMarkAttendance = ['developer', 'trainer'].includes(user?.role_name);
+  const { selectedSchool, canAddExtraStudents, canMarkAttendance, user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -75,7 +74,7 @@ const SchoolAttendance = () => {
   };
 
   const toggleAttendance = (studentId, date, currentStatus) => {
-    if (!canMarkAttendance) return; // Owner can't mark attendance
+    if (!canMarkAttendance()) return; // Can't mark attendance
     
     const dateStr = format(date, 'yyyy-MM-dd');
     const key = `${studentId}-${dateStr}`;
@@ -98,7 +97,7 @@ const SchoolAttendance = () => {
   };
 
   const markColumnPresent = (date) => {
-    if (!canMarkAttendance) return; // Owner can't mark attendance
+    if (!canMarkAttendance()) return; // Can't mark attendance
     
     const dateStr = format(date, 'yyyy-MM-dd');
     setAttendanceData(prev => {
@@ -211,12 +210,12 @@ const SchoolAttendance = () => {
         </div>
         
         <div className="action-buttons">
-          {selectedClass && canAddExtraStudents() && canMarkAttendance && (
+          {selectedClass && canAddExtraStudents() && canMarkAttendance() && (
             <button onClick={() => setShowAddExtra(true)} className="btn-secondary">
               + Add Extra Student
             </button>
           )}
-          {selectedClass && students.length > 0 && canMarkAttendance && (
+          {selectedClass && students.length > 0 && canMarkAttendance() && (
             <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save Attendance'}
             </button>

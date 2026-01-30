@@ -25,6 +25,8 @@ const Layout = () => {
           school_dashboard: true,
           school_classes: true,
           school_students: true,
+          school_curriculum: true,
+          school_class_progress: true,
           school_timetable: true,
           school_attendance: true,
           center_dashboard: true,
@@ -36,15 +38,15 @@ const Layout = () => {
           admin_schools: true,
           admin_centers: true,
           admin_trainer_assignments: true,
-          admin_teacher_assignments: true
+          admin_school_assignments: true
         });
       }
     };
     loadSettings();
   }, []);
 
-  // Developer, owner, and trainer_head always see everything
-  const isAdminRole = ['developer', 'owner', 'trainer_head'].includes(user?.role_name);
+  // Developer and owner always see everything (bypass sidebar settings)
+  const isAdminRole = ['developer', 'owner'].includes(user?.role_name);
 
   // Check if a menu item should be visible based on settings
   const isVisible = (settingKey) => {
@@ -78,12 +80,12 @@ const Layout = () => {
 
   const schoolMenuItems = [
     { path: '/school/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'principal', 'school_teacher', 'trainer_head', 'trainer'], settingKey: 'school_dashboard' },
-    { path: '/school/classes', label: 'Classes', roles: ['developer', 'owner', 'school_teacher', 'trainer_head'], settingKey: 'school_classes' },
+    { path: '/school/classes', label: 'Classes', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer_head', 'trainer'], settingKey: 'school_classes' },
     { path: '/school/students', label: 'Students', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_students' },
     { path: '/school/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'school_curriculum' },
-    { path: '/school/class-progress', label: 'Class Progress', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'school_class_progress' },
-    { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher', 'trainer', 'trainer_head'], settingKey: 'school_timetable' },
-    { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'trainer', 'trainer_head'], settingKey: 'school_attendance' },
+    { path: '/school/class-progress', label: 'Class Progress', roles: ['developer', 'owner', 'principal', 'trainer_head', 'trainer'], settingKey: 'school_class_progress' },
+    { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_timetable' },
+    { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_attendance' },
   ];
 
   const centerMenuItems = [
@@ -100,7 +102,7 @@ const Layout = () => {
     { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_schools' },
     { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_centers' },
     { path: '/admin/trainer-assignments', label: 'Trainer Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_trainer_assignments' },
-    { path: '/admin/teacher-assignments', label: 'Teacher Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_teacher_assignments' },
+    { path: '/admin/school-assignments', label: 'School Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_school_assignments' },
     { path: '/admin/settings', label: 'Settings', roles: ['developer'], settingKey: null }, // Always visible for developer
   ];
 

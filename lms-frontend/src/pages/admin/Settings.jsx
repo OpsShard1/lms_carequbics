@@ -9,6 +9,8 @@ const Settings = () => {
     school_dashboard: true,
     school_classes: true,
     school_students: true,
+    school_curriculum: true,
+    school_class_progress: true,
     school_timetable: true,
     school_attendance: true,
     center_dashboard: true,
@@ -20,7 +22,7 @@ const Settings = () => {
     admin_schools: true,
     admin_centers: true,
     admin_trainer_assignments: true,
-    admin_teacher_assignments: true
+    admin_school_assignments: true
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,6 +88,8 @@ const Settings = () => {
         { key: 'school_dashboard', label: 'Dashboard' },
         { key: 'school_classes', label: 'Classes' },
         { key: 'school_students', label: 'Students' },
+        { key: 'school_curriculum', label: 'Curriculum' },
+        { key: 'school_class_progress', label: 'Class Progress' },
         { key: 'school_timetable', label: 'Timetable' },
         { key: 'school_attendance', label: 'Attendance' },
       ]
@@ -109,7 +113,7 @@ const Settings = () => {
         { key: 'admin_schools', label: 'Schools' },
         { key: 'admin_centers', label: 'Centers' },
         { key: 'admin_trainer_assignments', label: 'Trainer Assignments' },
-        { key: 'admin_teacher_assignments', label: 'Teacher Assignments' },
+        { key: 'admin_school_assignments', label: 'School Assignments' },
       ]
     }
   ];

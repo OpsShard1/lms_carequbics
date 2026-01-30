@@ -8,10 +8,15 @@ router.get('/school/:schoolId', authenticate, checkSectionAccess('school'), asyn
   try {
     const [classes] = await pool.query(`
       SELECT c.*, u.first_name as teacher_first_name, u.last_name as teacher_last_name,
-             COUNT(DISTINCT s.id) as student_count
+             COUNT(DISTINCT s.id) as student_count,
+             cca.curriculum_id,
+             sc.name as curriculum_name,
+             sc.grade_name
       FROM classes c 
       LEFT JOIN users u ON c.teacher_id = u.id
       LEFT JOIN students s ON c.id = s.class_id AND s.is_active = true
+      LEFT JOIN class_curriculum_assignments cca ON c.id = cca.class_id AND cca.is_active = true
+      LEFT JOIN school_curriculums sc ON cca.curriculum_id = sc.id AND sc.is_active = true
       WHERE c.school_id = ? AND c.is_active = true 
       GROUP BY c.id
       ORDER BY c.grade, c.section

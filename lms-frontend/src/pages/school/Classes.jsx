@@ -11,6 +11,9 @@ const SchoolClasses = () => {
   // Permission check - trainer_head cannot create/edit classes
   const canEditClasses = ['developer', 'owner', 'school_teacher'].includes(user?.role_name);
   
+  // Trainers can assign curriculum
+  const canAssignCurriculum = ['developer', 'owner', 'trainer_head', 'trainer'].includes(user?.role_name);
+  
   // Form states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -20,6 +23,12 @@ const SchoolClasses = () => {
   // Students in class (only for edit modal)
   const [students, setStudents] = useState([]);
   const [newStudent, setNewStudent] = useState({ first_name: '', last_name: '', date_of_birth: '', gender: '', parent_name: '', parent_contact: '' });
+  
+  // Curriculum assignment
+  const [showCurriculumModal, setShowCurriculumModal] = useState(false);
+  const [selectedClassForCurriculum, setSelectedClassForCurriculum] = useState(null);
+  const [availableCurriculums, setAvailableCurriculums] = useState([]);
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState('');
 
   useEffect(() => {
     // Auto-select first school if none selected
@@ -32,6 +41,9 @@ const SchoolClasses = () => {
   useEffect(() => {
     if (selectedSchool?.id) {
       loadClasses();
+      if (canAssignCurriculum) {
+        loadCurriculums();
+      }
       // Reset form and editing state when school changes
       setShowCreateModal(false);
       setShowEditModal(false);
@@ -50,6 +62,41 @@ const SchoolClasses = () => {
       setClasses(res.data);
     } catch (err) {
       console.error('Failed to load classes:', err);
+    }
+  };
+
+  const loadCurriculums = async () => {
+    try {
+      const res = await api.get('/school-curriculum');
+      setAvailableCurriculums(res.data);
+    } catch (err) {
+      console.error('Failed to load curriculums:', err);
+    }
+  };
+
+  const openCurriculumModal = (classItem) => {
+    setSelectedClassForCurriculum(classItem);
+    setSelectedCurriculumId(classItem.curriculum_id || '');
+    setShowCurriculumModal(true);
+  };
+
+  const handleAssignCurriculum = async (e) => {
+    e.preventDefault();
+    if (!selectedCurriculumId) {
+      alert('Please select a curriculum');
+      return;
+    }
+
+    try {
+      await api.post('/school-curriculum/assign', {
+        class_id: selectedClassForCurriculum.id,
+        curriculum_id: selectedCurriculumId
+      });
+      setShowCurriculumModal(false);
+      loadClasses();
+      alert('Curriculum assigned successfully!');
+    } catch (err) {
+      alert('Failed to assign curriculum: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -213,8 +260,16 @@ const SchoolClasses = () => {
                 <p><strong>Section:</strong> {c.section || '-'}</p>
                 <p><strong>Room:</strong> {c.room_number || '-'}</p>
                 <p><strong>Students:</strong> {c.student_count || 0}</p>
+                {c.curriculum_name && (
+                  <p><strong>Curriculum:</strong> {c.curriculum_name} ({c.grade_name})</p>
+                )}
               </div>
               <div className="class-actions">
+                {canAssignCurriculum && (
+                  <button onClick={() => openCurriculumModal(c)} className="btn-success btn-sm">
+                    {c.curriculum_name ? 'Change Curriculum' : 'Assign Curriculum'}
+                  </button>
+                )}
                 {canEditClasses && (
                   <>
                     <button onClick={() => startEditClass(c)} className="btn-secondary btn-sm">Edit / Manage Students</button>
@@ -271,6 +326,39 @@ const SchoolClasses = () => {
               <div className="form-actions">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary">Create Class</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Curriculum Modal */}
+      {showCurriculumModal && selectedClassForCurriculum && (
+        <div className="modal-overlay" onClick={() => setShowCurriculumModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Assign Curriculum to {selectedClassForCurriculum.name}</h3>
+            <form onSubmit={handleAssignCurriculum}>
+              <div className="form-group">
+                <label>Select Curriculum *</label>
+                <select 
+                  value={selectedCurriculumId} 
+                  onChange={(e) => setSelectedCurriculumId(e.target.value)}
+                  required
+                >
+                  <option value="">-- Choose Curriculum --</option>
+                  {availableCurriculums.map(curr => (
+                    <option key={curr.id} value={curr.id}>
+                      {curr.name} - {curr.grade_name} ({curr.subject_count} subjects)
+                    </option>
+                  ))}
+                </select>
+                <p className="form-hint">
+                  This curriculum will be used to track class progress and projects.
+                </p>
+              </div>
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowCurriculumModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Assign Curriculum</button>
               </div>
             </form>
           </div>

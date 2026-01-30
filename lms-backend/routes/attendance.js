@@ -41,7 +41,7 @@ router.get('/school/:schoolId/students/:date', authenticate, async (req, res) =>
   }
 });
 
-router.post('/school/mark', authenticate, authorize('developer', 'trainer'), async (req, res) => {
+router.post('/school/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
     if (!school_id || !attendance_date || !records || records.length === 0) {
@@ -62,7 +62,7 @@ router.post('/school/mark', authenticate, authorize('developer', 'trainer'), asy
   }
 });
 
-router.post('/school/mark-bulk', authenticate, authorize('developer', 'trainer'), async (req, res) => {
+router.post('/school/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
     if (!school_id || !attendance_date || !records || records.length === 0) {
@@ -117,7 +117,7 @@ router.get('/center/:centerId', authenticate, async (req, res) => {
   }
 });
 
-router.post('/center/mark', authenticate, authorize('developer', 'trainer'), async (req, res) => {
+router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { center_id, student_id, attendance_date, attendance_time, status, remarks } = req.body;
     if (!center_id || !student_id || !attendance_date || !status) {
@@ -140,7 +140,7 @@ router.post('/center/mark', authenticate, authorize('developer', 'trainer'), asy
   }
 });
 
-router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer'), async (req, res) => {
+router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { center_id, attendance_date, records } = req.body;
     if (!center_id || !attendance_date || !records || records.length === 0) {

@@ -160,11 +160,13 @@ const SchoolCurriculum = () => {
     e.dataTransfer.setData('index', index.toString());
     e.dataTransfer.setData('type', type);
     e.currentTarget.style.opacity = '0.5';
-    e.stopPropagation(); // Prevent event bubbling
+    e.currentTarget.style.userSelect = 'none';
+    e.stopPropagation();
   };
 
   const handleDragEnd = (e) => {
     e.currentTarget.style.opacity = '1';
+    e.currentTarget.style.userSelect = 'auto';
     setDraggedOver(null);
     e.stopPropagation();
   };

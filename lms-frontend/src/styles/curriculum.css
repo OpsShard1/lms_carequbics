@@ -336,6 +336,11 @@
 
 .subject-card[draggable="true"] {
   cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  touch-action: none;
 }
 
 .subject-card[draggable="true"]:hover {
@@ -367,6 +372,11 @@
   color: #94a3b8;
   cursor: move;
   margin-right: 0.5rem;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  touch-action: none;
 }
 
 .subject-info {
@@ -498,6 +508,11 @@
 
 .project-item[draggable="true"] {
   cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  touch-action: none;
 }
 
 .project-item[draggable="true"]:hover {
