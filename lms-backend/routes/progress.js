@@ -126,3 +126,230 @@ router.post('/parent/view', async (req, res) => {
 });
 
 module.exports = router;
+
+
+// School parent view - public endpoint for parents to view their child's progress
+router.post('/school-parent/view', async (req, res) => {
+  try {
+    const { student_name, date_of_birth, month, year } = req.body;
+    
+    if (!student_name || !date_of_birth) {
+      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    }
+
+    const now = new Date();
+    const selectedYear = year || now.getFullYear();
+    const selectedMonth = month || (now.getMonth() + 1);
+
+    // Parse student name
+    const nameParts = student_name.trim().toLowerCase().split(/\s+/);
+    let students;
+
+    // Try exact match first
+    if (nameParts.length >= 2) {
+      [students] = await pool.query(`
+        SELECT s.id, s.first_name, s.last_name, s.school_id, s.class_id,
+               sc.name as school_name, c.name as class_name
+        FROM students s
+        LEFT JOIN schools sc ON s.school_id = sc.id
+        LEFT JOIN classes c ON s.class_id = c.id
+        WHERE LOWER(s.first_name) = ? 
+          AND LOWER(COALESCE(s.last_name, '')) = ? 
+          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.student_type = 'school'
+          AND s.is_active = true
+      `, [nameParts[0], nameParts.slice(1).join(' '), date_of_birth]);
+    } else {
+      [students] = await pool.query(`
+        SELECT s.id, s.first_name, s.last_name, s.school_id, s.class_id,
+               sc.name as school_name, c.name as class_name
+        FROM students s
+        LEFT JOIN schools sc ON s.school_id = sc.id
+        LEFT JOIN classes c ON s.class_id = c.id
+        WHERE LOWER(s.first_name) = ? 
+          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.student_type = 'school'
+          AND s.is_active = true
+      `, [nameParts[0], date_of_birth]);
+    }
+
+    // Try fuzzy match if exact match fails
+    if (students.length === 0) {
+      [students] = await pool.query(`
+        SELECT s.id, s.first_name, s.last_name, s.school_id, s.class_id,
+               sc.name as school_name, c.name as class_name
+        FROM students s
+        LEFT JOIN schools sc ON s.school_id = sc.id
+        LEFT JOIN classes c ON s.class_id = c.id
+        WHERE (LOWER(s.first_name) LIKE ? OR LOWER(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) LIKE ?)
+          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.student_type = 'school'
+          AND s.is_active = true
+      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, date_of_birth]);
+    }
+
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student not found. Please check the name and date of birth.' });
+    }
+
+    const student = students[0];
+
+    // Get class curriculum progress if class is assigned
+    let classProgress = null;
+    if (student.class_id) {
+      const [curriculum] = await pool.query(`
+        SELECT cca.curriculum_id, sc.name as curriculum_name, sc.grade_name, sc.description
+        FROM class_curriculum_assignments cca
+        JOIN school_curriculums sc ON cca.curriculum_id = sc.id
+        WHERE cca.class_id = ? AND cca.is_active = true
+      `, [student.class_id]);
+
+      if (curriculum.length > 0) {
+        // Get subjects with projects and progress
+        const [subjects] = await pool.query(`
+          SELECT * FROM school_curriculum_subjects 
+          WHERE curriculum_id = ? AND is_active = true 
+          ORDER BY sort_order, name
+        `, [curriculum[0].curriculum_id]);
+
+        for (let subject of subjects) {
+          const [projects] = await pool.query(`
+            SELECT 
+              scp.*,
+              cpp.status,
+              cpp.completion_date,
+              cpp.remarks
+            FROM school_curriculum_projects scp
+            LEFT JOIN class_project_progress cpp ON scp.id = cpp.project_id AND cpp.class_id = ?
+            WHERE scp.subject_id = ? AND scp.is_active = true 
+            ORDER BY scp.sort_order, scp.name
+          `, [student.class_id, subject.id]);
+          subject.projects = projects;
+        }
+
+        classProgress = {
+          curriculum: curriculum[0],
+          subjects: subjects
+        };
+      }
+    }
+
+    // Get attendance data
+    const firstDay = new Date(selectedYear, selectedMonth - 1, 1);
+    const lastDay = new Date(selectedYear, selectedMonth, 0);
+
+    const [attendanceRecords] = await pool.query(`
+      SELECT DATE_FORMAT(attendance_date, '%Y-%m-%d') as date, status 
+      FROM attendance 
+      WHERE student_id = ? 
+        AND attendance_date >= ? 
+        AND attendance_date <= ?
+        AND attendance_type = 'school'
+      ORDER BY attendance_date
+    `, [student.id, firstDay.toISOString().split('T')[0], lastDay.toISOString().split('T')[0]]);
+
+    const [attendanceSummary] = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present,
+        SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent,
+        SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late
+      FROM attendance 
+      WHERE student_id = ? AND attendance_type = 'school'
+    `, [student.id]);
+
+    const [monthlySummary] = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present,
+        SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent,
+        SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late
+      FROM attendance 
+      WHERE student_id = ? 
+        AND attendance_date >= ? 
+        AND attendance_date <= ?
+        AND attendance_type = 'school'
+    `, [student.id, firstDay.toISOString().split('T')[0], lastDay.toISOString().split('T')[0]]);
+
+    const attendanceData = attendanceSummary[0];
+    const monthlyData = monthlySummary[0];
+
+    const attendance = {
+      totalAllTime: attendanceData.total || 0,
+      presentAllTime: attendanceData.present || 0,
+      percentageAllTime: attendanceData.total > 0 ? Math.round((attendanceData.present / attendanceData.total) * 100) : 0,
+      total: monthlyData.total || 0,
+      present: monthlyData.present || 0,
+      absent: monthlyData.absent || 0,
+      late: monthlyData.late || 0,
+      percentage: monthlyData.total > 0 ? Math.round((monthlyData.present / monthlyData.total) * 100) : 0,
+      records: attendanceRecords
+    };
+
+    res.json({
+      student,
+      classProgress,
+      attendance
+    });
+  } catch (error) {
+    console.error('School parent view error:', error);
+    res.status(500).json({ error: 'Failed to fetch student progress' });
+  }
+});
+
+
+// Detect student type (center or school) for parent portal
+router.post('/detect-student-type', async (req, res) => {
+  try {
+    const { student_name, date_of_birth } = req.body;
+    
+    if (!student_name || !date_of_birth) {
+      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    }
+
+    // Parse student name
+    const nameParts = student_name.trim().toLowerCase().split(/\s+/);
+    let students;
+
+    // Try exact match first
+    if (nameParts.length >= 2) {
+      [students] = await pool.query(`
+        SELECT id, first_name, last_name, student_type
+        FROM students
+        WHERE LOWER(first_name) = ? 
+          AND LOWER(COALESCE(last_name, '')) = ? 
+          AND DATE(date_of_birth) = DATE(?)
+          AND is_active = true
+      `, [nameParts[0], nameParts.slice(1).join(' '), date_of_birth]);
+    } else {
+      [students] = await pool.query(`
+        SELECT id, first_name, last_name, student_type
+        FROM students
+        WHERE LOWER(first_name) = ? 
+          AND DATE(date_of_birth) = DATE(?)
+          AND is_active = true
+      `, [nameParts[0], date_of_birth]);
+    }
+
+    // Try fuzzy match if exact match fails
+    if (students.length === 0) {
+      [students] = await pool.query(`
+        SELECT id, first_name, last_name, student_type
+        FROM students
+        WHERE (LOWER(first_name) LIKE ? OR LOWER(CONCAT(first_name, ' ', COALESCE(last_name, ''))) LIKE ?)
+          AND DATE(date_of_birth) = DATE(?)
+          AND is_active = true
+      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, date_of_birth]);
+    }
+
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student not found. Please check the name and date of birth.' });
+    }
+
+    const student = students[0];
+    res.json({ student_type: student.student_type });
+  } catch (error) {
+    console.error('Detect student type error:', error);
+    res.status(500).json({ error: 'Failed to detect student type' });
+  }
+});

@@ -35,8 +35,8 @@ const Login = () => {
       setError('Please enter child name and date of birth');
       return;
     }
-    // Navigate to parent progress page with query params
-    navigate(`/parent/progress?name=${encodeURIComponent(childName.trim())}&dob=${dateOfBirth}`);
+    // Navigate to unified parent portal
+    navigate(`/parent/portal?name=${encodeURIComponent(childName.trim())}&dob=${dateOfBirth}`);
   };
 
   return (

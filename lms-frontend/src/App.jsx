@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
-import ParentProgress from './pages/ParentProgress';
+import ParentPortal from './pages/ParentPortal';
 import SchoolDashboard from './pages/school/Dashboard';
 import SchoolClasses from './pages/school/Classes';
 import SchoolStudents from './pages/school/Students';
@@ -51,7 +51,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/parent/progress" element={<ParentProgress />} />
+          <Route path="/parent/portal" element={<ParentPortal />} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<HomeRedirect />} />
             {/* School Routes */}
