@@ -106,7 +106,7 @@ const FeesDetail = () => {
         {/* Current Curriculum Info */}
         {feesData.current_curriculum?.id && (
           <div className="current-curriculum-card">
-            <h4>📚 Current Curriculum</h4>
+            <h4>Current Curriculum</h4>
             <p><strong>{feesData.current_curriculum.name}</strong></p>
           </div>
         )}
@@ -129,6 +129,15 @@ const FeesDetail = () => {
                       {payment.payment_status?.toUpperCase()}
                     </span>
                   </div>
+                  {payment.discount_percentage > 0 && (
+                    <div className="discount-info">
+                      <span className="discount-label">Discount Applied:</span>
+                      <span className="discount-value">{payment.discount_percentage}% (₹{parseFloat(payment.discount_amount || 0).toLocaleString('en-IN')})</span>
+                      {payment.discount_reason && (
+                        <div className="discount-reason">Reason: {payment.discount_reason}</div>
+                      )}
+                    </div>
+                  )}
                   <div className="breakdown-amounts">
                     <div className="breakdown-amount-item">
                       <span className="amount-label">Total:</span>

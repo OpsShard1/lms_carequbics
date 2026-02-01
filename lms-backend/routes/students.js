@@ -106,7 +106,7 @@ router.post('/school/extra', authenticate, authorize('developer', 'trainer', 'tr
   }
 });
 
-router.post('/center', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center', authenticate, authorize('developer', 'trainer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     const { first_name, last_name, date_of_birth, age, gender, center_id, school_name_external, student_class, curriculum_id, parent_name, parent_contact, parent_alternate_contact, parent_email, parent_address, parent_qualification, parent_occupation, referral_source, program_type, attended_before, class_format, enrollment_date, special_remarks } = req.body;
     if (!first_name || !date_of_birth || !center_id) {
@@ -129,7 +129,7 @@ router.post('/center', authenticate, authorize('developer', 'trainer', 'trainer_
   }
 });
 
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     const fields = req.body;
     const updates = [];
@@ -153,7 +153,7 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     await pool.query('UPDATE students SET is_active = false WHERE id = ?', [req.params.id]);
     res.json({ message: 'Student deleted successfully' });

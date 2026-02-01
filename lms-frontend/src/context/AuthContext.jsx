@@ -45,33 +45,48 @@ export const AuthProvider = ({ children }) => {
 
   const loadAvailableEntities = async (userData) => {
     try {
-      // Trainers get their assigned schools/centers from trainer_assignments table
-      if (userData.role_name === 'trainer') {
+      // Trainers and Registrars get their assigned schools/centers from trainer_assignments table
+      if (userData.role_name === 'trainer' || userData.role_name === 'registrar') {
         const [schoolsRes, centersRes] = await Promise.all([
-          api.get('/trainer-assignments/my-schools'),
-          api.get('/trainer-assignments/my-centers')
+          api.get('/staff-assignments/my-schools'),
+          api.get('/staff-assignments/my-centers')
         ]);
         const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
         const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
-        setAvailableSchools(schools);
-        setAvailableCenters(centers);
         
-        // Auto-select first available and set section based on what's available
-        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
-          selectSchool(schools[0]);
-        }
-        if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
-          selectCenter(centers[0]);
-        }
-        
-        // Set default section based on what trainer has access to
-        if (!localStorage.getItem('currentSection')) {
-          if (schools.length > 0) {
-            setCurrentSection('school');
-            localStorage.setItem('currentSection', 'school');
-          } else if (centers.length > 0) {
-            setCurrentSection('center');
-            localStorage.setItem('currentSection', 'center');
+        // Registrars only have center access
+        if (userData.role_name === 'registrar') {
+          setAvailableSchools([]);
+          setAvailableCenters(centers);
+          
+          if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
+            selectCenter(centers[0]);
+          }
+          
+          setCurrentSection('center');
+          localStorage.setItem('currentSection', 'center');
+        } else {
+          // Trainers can have both
+          setAvailableSchools(schools);
+          setAvailableCenters(centers);
+          
+          // Auto-select first available and set section based on what's available
+          if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+            selectSchool(schools[0]);
+          }
+          if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
+            selectCenter(centers[0]);
+          }
+          
+          // Set default section based on what trainer has access to
+          if (!localStorage.getItem('currentSection')) {
+            if (schools.length > 0) {
+              setCurrentSection('school');
+              localStorage.setItem('currentSection', 'school');
+            } else if (centers.length > 0) {
+              setCurrentSection('center');
+              localStorage.setItem('currentSection', 'center');
+            }
           }
         }
       } else if (userData.role_name === 'school_teacher') {
@@ -232,6 +247,11 @@ export const AuthProvider = ({ children }) => {
   // Check if user can access a section based on their available schools/centers
   const canAccessSection = (section) => {
     if (!user) return false;
+    
+    // Registrars only have center access
+    if (user.role_name === 'registrar') {
+      return section === 'center' && availableCenters.length > 0;
+    }
     
     // For trainers and trainer_head, check if they have assignments/access in that section
     if (user.role_name === 'trainer' || user.role_name === 'trainer_head') {

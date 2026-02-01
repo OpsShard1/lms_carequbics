@@ -210,10 +210,18 @@
 .fees-row {
   transition: all 0.2s;
   border-left: 4px solid transparent;
+  position: relative;
 }
 
 .fees-row:hover {
-  background: #f9fafb;
+  background: #eff6ff;
+  cursor: pointer;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.fees-row td:last-child {
+  cursor: default !important;
 }
 
 .fees-row.status-paid {
@@ -282,10 +290,97 @@
 .action-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-sm.btn-info {
+  background: #3b82f6;
+  color: white;
+  border: 1px solid #3b82f6;
+}
+
+.btn-sm.btn-info:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Discount Badge */
+.discount-cell {
+  font-size: 13px;
+}
+
+.discount-badge {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+  display: inline-block;
+}
+
+/* Discount Section in Payment Modal */
+.discount-notice {
+  background: #fef3c7;
+  border: 2px solid #fbbf24;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.discount-notice p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #92400e;
+}
+
+.discount-notice p:first-child {
+  font-weight: 600;
+}
+
+.discount-section {
+  background: #f0f9ff;
+  border: 2px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.discount-section-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #bfdbfe;
+}
+
+.discount-section-header h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #1e40af;
+}
+
+.discount-section-header small {
+  color: #3b82f6;
+  font-size: 12px;
+}
+
+/* Discount Preview */
+.discount-preview {
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.discount-preview p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #374151;
 }
 
 /* Payment Modal */
-.payment-modal {
+.payment-modal,
+.discount-modal {
   max-width: 600px;
   width: 90%;
 }
@@ -374,6 +469,60 @@
   font-size: 14px;
   transition: all 0.2s;
   font-family: inherit;
+}
+
+/* Remove number input spinner arrows */
+.form-group input[type="number"]::-webkit-inner-spin-button,
+.form-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-group input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Amount Input Wrapper */
+.amount-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.amount-input-wrapper input {
+  flex: 1;
+}
+
+.amount-input-wrapper input[type="number"]::-webkit-inner-spin-button,
+.amount-input-wrapper input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.amount-input-wrapper input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.pay-full-btn {
+  padding: 10px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pay-full-btn:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .form-group input:focus,
@@ -581,6 +730,40 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.discount-info {
+  background: #dbeafe;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.discount-label {
+  font-size: 13px;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.discount-value {
+  font-size: 14px;
+  color: #1e40af;
+  font-weight: 700;
+  background: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.discount-reason {
+  width: 100%;
+  font-size: 12px;
+  color: #1e40af;
+  font-style: italic;
+  margin-top: 4px;
 }
 
 .breakdown-curriculum-name {
@@ -840,5 +1023,115 @@
 
   .detail-label {
     min-width: auto;
+  }
+
+  /* Mobile-specific improvements */
+  .amount-input-wrapper {
+    flex-direction: column;
+  }
+
+  .pay-full-btn {
+    width: 100%;
+  }
+
+  .discount-preview p {
+    font-size: 13px;
+  }
+
+  .student-info-box p {
+    font-size: 13px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 14px;
+  }
+
+  /* Improve table readability on mobile */
+  .fees-row:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .discount-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  /* Modal improvements for mobile */
+  .modal-header h3 {
+    font-size: 18px;
+  }
+
+  .discount-notice p {
+    font-size: 13px;
+  }
+
+  .discount-section-header h4 {
+    font-size: 15px;
+  }
+
+  .discount-modal {
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Stats cards mobile optimization */
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+
+  /* Breakdown items mobile */
+  .breakdown-amounts {
+    grid-template-columns: 1fr;
+  }
+
+  .breakdown-curriculum-name {
+    font-size: 15px;
+  }
+
+  .current-badge {
+    font-size: 10px;
+  }
+
+  /* Transaction list mobile */
+  .transaction-amount {
+    font-size: 18px;
+  }
+
+  .transaction-date {
+    font-size: 13px;
+  }
+
+  .detail-row {
+    font-size: 13px;
+  }
+
+  /* Discount info mobile */
+  .discount-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .discount-label,
+  .discount-value {
+    font-size: 12px;
   }
 }

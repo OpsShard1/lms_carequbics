@@ -495,7 +495,7 @@ const SchoolCurriculum = () => {
                                   <div className="project-name">{project.name}</div>
                                   {project.description && <div className="project-desc">{project.description}</div>}
                                 </div>
-                                {canEdit && editingProjects === subject.id && (
+                                {canEdit && (
                                   <button
                                     onClick={() => handleDeleteProject(project.id)}
                                     className="delete-btn-small"

@@ -117,7 +117,7 @@ router.get('/center/:centerId', authenticate, async (req, res) => {
   }
 });
 
-router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     const { center_id, student_id, attendance_date, attendance_time, status, remarks } = req.body;
     if (!center_id || !student_id || !attendance_date || !status) {
@@ -140,7 +140,7 @@ router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'tra
   }
 });
 
-router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
+router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     const { center_id, attendance_date, records } = req.body;
     if (!center_id || !attendance_date || !records || records.length === 0) {
@@ -161,7 +161,7 @@ router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer',
   }
 });
 
-router.delete('/:id', authenticate, authorize('developer', 'trainer_head'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     await pool.query('DELETE FROM attendance WHERE id = ?', [req.params.id]);
     res.json({ message: 'Attendance record deleted' });

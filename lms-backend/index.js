@@ -65,7 +65,7 @@ app.use('/api/students', require('./routes/students'));
 app.use('/api/timetables', require('./routes/timetables'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/progress', require('./routes/progress'));
-app.use('/api/trainer-assignments', require('./routes/trainer-assignments'));
+app.use('/api/staff-assignments', require('./routes/staff-assignments'));
 app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
 app.use('/api/school-assignments', require('./routes/school-assignments'));
 app.use('/api/curriculum', require('./routes/curriculum'));

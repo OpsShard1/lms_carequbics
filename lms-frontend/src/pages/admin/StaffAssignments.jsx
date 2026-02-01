@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import '../../styles/classes.css';
 
-const TrainerAssignments = () => {
+const StaffAssignments = () => {
   const [assignments, setAssignments] = useState([]);
-  const [trainers, setTrainers] = useState([]);
+  const [staff, setStaff] = useState([]);
   const [schools, setSchools] = useState([]);
   const [centers, setCenters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    trainer_id: '',
-    assignment_type: 'school',
+    staff_id: '',
+    assignment_type: 'center',
     school_id: '',
     center_id: ''
   });
@@ -22,14 +22,14 @@ const TrainerAssignments = () => {
 
   const loadData = async () => {
     try {
-      const [assignmentsRes, trainersRes, schoolsRes, centersRes] = await Promise.all([
-        api.get('/trainer-assignments'),
-        api.get('/trainer-assignments/trainers'),
+      const [assignmentsRes, staffRes, schoolsRes, centersRes] = await Promise.all([
+        api.get('/staff-assignments'),
+        api.get('/staff-assignments/staff'),
         api.get('/schools'),
         api.get('/centers')
       ]);
       setAssignments(assignmentsRes.data);
-      setTrainers(trainersRes.data);
+      setStaff(staffRes.data);
       setSchools(schoolsRes.data);
       setCenters(centersRes.data);
     } catch (err) {
@@ -43,14 +43,14 @@ const TrainerAssignments = () => {
     e.preventDefault();
     try {
       const payload = {
-        trainer_id: formData.trainer_id,
+        staff_id: formData.staff_id,
         school_id: formData.assignment_type === 'school' ? formData.school_id : null,
         center_id: formData.assignment_type === 'center' ? formData.center_id : null
       };
       
-      await api.post('/trainer-assignments', payload);
+      await api.post('/staff-assignments', payload);
       setShowForm(false);
-      setFormData({ trainer_id: '', assignment_type: 'school', school_id: '', center_id: '' });
+      setFormData({ staff_id: '', assignment_type: 'center', school_id: '', center_id: '' });
       loadData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to create assignment');
@@ -60,28 +60,37 @@ const TrainerAssignments = () => {
   const handleDelete = async (id) => {
     if (!confirm('Remove this assignment?')) return;
     try {
-      await api.delete(`/trainer-assignments/${id}`);
+      await api.delete(`/staff-assignments/${id}`);
       loadData();
     } catch (err) {
       alert('Failed to remove assignment');
     }
   };
 
-  // Group assignments by trainer
-  const groupedAssignments = trainers.map(trainer => ({
-    trainer,
-    schoolAssignments: assignments.filter(a => a.trainer_id === trainer.id && a.school_id),
-    centerAssignments: assignments.filter(a => a.trainer_id === trainer.id && a.center_id)
+  // Get selected staff member's role
+  const getSelectedStaffRole = () => {
+    const selectedStaff = staff.find(s => s.id === parseInt(formData.staff_id));
+    return selectedStaff?.role_name;
+  };
+
+  // Group assignments by staff member
+  const groupedAssignments = staff.map(member => ({
+    staff: member,
+    schoolAssignments: assignments.filter(a => a.staff_id === member.id && a.school_id),
+    centerAssignments: assignments.filter(a => a.staff_id === member.id && a.center_id)
   })).filter(g => g.schoolAssignments.length > 0 || g.centerAssignments.length > 0);
 
   if (loading) return <p>Loading...</p>;
+
+  const selectedRole = getSelectedStaffRole();
+  const isRegistrar = selectedRole === 'registrar';
 
   return (
     <div className="classes-page">
       <div className="page-header">
         <div>
-          <h2>Trainer Assignments</h2>
-          <p className="subtitle">Assign trainers to schools and centers</p>
+          <h2>Staff Assignments</h2>
+          <p className="subtitle">Assign trainers and registrars to schools and centers. Trainer heads automatically get access based on their section type.</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary">
           + New Assignment
@@ -91,34 +100,46 @@ const TrainerAssignments = () => {
       {showForm && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Assign Trainer</h3>
+            <h3>Assign Staff Member</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Trainer</label>
+                <label>Staff Member</label>
                 <select 
-                  value={formData.trainer_id} 
-                  onChange={(e) => setFormData({...formData, trainer_id: e.target.value})}
+                  value={formData.staff_id} 
+                  onChange={(e) => setFormData({...formData, staff_id: e.target.value, assignment_type: 'center', school_id: '', center_id: ''})}
                   required
                 >
-                  <option value="">Select Trainer</option>
-                  {trainers.map(t => (
-                    <option key={t.id} value={t.id}>{t.first_name} {t.last_name} ({t.email})</option>
+                  <option value="">Select Staff Member</option>
+                  {staff.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.first_name} {s.last_name} ({s.role_name}) - {s.email}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Assignment Type</label>
-                <select 
-                  value={formData.assignment_type} 
-                  onChange={(e) => setFormData({...formData, assignment_type: e.target.value, school_id: '', center_id: ''})}
-                >
-                  <option value="school">School</option>
-                  <option value="center">Center</option>
-                </select>
-              </div>
+              {!isRegistrar && (
+                <div className="form-group">
+                  <label>Assignment Type</label>
+                  <select 
+                    value={formData.assignment_type} 
+                    onChange={(e) => setFormData({...formData, assignment_type: e.target.value, school_id: '', center_id: ''})}
+                  >
+                    <option value="school">School</option>
+                    <option value="center">Center</option>
+                  </select>
+                </div>
+              )}
 
-              {formData.assignment_type === 'school' ? (
+              {isRegistrar && (
+                <div className="form-group">
+                  <p style={{color: '#64748b', fontSize: '0.9rem', margin: '0.5rem 0'}}>
+                    Registrars can only be assigned to centers
+                  </p>
+                </div>
+              )}
+
+              {(!isRegistrar && formData.assignment_type === 'school') ? (
                 <div className="form-group">
                   <label>School</label>
                   <select 
@@ -159,16 +180,19 @@ const TrainerAssignments = () => {
 
       {groupedAssignments.length === 0 ? (
         <div className="no-data">
-          <p>No trainer assignments yet.</p>
-          <p className="hint">Click "New Assignment" to assign trainers to schools or centers.</p>
+          <p>No staff assignments yet.</p>
+          <p className="hint">Click "New Assignment" to assign staff members to schools or centers.</p>
         </div>
       ) : (
         <div className="assignments-list">
-          {groupedAssignments.map(({ trainer, schoolAssignments, centerAssignments }) => (
-            <div key={trainer.id} className="trainer-card">
+          {groupedAssignments.map(({ staff: member, schoolAssignments, centerAssignments }) => (
+            <div key={member.id} className="trainer-card">
               <div className="trainer-header">
-                <h3>👤 {trainer.first_name} {trainer.last_name}</h3>
-                <span className="trainer-email">{trainer.email}</span>
+                <div>
+                  <h3>👤 {member.first_name} {member.last_name}</h3>
+                  <span className="trainer-role">{member.role_name}</span>
+                </div>
+                <span className="trainer-email">{member.email}</span>
               </div>
               
               <div className="assignments-grid">
@@ -221,7 +245,17 @@ const TrainerAssignments = () => {
           padding-bottom: 1rem;
           border-bottom: 1px solid #e2e8f0;
         }
-        .trainer-header h3 { margin: 0; color: #1a1a2e; }
+        .trainer-header h3 { margin: 0 0 0.25rem; color: #1a1a2e; }
+        .trainer-role { 
+          display: inline-block;
+          padding: 0.25rem 0.5rem;
+          background: #e0e7ff;
+          color: #4338ca;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: capitalize;
+        }
         .trainer-email { color: #64748b; font-size: 0.9rem; }
         .assignments-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
         .assignment-section h4 { margin: 0 0 0.75rem; color: #64748b; font-size: 0.9rem; }
@@ -245,4 +279,4 @@ const TrainerAssignments = () => {
   );
 };
 
-export default TrainerAssignments;
+export default StaffAssignments;

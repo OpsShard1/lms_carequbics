@@ -16,6 +16,7 @@ const Login = () => {
 
   const handleStaffLogin = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent any event bubbling
     setError('');
     setLoading(true);
 
@@ -23,7 +24,12 @@ const Login = () => {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.error || 'Wrong email or password';
+      setError(errorMessage);
+      setPassword(''); // Clear only password field
+      setLoading(false);
+      return false; // Prevent any default behavior
     } finally {
       setLoading(false);
     }

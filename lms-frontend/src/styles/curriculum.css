@@ -528,9 +528,9 @@
 .project-number {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  background: #3b82f6;
-  color: white;
+  border-radius: 4px !important;
+  background: #e5e7eb !important;
+  color: #111827 !important;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -7,8 +7,9 @@ import '../../styles/student-registration.css';
 const CenterStudents = () => {
   const { selectedCenter, user } = useAuth();
   const navigate = useNavigate();
-  const canChangeCurriculum = ['developer', 'trainer_head'].includes(user?.role_name);
-  const canEditStudents = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
+  const canChangeCurriculum = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
+  const canRegisterStudents = ['developer', 'trainer_head', 'trainer', 'registrar'].includes(user?.role_name);
+  const canEditStudents = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -185,7 +186,7 @@ const CenterStudents = () => {
               </button>
             )}
           </div>
-          {canEditStudents && (
+          {canRegisterStudents && (
             <button onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }} className="btn-primary">
               {showForm ? 'Cancel' : 'Register Student'}
             </button>

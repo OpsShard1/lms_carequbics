@@ -15,6 +15,9 @@ router.get('/center/:centerId/overview', authenticate, async (req, res) => {
         s.curriculum_id,
         c.name as curriculum_name,
         c.fees as curriculum_fees,
+        COALESCE(fp.discount_percentage, 0) as discount_percentage,
+        COALESCE(fp.discount_amount, 0) as discount_amount,
+        fp.discount_reason,
         COALESCE(fp.total_fees, c.fees, 0) as total_fees,
         COALESCE(fp.amount_paid, 0) as amount_paid,
         COALESCE(fp.amount_pending, c.fees, 0) as amount_pending,
@@ -68,6 +71,9 @@ router.get('/student/:studentId', authenticate, async (req, res) => {
         fp.curriculum_id,
         c.name as curriculum_name,
         fp.total_fees,
+        fp.discount_percentage,
+        fp.discount_amount,
+        fp.discount_reason,
         fp.amount_paid,
         fp.amount_pending,
         fp.payment_status,
@@ -121,7 +127,7 @@ router.get('/student/:studentId', authenticate, async (req, res) => {
 });
 
 // Initialize or update fees payment record
-router.post('/initialize', authenticate, authorize('developer', 'trainer_head', 'trainer'), async (req, res) => {
+router.post('/initialize', authenticate, authorize('developer', 'trainer_head'), async (req, res) => {
   try {
     const { student_id, curriculum_id, total_fees } = req.body;
     
@@ -158,16 +164,25 @@ router.post('/initialize', authenticate, authorize('developer', 'trainer_head', 
 });
 
 // Record a payment
-router.post('/payment', authenticate, authorize('developer', 'trainer_head', 'trainer'), async (req, res) => {
+router.post('/payment', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
   const connection = await pool.getConnection();
   
   try {
     await connection.beginTransaction();
     
-    const { student_id, curriculum_id, amount, payment_method, payment_date, transaction_reference, remarks } = req.body;
+    const { student_id, curriculum_id, amount, payment_method, payment_date, transaction_reference, remarks, discount_percentage, discount_reason } = req.body;
     
     if (!student_id || !curriculum_id || !amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid payment data' });
+    }
+
+    // Validate amount is a whole number
+    if (!Number.isInteger(parseFloat(amount))) {
+      return res.status(400).json({ error: 'Amount must be a whole number (no decimals)' });
+    }
+
+    if (amount < 1) {
+      return res.status(400).json({ error: 'Minimum payment amount is ₹1' });
     }
     
     // Get or create fees_payment record
@@ -177,22 +192,83 @@ router.post('/payment', authenticate, authorize('developer', 'trainer_head', 'tr
     );
     
     let feesPaymentId;
+    let isFirstPayment = false;
     
     if (feesPayment.length === 0) {
+      isFirstPayment = true;
+      
       // Get curriculum fees
       const [curriculum] = await connection.query('SELECT fees FROM curriculums WHERE id = ?', [curriculum_id]);
-      const totalFees = curriculum[0]?.fees || 0;
+      const originalFees = curriculum[0]?.fees || 0;
       
-      // Create fees payment record
+      // Calculate discount if provided
+      let totalFees = originalFees;
+      let discountAmount = 0;
+      let discountPercentage = 0;
+      let discountReasonValue = null;
+      
+      if (discount_percentage !== undefined && discount_percentage !== null && discount_percentage !== '') {
+        discountPercentage = parseFloat(discount_percentage);
+        if (discountPercentage < 0 || discountPercentage > 100) {
+          return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
+        }
+        discountAmount = (originalFees * discountPercentage) / 100;
+        totalFees = originalFees - discountAmount;
+        discountReasonValue = discount_reason || null;
+      }
+
+      // Validate payment amount doesn't exceed total fees
+      if (amount > totalFees) {
+        return res.status(400).json({ error: `Payment amount cannot exceed total fees of ₹${totalFees}` });
+      }
+      
+      // Create fees payment record with discount
       const [result] = await connection.query(
-        `INSERT INTO fees_payments (student_id, curriculum_id, total_fees, amount_paid, amount_pending, payment_status)
-         VALUES (?, ?, ?, 0, ?, 'unpaid')`,
-        [student_id, curriculum_id, totalFees, totalFees]
+        `INSERT INTO fees_payments (student_id, curriculum_id, total_fees, discount_percentage, discount_amount, discount_reason, amount_paid, amount_pending, payment_status)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'unpaid')`,
+        [student_id, curriculum_id, totalFees, discountPercentage, discountAmount, discountReasonValue, totalFees]
       );
       feesPaymentId = result.insertId;
       feesPayment = [{ id: feesPaymentId, total_fees: totalFees, amount_paid: 0 }];
     } else {
       feesPaymentId = feesPayment[0].id;
+      
+      // Check if this is truly the first payment (amount_paid is 0)
+      if (parseFloat(feesPayment[0].amount_paid) === 0) {
+        isFirstPayment = true;
+        
+        // If discount is provided on first payment, update the fees_payment record
+        if (discount_percentage !== undefined && discount_percentage !== null && discount_percentage !== '') {
+          const discountPercentage = parseFloat(discount_percentage);
+          if (discountPercentage < 0 || discountPercentage > 100) {
+            return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
+          }
+          
+          // Get original curriculum fees
+          const [curriculum] = await connection.query('SELECT fees FROM curriculums WHERE id = ?', [curriculum_id]);
+          const originalFees = curriculum[0]?.fees || 0;
+          
+          const discountAmount = (originalFees * discountPercentage) / 100;
+          const totalFeesAfterDiscount = originalFees - discountAmount;
+          
+          await connection.query(
+            `UPDATE fees_payments 
+             SET discount_percentage = ?, discount_amount = ?, discount_reason = ?, 
+                 total_fees = ?, amount_pending = ?
+             WHERE id = ?`,
+            [discountPercentage, discountAmount, discount_reason || null, totalFeesAfterDiscount, totalFeesAfterDiscount, feesPaymentId]
+          );
+          
+          // Update feesPayment for calculation below
+          feesPayment[0].total_fees = totalFeesAfterDiscount;
+        }
+      }
+      
+      // Validate payment amount doesn't exceed pending amount
+      const pendingAmount = parseFloat(feesPayment[0].total_fees) - parseFloat(feesPayment[0].amount_paid);
+      if (amount > pendingAmount) {
+        return res.status(400).json({ error: `Payment amount cannot exceed pending amount of ₹${pendingAmount}` });
+      }
     }
     
     // Record transaction
@@ -222,7 +298,10 @@ router.post('/payment', authenticate, authorize('developer', 'trainer_head', 'tr
     );
     
     await connection.commit();
-    res.status(201).json({ message: 'Payment recorded successfully' });
+    res.status(201).json({ 
+      message: 'Payment recorded successfully',
+      is_first_payment: isFirstPayment
+    });
   } catch (error) {
     await connection.rollback();
     console.error('Record payment error:', error);
@@ -270,6 +349,84 @@ router.get('/center/:centerId/stats', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Get fees stats error:', error);
     res.status(500).json({ error: 'Failed to fetch fees statistics' });
+  }
+});
+
+// Set or update discount for a student
+router.post('/discount', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const { student_id, curriculum_id, discount_percentage, discount_reason } = req.body;
+    
+    if (!student_id || !curriculum_id || discount_percentage === undefined) {
+      return res.status(400).json({ error: 'Student ID, Curriculum ID, and discount percentage are required' });
+    }
+    
+    if (discount_percentage < 0 || discount_percentage > 100) {
+      return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
+    }
+    
+    // Get curriculum fees
+    const [curriculum] = await connection.query('SELECT fees FROM curriculums WHERE id = ?', [curriculum_id]);
+    if (curriculum.length === 0) {
+      return res.status(404).json({ error: 'Curriculum not found' });
+    }
+    
+    const originalFees = parseFloat(curriculum[0].fees);
+    const discountAmount = (originalFees * discount_percentage) / 100;
+    const totalFeesAfterDiscount = originalFees - discountAmount;
+    
+    // Check if fees_payment record exists
+    const [existing] = await connection.query(
+      'SELECT id, amount_paid FROM fees_payments WHERE student_id = ? AND curriculum_id = ?',
+      [student_id, curriculum_id]
+    );
+    
+    if (existing.length > 0) {
+      // Update existing record
+      const amountPaid = parseFloat(existing[0].amount_paid);
+      const newAmountPending = totalFeesAfterDiscount - amountPaid;
+      
+      let paymentStatus = 'unpaid';
+      if (amountPaid >= totalFeesAfterDiscount) {
+        paymentStatus = 'paid';
+      } else if (amountPaid > 0) {
+        paymentStatus = 'partial';
+      }
+      
+      await connection.query(
+        `UPDATE fees_payments 
+         SET discount_percentage = ?, discount_amount = ?, discount_reason = ?, 
+             total_fees = ?, amount_pending = ?, payment_status = ?
+         WHERE id = ?`,
+        [discount_percentage, discountAmount, discount_reason, totalFeesAfterDiscount, newAmountPending, paymentStatus, existing[0].id]
+      );
+    } else {
+      // Create new record with discount
+      await connection.query(
+        `INSERT INTO fees_payments (student_id, curriculum_id, total_fees, discount_percentage, discount_amount, discount_reason, amount_paid, amount_pending, payment_status)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'unpaid')`,
+        [student_id, curriculum_id, totalFeesAfterDiscount, discount_percentage, discountAmount, discount_reason, totalFeesAfterDiscount]
+      );
+    }
+    
+    await connection.commit();
+    res.json({ 
+      message: 'Discount applied successfully',
+      original_fees: originalFees,
+      discount_percentage: discount_percentage,
+      discount_amount: discountAmount,
+      total_fees_after_discount: totalFeesAfterDiscount
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Apply discount error:', error);
+    res.status(500).json({ error: 'Failed to apply discount' });
+  } finally {
+    connection.release();
   }
 });
 

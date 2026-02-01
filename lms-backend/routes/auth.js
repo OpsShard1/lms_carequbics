@@ -23,14 +23,14 @@ router.post('/login', async (req, res) => {
     `, [email]);
 
     if (users.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Wrong email or password' });
     }
 
     const user = users[0];
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Wrong email or password' });
     }
 
     const [assignments] = await pool.query(`

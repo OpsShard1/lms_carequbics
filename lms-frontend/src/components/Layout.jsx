@@ -89,19 +89,19 @@ const Layout = () => {
   ];
 
   const centerMenuItems = [
-    { path: '/center/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'center_dashboard' },
-    { path: '/center/students', label: 'Students', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'center_students' },
-    { path: '/center/attendance', label: 'Attendance', roles: ['developer', 'owner', 'trainer', 'trainer_head'], settingKey: 'center_attendance' },
+    { path: '/center/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'trainer_head', 'trainer', 'registrar'], settingKey: 'center_dashboard' },
+    { path: '/center/students', label: 'Students', roles: ['developer', 'owner', 'trainer_head', 'trainer', 'registrar'], settingKey: 'center_students' },
+    { path: '/center/attendance', label: 'Attendance', roles: ['developer', 'owner', 'trainer', 'trainer_head', 'registrar'], settingKey: 'center_attendance' },
     { path: '/center/progress', label: 'Progress', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'center_progress' },
     { path: '/center/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'center_curriculum' },
-    { path: '/center/fees', label: 'Fees', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'center_fees' },
+    { path: '/center/fees', label: 'Fees', roles: ['developer', 'owner', 'trainer_head', 'registrar'], settingKey: 'center_fees' },
   ];
 
   const adminMenuItems = [
     { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_users' },
     { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_schools' },
     { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_centers' },
-    { path: '/admin/trainer-assignments', label: 'Trainer Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_trainer_assignments' },
+    { path: '/admin/staff-assignments', label: 'Staff Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_staff_assignments' },
     { path: '/admin/school-assignments', label: 'School Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_school_assignments' },
     { path: '/admin/settings', label: 'Settings', roles: ['developer'], settingKey: null }, // Always visible for developer
   ];
