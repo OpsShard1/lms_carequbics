@@ -11,6 +11,10 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Specific .env files in subdirectories
+lms-backend/.env
+lms-frontend/.env
+
 # Logs
 logs/
 *.log

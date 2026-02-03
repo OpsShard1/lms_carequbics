@@ -21,7 +21,7 @@ const Settings = () => {
     admin_users: true,
     admin_schools: true,
     admin_centers: true,
-    admin_trainer_assignments: true,
+    admin_staff_assignments: true,
     admin_school_assignments: true
   });
   const [loading, setLoading] = useState(true);
@@ -112,7 +112,7 @@ const Settings = () => {
         { key: 'admin_users', label: 'Users' },
         { key: 'admin_schools', label: 'Schools' },
         { key: 'admin_centers', label: 'Centers' },
-        { key: 'admin_trainer_assignments', label: 'Trainer Assignments' },
+        { key: 'admin_staff_assignments', label: 'Staff Assignments' },
         { key: 'admin_school_assignments', label: 'School Assignments' },
       ]
     }
