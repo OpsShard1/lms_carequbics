@@ -18,6 +18,35 @@ const FeesDetail = () => {
     try {
       setLoading(true);
       const res = await api.get(`/fees/student/${studentId}`);
+      
+      // Enhance each fees payment with installment details
+      if (res.data.all_fees_payments) {
+        for (let payment of res.data.all_fees_payments) {
+          if (payment.payment_type === 'installment') {
+            const installmentAmount = parseFloat(payment.installment_amount || 0);
+            const totalInstallments = payment.total_installments || 1;
+            const amountPaid = parseFloat(payment.amount_paid || 0);
+            const installmentNumber = payment.installment_number || 0;
+            
+            // Calculate per-installment breakdown
+            const paidForPreviousInstallments = installmentNumber * installmentAmount;
+            const paidForCurrentInstallment = amountPaid - paidForPreviousInstallments;
+            const currentInstallmentPending = Math.max(0, installmentAmount - paidForCurrentInstallment);
+            
+            payment.installment_details = {
+              current_installment: installmentNumber + 1,
+              total_installments: totalInstallments,
+              installment_amount: installmentAmount,
+              paid_for_current: paidForCurrentInstallment,
+              pending_for_current: currentInstallmentPending,
+              is_current_complete: paidForCurrentInstallment >= installmentAmount,
+              installments_completed: installmentNumber,
+              installments_remaining: totalInstallments - installmentNumber
+            };
+          }
+        }
+      }
+      
       setFeesData(res.data);
     } catch (err) {
       console.error('Failed to load fees detail:', err);
@@ -29,7 +58,11 @@ const FeesDetail = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN');
+    return date.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
   };
 
   const getStatusClass = (status) => {
@@ -71,7 +104,7 @@ const FeesDetail = () => {
         {/* Overall Summary Card */}
         <div className="fees-summary-card">
           <div className="summary-header">
-            <h3>Overall Payment Summary (All Curriculums)</h3>
+            <h3>Overall Payment Summary</h3>
           </div>
           <div className="summary-grid">
             <div className="summary-item">
@@ -111,7 +144,7 @@ const FeesDetail = () => {
           </div>
         )}
 
-        {/* Curriculum-wise Breakdown */}
+        {/* Curriculum-wise Breakdown with Installment Details */}
         {feesData.all_fees_payments && feesData.all_fees_payments.length > 0 && (
           <div className="curriculum-breakdown-card">
             <h3>Curriculum-wise Breakdown</h3>
@@ -129,6 +162,17 @@ const FeesDetail = () => {
                       {payment.payment_status?.toUpperCase()}
                     </span>
                   </div>
+                  
+                  {/* Payment Type Badge */}
+                  <div className="payment-type-badge">
+                    {payment.payment_type === 'installment' ? (
+                      <span className="badge-installment">Monthly Installments</span>
+                    ) : (
+                      <span className="badge-full">Full Payment</span>
+                    )}
+                  </div>
+                  
+                  {/* Discount Info */}
                   {payment.discount_percentage > 0 && (
                     <div className="discount-info">
                       <span className="discount-label">Discount Applied:</span>
@@ -138,17 +182,78 @@ const FeesDetail = () => {
                       )}
                     </div>
                   )}
+                  
+                  {/* Installment Progress Tracker */}
+                  {payment.payment_type === 'installment' && payment.installment_details && (
+                    <div className="installment-tracker">
+                      <div className="tracker-header">
+                        <h4>Installment Progress</h4>
+                        <span className="installment-count">
+                          {payment.installment_details.installments_completed} of {payment.installment_details.total_installments} completed
+                        </span>
+                      </div>
+                      
+                      {/* Visual Progress Bar */}
+                      <div className="installment-progress-bar">
+                        {Array.from({ length: payment.installment_details.total_installments }).map((_, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`installment-block ${
+                              idx < payment.installment_details.installments_completed ? 'completed' :
+                              idx === payment.installment_details.installments_completed && payment.installment_details.is_current_complete ? 'completed' :
+                              idx === payment.installment_details.installments_completed ? 'current' : 'pending'
+                            }`}
+                            title={`Installment ${idx + 1}`}
+                          >
+                            {idx < payment.installment_details.installments_completed ? '✓' :
+                             idx === payment.installment_details.installments_completed && payment.installment_details.is_current_complete ? '✓' :
+                             idx === payment.installment_details.installments_completed ? (idx + 1) : (idx + 1)}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Current Installment Details */}
+                      {payment.payment_status !== 'paid' && (
+                        <div className="current-installment-details">
+                          <div className="detail-box">
+                            <div className="detail-label">Current Installment</div>
+                            <div className="detail-value">#{payment.installment_details.current_installment}</div>
+                          </div>
+                          <div className="detail-box">
+                            <div className="detail-label">Installment Amount</div>
+                            <div className="detail-value">₹{payment.installment_details.installment_amount.toLocaleString('en-IN')}</div>
+                          </div>
+                          <div className="detail-box success">
+                            <div className="detail-label">Paid for Current</div>
+                            <div className="detail-value">₹{payment.installment_details.paid_for_current.toLocaleString('en-IN')}</div>
+                          </div>
+                          <div className="detail-box warning">
+                            <div className="detail-label">Pending for Current</div>
+                            <div className="detail-value">₹{payment.installment_details.pending_for_current.toLocaleString('en-IN')}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {payment.installment_details.is_current_complete && payment.payment_status !== 'paid' && (
+                        <div className="installment-status-message success">
+                          ✓ Current installment complete! Next installment will be due after more classes.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Amount Breakdown */}
                   <div className="breakdown-amounts">
                     <div className="breakdown-amount-item">
-                      <span className="amount-label">Total:</span>
+                      <span className="amount-label">Total Fees:</span>
                       <span className="amount-value">₹{parseFloat(payment.total_fees).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="breakdown-amount-item success">
-                      <span className="amount-label">Paid:</span>
+                      <span className="amount-label">Total Paid:</span>
                       <span className="amount-value">₹{parseFloat(payment.amount_paid).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="breakdown-amount-item warning">
-                      <span className="amount-label">Pending:</span>
+                      <span className="amount-label">Total Pending:</span>
                       <span className="amount-value">₹{parseFloat(payment.amount_pending).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
@@ -161,7 +266,7 @@ const FeesDetail = () => {
         {/* Transaction History */}
         <div className="transactions-card">
           <div className="transactions-header">
-            <h3>Payment History</h3>
+            <h3>Payment History ({filteredTransactions.length} transactions)</h3>
             {feesData.all_fees_payments && feesData.all_fees_payments.length > 1 && (
               <select 
                 value={selectedCurriculumFilter}
@@ -219,6 +324,7 @@ const FeesDetail = () => {
             </div>
           ) : (
             <div className="no-transactions">
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>💳</div>
               <p>No payment transactions recorded yet</p>
             </div>
           )}

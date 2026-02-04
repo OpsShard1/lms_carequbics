@@ -4,7 +4,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get fees overview for a center (with payment status)
+// Get fees overview for a center (with payment status and installment tracking)
 router.get('/center/:centerId/overview', authenticate, async (req, res) => {
   try {
     const [students] = await pool.query(`
@@ -13,8 +13,12 @@ router.get('/center/:centerId/overview', authenticate, async (req, res) => {
         s.first_name,
         s.last_name,
         s.curriculum_id,
+        s.class_format,
         c.name as curriculum_name,
         c.fees as curriculum_fees,
+        c.duration_months,
+        c.classes_per_installment as classes_per_installment_weekday,
+        c.classes_per_installment_weekend,
         COALESCE(fp.discount_percentage, 0) as discount_percentage,
         COALESCE(fp.discount_amount, 0) as discount_amount,
         fp.discount_reason,
@@ -22,6 +26,11 @@ router.get('/center/:centerId/overview', authenticate, async (req, res) => {
         COALESCE(fp.amount_paid, 0) as amount_paid,
         COALESCE(fp.amount_pending, c.fees, 0) as amount_pending,
         COALESCE(fp.payment_status, 'unpaid') as payment_status,
+        fp.payment_type,
+        fp.installment_number,
+        fp.total_installments,
+        fp.installment_amount,
+        fp.attendance_count_at_payment,
         fp.id as fees_payment_id
       FROM students s
       LEFT JOIN curriculums c ON s.curriculum_id = c.id
@@ -35,6 +44,64 @@ router.get('/center/:centerId/overview', authenticate, async (req, res) => {
         END,
         s.first_name
     `, [req.params.centerId]);
+    
+    // For each student, check if installment is due based on attendance
+    for (let student of students) {
+      if (student.payment_type === 'installment' && student.payment_status !== 'paid') {
+        // Get current attendance count
+        const [attendance] = await pool.query(
+          `SELECT COUNT(*) as count FROM attendance 
+           WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+          [student.id, req.params.centerId]
+        );
+        
+        const currentAttendance = attendance[0].count;
+        
+        // Use weekday or weekend classes based on student's class_format
+        const classesPerInstallment = student.class_format === 'weekend'
+          ? (student.classes_per_installment_weekend || 4)
+          : (student.classes_per_installment_weekday || 8);
+        
+        // Calculate installment details
+        const installmentAmount = parseFloat(student.installment_amount);
+        const currentInstallmentNumber = student.installment_number || 0; // Number of COMPLETED installments
+        const amountPaid = parseFloat(student.amount_paid);
+        
+        // Calculate how much has been paid for the CURRENT installment (the one being worked on)
+        const paidForPreviousInstallments = currentInstallmentNumber * installmentAmount;
+        const paidForCurrentInstallment = amountPaid - paidForPreviousInstallments;
+        const currentInstallmentPending = Math.max(0, installmentAmount - paidForCurrentInstallment);
+        
+        // Check if current installment is fully paid
+        const isCurrentInstallmentComplete = paidForCurrentInstallment >= installmentAmount;
+        
+        // Calculate when next payment reminder should appear
+        // Based on classes covered by PAID installments
+        // 0 installments paid = 0 classes covered → reminder at 0+ classes
+        // 1 installment paid = 8 classes covered → reminder at 8+ classes
+        // 2 installments paid = 16 classes covered → reminder at 16+ classes
+        const classesCoveredByPayments = currentInstallmentNumber * classesPerInstallment;
+        
+        // Show "Pay Now" reminder when attendance exceeds classes covered by payments
+        const isInstallmentDue = currentAttendance >= classesCoveredByPayments;
+        
+        student.current_attendance = currentAttendance;
+        student.classes_per_installment = classesPerInstallment;
+        student.classes_covered_by_payments = classesCoveredByPayments;
+        student.current_installment_paid = paidForCurrentInstallment;
+        student.current_installment_pending = currentInstallmentPending;
+        student.is_current_installment_complete = isCurrentInstallmentComplete;
+        student.is_installment_due = isInstallmentDue;
+      } else {
+        student.current_attendance = 0;
+        student.classes_per_installment = 0;
+        student.classes_covered_by_payments = 0;
+        student.current_installment_paid = 0;
+        student.current_installment_pending = 0;
+        student.is_current_installment_complete = false;
+        student.is_installment_due = false;
+      }
+    }
     
     res.json(students);
   } catch (error) {
@@ -77,6 +144,10 @@ router.get('/student/:studentId', authenticate, async (req, res) => {
         fp.amount_paid,
         fp.amount_pending,
         fp.payment_status,
+        fp.payment_type,
+        fp.installment_number,
+        fp.total_installments,
+        fp.installment_amount,
         fp.created_at,
         fp.updated_at
       FROM fees_payments fp
@@ -163,14 +234,14 @@ router.post('/initialize', authenticate, authorize('developer', 'trainer_head'),
   }
 });
 
-// Record a payment
+// Record a payment (with installment tracking)
 router.post('/payment', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
   const connection = await pool.getConnection();
   
   try {
     await connection.beginTransaction();
     
-    const { student_id, curriculum_id, amount, payment_method, payment_date, transaction_reference, remarks, discount_percentage, discount_reason } = req.body;
+    const { student_id, curriculum_id, amount, payment_method, payment_date, transaction_reference, remarks } = req.body;
     
     if (!student_id || !curriculum_id || !amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid payment data' });
@@ -185,91 +256,34 @@ router.post('/payment', authenticate, authorize('developer', 'trainer_head', 're
       return res.status(400).json({ error: 'Minimum payment amount is ₹1' });
     }
     
-    // Get or create fees_payment record
+    // Get fees_payment record (must exist after discount setup)
     let [feesPayment] = await connection.query(
       'SELECT * FROM fees_payments WHERE student_id = ? AND curriculum_id = ?',
       [student_id, curriculum_id]
     );
     
-    let feesPaymentId;
-    let isFirstPayment = false;
-    
     if (feesPayment.length === 0) {
-      isFirstPayment = true;
-      
-      // Get curriculum fees
-      const [curriculum] = await connection.query('SELECT fees FROM curriculums WHERE id = ?', [curriculum_id]);
-      const originalFees = curriculum[0]?.fees || 0;
-      
-      // Calculate discount if provided
-      let totalFees = originalFees;
-      let discountAmount = 0;
-      let discountPercentage = 0;
-      let discountReasonValue = null;
-      
-      if (discount_percentage !== undefined && discount_percentage !== null && discount_percentage !== '') {
-        discountPercentage = parseFloat(discount_percentage);
-        if (discountPercentage < 0 || discountPercentage > 100) {
-          return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
-        }
-        discountAmount = (originalFees * discountPercentage) / 100;
-        totalFees = originalFees - discountAmount;
-        discountReasonValue = discount_reason || null;
-      }
-
-      // Validate payment amount doesn't exceed total fees
-      if (amount > totalFees) {
-        return res.status(400).json({ error: `Payment amount cannot exceed total fees of ₹${totalFees}` });
-      }
-      
-      // Create fees payment record with discount
-      const [result] = await connection.query(
-        `INSERT INTO fees_payments (student_id, curriculum_id, total_fees, discount_percentage, discount_amount, discount_reason, amount_paid, amount_pending, payment_status)
-         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'unpaid')`,
-        [student_id, curriculum_id, totalFees, discountPercentage, discountAmount, discountReasonValue, totalFees]
-      );
-      feesPaymentId = result.insertId;
-      feesPayment = [{ id: feesPaymentId, total_fees: totalFees, amount_paid: 0 }];
-    } else {
-      feesPaymentId = feesPayment[0].id;
-      
-      // Check if this is truly the first payment (amount_paid is 0)
-      if (parseFloat(feesPayment[0].amount_paid) === 0) {
-        isFirstPayment = true;
-        
-        // If discount is provided on first payment, update the fees_payment record
-        if (discount_percentage !== undefined && discount_percentage !== null && discount_percentage !== '') {
-          const discountPercentage = parseFloat(discount_percentage);
-          if (discountPercentage < 0 || discountPercentage > 100) {
-            return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
-          }
-          
-          // Get original curriculum fees
-          const [curriculum] = await connection.query('SELECT fees FROM curriculums WHERE id = ?', [curriculum_id]);
-          const originalFees = curriculum[0]?.fees || 0;
-          
-          const discountAmount = (originalFees * discountPercentage) / 100;
-          const totalFeesAfterDiscount = originalFees - discountAmount;
-          
-          await connection.query(
-            `UPDATE fees_payments 
-             SET discount_percentage = ?, discount_amount = ?, discount_reason = ?, 
-                 total_fees = ?, amount_pending = ?
-             WHERE id = ?`,
-            [discountPercentage, discountAmount, discount_reason || null, totalFeesAfterDiscount, totalFeesAfterDiscount, feesPaymentId]
-          );
-          
-          // Update feesPayment for calculation below
-          feesPayment[0].total_fees = totalFeesAfterDiscount;
-        }
-      }
-      
-      // Validate payment amount doesn't exceed pending amount
-      const pendingAmount = parseFloat(feesPayment[0].total_fees) - parseFloat(feesPayment[0].amount_paid);
-      if (amount > pendingAmount) {
-        return res.status(400).json({ error: `Payment amount cannot exceed pending amount of ₹${pendingAmount}` });
-      }
+      return res.status(400).json({ error: 'Fees not initialized. Please set discount first.' });
     }
+    
+    const feesPaymentId = feesPayment[0].id;
+    const totalFees = parseFloat(feesPayment[0].total_fees);
+    const currentPaid = parseFloat(feesPayment[0].amount_paid);
+    const pendingAmount = totalFees - currentPaid;
+    
+    // Validate payment amount doesn't exceed pending amount
+    if (amount > pendingAmount) {
+      return res.status(400).json({ error: `Payment amount cannot exceed pending amount of ₹${pendingAmount}` });
+    }
+    
+    // Get current attendance for installment tracking
+    const [student] = await connection.query('SELECT center_id FROM students WHERE id = ?', [student_id]);
+    const [attendance] = await connection.query(
+      `SELECT COUNT(*) as count FROM attendance 
+       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+      [student_id, student[0].center_id]
+    );
+    const currentAttendance = attendance[0].count;
     
     // Record transaction
     await connection.query(
@@ -278,29 +292,57 @@ router.post('/payment', authenticate, authorize('developer', 'trainer_head', 're
       [feesPaymentId, amount, payment_method || 'cash', transaction_reference, payment_date, remarks, req.user.id]
     );
     
-    // Update fees_payment record
-    const newAmountPaid = parseFloat(feesPayment[0].amount_paid) + parseFloat(amount);
-    const totalFees = parseFloat(feesPayment[0].total_fees);
+    // Calculate new amounts
+    const newAmountPaid = currentPaid + parseFloat(amount);
     const newAmountPending = totalFees - newAmountPaid;
     
     let paymentStatus = 'unpaid';
-    if (newAmountPaid >= totalFees) {
-      paymentStatus = 'paid';
-    } else if (newAmountPaid > 0) {
-      paymentStatus = 'partial';
+    let newInstallmentNumber = feesPayment[0].installment_number || 0;
+    
+    // For installment payments, track per-installment completion
+    if (feesPayment[0].payment_type === 'installment') {
+      const installmentAmount = parseFloat(feesPayment[0].installment_amount);
+      const totalInstallments = feesPayment[0].total_installments;
+      
+      // Calculate how much has been paid for the CURRENT installment
+      const paidForPreviousInstallments = newInstallmentNumber * installmentAmount;
+      const paidForCurrentInstallment = newAmountPaid - paidForPreviousInstallments;
+      
+      // Check if current installment is now fully paid
+      if (paidForCurrentInstallment >= installmentAmount) {
+        // Current installment is complete, increment the counter
+        newInstallmentNumber = newInstallmentNumber + 1;
+      }
+      
+      // Determine overall payment status
+      if (newAmountPaid >= totalFees) {
+        paymentStatus = 'paid';
+      } else if (newInstallmentNumber > 0 || paidForCurrentInstallment > 0) {
+        paymentStatus = 'partial';
+      }
+    } else {
+      // Full payment mode
+      if (newAmountPaid >= totalFees) {
+        paymentStatus = 'paid';
+      } else if (newAmountPaid > 0) {
+        paymentStatus = 'partial';
+      }
     }
     
     await connection.query(
       `UPDATE fees_payments 
-       SET amount_paid = ?, amount_pending = ?, payment_status = ?
+       SET amount_paid = ?, amount_pending = ?, payment_status = ?,
+           installment_number = ?
        WHERE id = ?`,
-      [newAmountPaid, newAmountPending, paymentStatus, feesPaymentId]
+      [newAmountPaid, newAmountPending, paymentStatus, newInstallmentNumber, feesPaymentId]
     );
     
     await connection.commit();
     res.status(201).json({ 
       message: 'Payment recorded successfully',
-      is_first_payment: isFirstPayment
+      payment_status: paymentStatus,
+      installment_number: newInstallmentNumber,
+      total_installments: feesPayment[0].total_installments
     });
   } catch (error) {
     await connection.rollback();
@@ -352,32 +394,253 @@ router.get('/center/:centerId/stats', authenticate, async (req, res) => {
   }
 });
 
-// Set or update discount for a student
+// Get installment status for a student (for parent portal)
+router.get('/student/:studentId/installment-status', authenticate, async (req, res) => {
+  try {
+    const [student] = await pool.query(`
+      SELECT s.*, c.duration_months, c.classes_per_installment, c.classes_per_installment_weekend, c.name as curriculum_name
+      FROM students s
+      LEFT JOIN curriculums c ON s.curriculum_id = c.id
+      WHERE s.id = ?
+    `, [req.params.studentId]);
+    
+    if (student.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    
+    const [feesPayment] = await pool.query(`
+      SELECT * FROM fees_payments 
+      WHERE student_id = ? AND curriculum_id = ?
+    `, [req.params.studentId, student[0].curriculum_id]);
+    
+    if (feesPayment.length === 0) {
+      return res.json({
+        has_fees: false,
+        message: 'No fees record found'
+      });
+    }
+    
+    const fp = feesPayment[0];
+    
+    // Get current attendance
+    const [attendance] = await pool.query(
+      `SELECT COUNT(*) as count FROM attendance 
+       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+      [req.params.studentId, student[0].center_id]
+    );
+    
+    const currentAttendance = attendance[0].count;
+    
+    // Use weekday or weekend classes based on student's class_format
+    const classesPerInstallment = student[0].class_format === 'weekend'
+      ? (student[0].classes_per_installment_weekend || 4)
+      : (student[0].classes_per_installment || 8);
+    
+    // Calculate current installment status
+    const installmentAmount = parseFloat(fp.installment_amount);
+    const currentInstallmentNumber = fp.installment_number || 0;
+    const paidForPreviousInstallments = currentInstallmentNumber * installmentAmount;
+    const paidForCurrentInstallment = parseFloat(fp.amount_paid) - paidForPreviousInstallments;
+    const currentInstallmentPending = Math.max(0, installmentAmount - paidForCurrentInstallment);
+    
+    // Check if current installment is complete
+    const isCurrentInstallmentComplete = paidForCurrentInstallment >= installmentAmount;
+    
+    // Calculate classes covered by paid installments
+    const classesCoveredByPayments = currentInstallmentNumber * classesPerInstallment;
+    
+    const isInstallmentDue = fp.payment_type === 'installment' && 
+                             fp.payment_status !== 'paid' && 
+                             currentAttendance >= classesCoveredByPayments;
+    
+    res.json({
+      has_fees: true,
+      curriculum_name: student[0].curriculum_name,
+      payment_type: fp.payment_type,
+      payment_status: fp.payment_status,
+      total_fees: fp.total_fees,
+      amount_paid: fp.amount_paid,
+      amount_pending: fp.amount_pending,
+      installment_number: fp.installment_number,
+      total_installments: fp.total_installments,
+      installment_amount: fp.installment_amount,
+      current_installment_pending: currentInstallmentPending,
+      current_attendance: currentAttendance,
+      classes_covered_by_payments: classesCoveredByPayments,
+      classes_per_installment: classesPerInstallment,
+      is_installment_due: isInstallmentDue,
+      next_installment_amount: fp.installment_amount
+    });
+  } catch (error) {
+    console.error('Get installment status error:', error);
+    res.status(500).json({ error: 'Failed to fetch installment status' });
+  }
+});
+
+// Get installment status for parent portal (public - no auth required)
+router.post('/student/installment-status/parent', async (req, res) => {
+  try {
+    const { student_name, date_of_birth } = req.body;
+    
+    if (!student_name || !date_of_birth) {
+      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    }
+    
+    // Find student by name and DOB - handle cases where last_name might be empty
+    const [students] = await pool.query(
+      `SELECT s.*, c.duration_months, c.classes_per_installment, c.classes_per_installment_weekend, c.name as curriculum_name
+       FROM students s
+       LEFT JOIN curriculums c ON s.curriculum_id = c.id
+       WHERE TRIM(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) = ? AND s.date_of_birth = ?`,
+      [student_name, date_of_birth]
+    );
+    
+    if (students.length === 0) {
+      return res.json({ 
+        has_fees: false, 
+        message: 'Student not found or no curriculum assigned' 
+      });
+    }
+    
+    const student = students[0];
+    
+    // Check if student has curriculum
+    if (!student.curriculum_id) {
+      return res.json({ 
+        has_fees: false, 
+        message: 'No curriculum assigned to student' 
+      });
+    }
+    
+    const [feesPayment] = await pool.query(`
+      SELECT * FROM fees_payments 
+      WHERE student_id = ? AND curriculum_id = ?
+    `, [student.id, student.curriculum_id]);
+    
+    if (feesPayment.length === 0) {
+      return res.json({
+        has_fees: false,
+        message: 'No fees record found'
+      });
+    }
+    
+    const fp = feesPayment[0];
+    
+    // Get current attendance
+    const [attendance] = await pool.query(
+      `SELECT COUNT(*) as count FROM attendance 
+       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+      [student.id, student.center_id]
+    );
+    
+    const currentAttendance = attendance[0].count;
+    const installmentNumber = fp.installment_number || 0;
+    
+    // Use weekday or weekend classes based on student's class_format
+    const classesPerInstallment = student.class_format === 'weekend'
+      ? (student.classes_per_installment_weekend || 4)
+      : (student.classes_per_installment || 8);
+    
+    // Calculate allowed classes based on completed installments
+    const allowedClasses = (installmentNumber + 1) * classesPerInstallment;
+    
+    // Calculate current installment status
+    const installmentAmount = parseFloat(fp.installment_amount);
+    const paidForPreviousInstallments = installmentNumber * installmentAmount;
+    const paidForCurrentInstallment = parseFloat(fp.amount_paid) - paidForPreviousInstallments;
+    const currentInstallmentPending = Math.max(0, installmentAmount - paidForCurrentInstallment);
+    
+    const isInstallmentDue = fp.payment_type === 'installment' && 
+                             fp.payment_status !== 'paid' && 
+                             currentAttendance >= allowedClasses;
+    
+    res.json({
+      has_fees: true,
+      student_name: `${student.first_name} ${student.last_name}`,
+      curriculum_name: student.curriculum_name,
+      payment_type: fp.payment_type,
+      payment_status: fp.payment_status,
+      total_fees: fp.total_fees,
+      amount_paid: fp.amount_paid,
+      amount_pending: fp.amount_pending,
+      installment_number: fp.installment_number,
+      total_installments: fp.total_installments,
+      installment_amount: fp.installment_amount,
+      current_installment_paid: paidForCurrentInstallment,
+      current_installment_pending: currentInstallmentPending,
+      current_attendance: currentAttendance,
+      allowed_classes: allowedClasses,
+      classes_per_installment: classesPerInstallment,
+      is_installment_due: isInstallmentDue,
+      next_installment_amount: fp.installment_amount
+    });
+  } catch (error) {
+    console.error('Get parent installment status error:', error);
+    res.status(500).json({ error: 'Failed to fetch installment status', details: error.message });
+  }
+});
+
+// Set or update discount for a student (with installment support)
 router.post('/discount', authenticate, authorize('developer', 'trainer_head', 'registrar'), async (req, res) => {
   const connection = await pool.getConnection();
   
   try {
     await connection.beginTransaction();
     
-    const { student_id, curriculum_id, discount_percentage, discount_reason } = req.body;
+    const { student_id, curriculum_id, discount_percentage, discount_reason, payment_type } = req.body;
     
-    if (!student_id || !curriculum_id || discount_percentage === undefined) {
-      return res.status(400).json({ error: 'Student ID, Curriculum ID, and discount percentage are required' });
+    if (!student_id || !curriculum_id || discount_percentage === undefined || !payment_type) {
+      return res.status(400).json({ error: 'Student ID, Curriculum ID, discount percentage, and payment type are required' });
     }
     
     if (discount_percentage < 0 || discount_percentage > 100) {
       return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
     }
     
-    // Get curriculum fees
-    const [curriculum] = await connection.query('SELECT fees FROM curriculums WHERE id = ?', [curriculum_id]);
+    if (!['full', 'installment'].includes(payment_type)) {
+      return res.status(400).json({ error: 'Payment type must be either "full" or "installment"' });
+    }
+    
+    // Get curriculum and student details
+    const [curriculum] = await connection.query(
+      'SELECT fees, duration_months, classes_per_installment, classes_per_installment_weekend FROM curriculums WHERE id = ?', 
+      [curriculum_id]
+    );
     if (curriculum.length === 0) {
       return res.status(404).json({ error: 'Curriculum not found' });
     }
     
+    const [student] = await connection.query(
+      'SELECT center_id, class_format FROM students WHERE id = ?',
+      [student_id]
+    );
+    if (student.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    
     const originalFees = parseFloat(curriculum[0].fees);
+    const durationMonths = curriculum[0].duration_months || 12;
+    
+    // Use weekday or weekend classes based on student's class_format
+    const classesPerInstallment = student[0].class_format === 'weekend'
+      ? (curriculum[0].classes_per_installment_weekend || 4)
+      : (curriculum[0].classes_per_installment || 8);
+    
     const discountAmount = (originalFees * discount_percentage) / 100;
     const totalFeesAfterDiscount = originalFees - discountAmount;
+    
+    // Calculate installment details
+    const totalInstallments = payment_type === 'installment' ? durationMonths : 1;
+    const installmentAmount = payment_type === 'installment' ? 
+      Math.ceil(totalFeesAfterDiscount / totalInstallments) : 0;
+    
+    // Get current attendance count
+    const [attendance] = await connection.query(
+      `SELECT COUNT(*) as count FROM attendance 
+       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+      [student_id, student[0].center_id]
+    );
+    const currentAttendance = attendance[0].count;
     
     // Check if fees_payment record exists
     const [existing] = await connection.query(
@@ -400,26 +663,37 @@ router.post('/discount', authenticate, authorize('developer', 'trainer_head', 'r
       await connection.query(
         `UPDATE fees_payments 
          SET discount_percentage = ?, discount_amount = ?, discount_reason = ?, 
-             total_fees = ?, amount_pending = ?, payment_status = ?
+             total_fees = ?, amount_pending = ?, payment_status = ?,
+             payment_type = ?, total_installments = ?, installment_amount = ?
          WHERE id = ?`,
-        [discount_percentage, discountAmount, discount_reason, totalFeesAfterDiscount, newAmountPending, paymentStatus, existing[0].id]
+        [discount_percentage, discountAmount, discount_reason, totalFeesAfterDiscount, 
+         newAmountPending, paymentStatus, payment_type, totalInstallments, 
+         installmentAmount, existing[0].id]
       );
     } else {
-      // Create new record with discount
+      // Create new record with discount and installment info
       await connection.query(
-        `INSERT INTO fees_payments (student_id, curriculum_id, total_fees, discount_percentage, discount_amount, discount_reason, amount_paid, amount_pending, payment_status)
-         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'unpaid')`,
-        [student_id, curriculum_id, totalFeesAfterDiscount, discount_percentage, discountAmount, discount_reason, totalFeesAfterDiscount]
+        `INSERT INTO fees_payments (
+          student_id, curriculum_id, total_fees, discount_percentage, discount_amount, 
+          discount_reason, amount_paid, amount_pending, payment_status, payment_type,
+          installment_number, total_installments, installment_amount
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'unpaid', ?, 0, ?, ?)`,
+        [student_id, curriculum_id, totalFeesAfterDiscount, discount_percentage, discountAmount, 
+         discount_reason, totalFeesAfterDiscount, payment_type, totalInstallments, 
+         installmentAmount]
       );
     }
     
     await connection.commit();
     res.json({ 
-      message: 'Discount applied successfully',
+      message: 'Discount and payment plan applied successfully',
       original_fees: originalFees,
       discount_percentage: discount_percentage,
       discount_amount: discountAmount,
-      total_fees_after_discount: totalFeesAfterDiscount
+      total_fees_after_discount: totalFeesAfterDiscount,
+      payment_type: payment_type,
+      total_installments: totalInstallments,
+      installment_amount: installmentAmount
     });
   } catch (error) {
     await connection.rollback();

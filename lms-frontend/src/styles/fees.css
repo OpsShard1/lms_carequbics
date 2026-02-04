@@ -1,8 +1,26 @@
-/* Fees Page Styles */
+/* Fees Page Styles - Enhanced Clean Design */
 .fees-page {
   padding: 24px;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
 }
 
 /* Statistics Cards */
@@ -15,31 +33,37 @@
 
 .stat-card {
   background: white;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #667eea;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .stat-card.success {
-  border-left-color: #10b981;
+  border-left: 4px solid #10b981;
 }
 
 .stat-card.warning {
-  border-left-color: #f59e0b;
+  border-left: 4px solid #f59e0b;
 }
 
 .stat-card.info {
-  border-left-color: #3b82f6;
+  border-left: 4px solid #3b82f6;
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   display: flex;
@@ -67,24 +91,26 @@
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: #111827;
   margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #6b7280;
+  font-weight: 500;
 }
 
 /* Filters */
 .fees-filters {
   background: white;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
 .search-box {
@@ -94,10 +120,10 @@
 
 .search-input {
   width: 100%;
-  padding: 12px 40px 12px 16px;
+  padding: 14px 40px 14px 16px;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 15px;
   transition: all 0.2s;
 }
 
@@ -173,34 +199,43 @@
   border-color: #ef4444;
 }
 
-/* Fees Table */
+/* Fees Table - Clean Modern Design */
+.table-wrapper {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
 .fees-table {
   width: 100%;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .fees-table thead {
-  background: #f9fafb;
+  background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
 }
 
 .fees-table th {
-  padding: 16px;
+  padding: 18px 16px;
   text-align: left;
   font-weight: 600;
   color: #374151;
-  font-size: 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
 }
 
 .fees-table td {
-  padding: 16px;
+  padding: 20px 16px;
   color: #111827;
   font-size: 14px;
   border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
 }
 
 .fees-table tbody tr:last-child td {
@@ -208,16 +243,13 @@
 }
 
 .fees-row {
-  transition: all 0.2s;
-  border-left: 4px solid transparent;
-  position: relative;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
 }
 
 .fees-row:hover {
-  background: #eff6ff;
-  cursor: pointer;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  background: #f8fafc;
+  border-left-color: #6366f1;
 }
 
 .fees-row td:last-child {
@@ -225,18 +257,39 @@
 }
 
 .fees-row.status-paid {
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.fees-row.status-paid:hover {
+  background: rgba(16, 185, 129, 0.08);
   border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.02);
 }
 
 .fees-row.status-partial {
+  background: rgba(245, 158, 11, 0.03);
+}
+
+.fees-row.status-partial:hover {
+  background: rgba(245, 158, 11, 0.08);
   border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.02);
 }
 
 .fees-row.status-unpaid {
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.fees-row.status-unpaid:hover {
+  background: rgba(239, 68, 68, 0.08);
   border-left-color: #ef4444;
-  background: rgba(239, 68, 68, 0.02);
+}
+
+.fees-row.status-installment-complete {
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.fees-row.status-installment-complete:hover {
+  background: rgba(16, 185, 129, 0.08);
+  border-left-color: #10b981;
 }
 
 .student-name-cell {
@@ -248,10 +301,12 @@
 .student-name {
   font-weight: 600;
   color: #111827;
+  font-size: 15px;
 }
 
 .amount-cell {
   font-weight: 600;
+  font-size: 15px;
   font-family: 'Courier New', monospace;
 }
 
@@ -264,44 +319,93 @@
 }
 
 .status-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 24px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
   display: inline-block;
+  border: 2px solid;
 }
 
 .status-badge.status-paid {
   background: #d1fae5;
   color: #065f46;
+  border-color: #10b981;
 }
 
 .status-badge.status-partial {
   background: #fef3c7;
   color: #92400e;
+  border-color: #f59e0b;
 }
 
 .status-badge.status-unpaid {
   background: #fee2e2;
   color: #991b1b;
+  border-color: #ef4444;
+}
+
+.discount-cell {
+  font-size: 13px;
+}
+
+.discount-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.installment-info {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .action-buttons {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-sm {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.btn-sm.btn-primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+}
+
+.btn-sm.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
 .btn-sm.btn-info {
   background: #3b82f6;
   color: white;
-  border: 1px solid #3b82f6;
+  border: none;
 }
 
 .btn-sm.btn-info:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 /* Discount Badge */
@@ -1133,5 +1237,652 @@
   .discount-label,
   .discount-value {
     font-size: 12px;
+  }
+}
+
+
+/* Radio Group Styles */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.radio-label:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.radio-label input[type="radio"]:checked + span {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.radio-label span {
+  font-size: 15px;
+  color: #1e293b;
+  transition: all 0.2s;
+}
+
+/* Installment Status Badge */
+.installment-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 2px solid;
+}
+
+.installment-badge.due {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #ef4444;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.installment-badge.current {
+  background: #dcfce7;
+  color: #16a34a;
+  border-color: #10b981;
+}
+
+.installment-badge.complete {
+  background: #dcfce7;
+  color: #16a34a;
+  border-color: #10b981;
+}
+
+/* Professional Simplified Fees Table */
+.text-right {
+  text-align: right !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.student-info-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.student-name-main {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.student-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.discount-tag {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.program-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.program-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.program-meta {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.amount-due-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.amount-main {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.amount-sub {
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-badge-new {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.status-badge-new.status-paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge-new.status-partial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge-new.status-unpaid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge-new.status-installment-complete {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.installment-compact {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.due-indicator {
+  color: #dc2626;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.installment-progress {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.btn-action {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-normal {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+}
+
+.btn-normal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-urgent {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  animation: urgentPulse 2s infinite;
+}
+
+.btn-urgent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes urgentPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .fees-table th,
+  .fees-table td {
+    padding: 14px 10px;
+    font-size: 13px;
+  }
+
+  .student-name-main {
+    font-size: 14px;
+  }
+
+  .amount-main {
+    font-size: 15px;
+  }
+
+  .btn-action {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}
+
+/* Payment Type Badge */
+.payment-type-badge {
+  margin: 12px 0;
+}
+
+.badge-installment,
+.badge-full {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-installment {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.badge-full {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+/* Installment Tracker */
+.installment-tracker {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tracker-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.installment-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b82f6;
+  background: #dbeafe;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* Installment Progress Bar */
+.installment-progress-bar {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.installment-block {
+  flex: 1;
+  min-width: 40px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.3s;
+  border: 2px solid;
+}
+
+.installment-block.completed {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.installment-block.current {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  animation: currentPulse 2s infinite;
+}
+
+.installment-block.pending {
+  background: white;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+@keyframes currentPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Current Installment Details */
+.current-installment-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.detail-box {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.detail-box.success {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.detail-box.warning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.detail-box .detail-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.detail-box .detail-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Installment Status Message */
+.installment-status-message {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.installment-status-message.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 2px solid #10b981;
+}
+
+/* Enhanced Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.discount-modal .modal-header,
+.payment-modal .modal-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 28px;
+}
+
+.discount-modal .modal-header h3,
+.payment-modal .modal-header h3 {
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.discount-modal .close-btn,
+.payment-modal .close-btn {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.discount-modal .close-btn:hover,
+.payment-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.discount-modal .student-info-box,
+.payment-modal .student-info-box {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-left: 4px solid #3b82f6;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.discount-notice {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+
+.discount-notice p {
+  margin: 10px 0;
+  font-size: 14px;
+  color: #78350f;
+  line-height: 1.6;
+}
+
+.discount-notice p:first-child {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.discount-preview {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 20px;
+}
+
+.discount-preview p {
+  margin: 10px 0;
+  font-size: 14px;
+  color: #065f46;
+}
+
+.discount-preview p strong {
+  color: #064e3b;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile Responsive for New Elements */
+@media (max-width: 768px) {
+  .installment-progress-bar {
+    gap: 6px;
+  }
+  
+  .installment-block {
+    min-width: 35px;
+    height: 45px;
+    font-size: 12px;
+  }
+  
+  .current-installment-details {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .detail-box .detail-value {
+    font-size: 16px;
+  }
+  
+  .tracker-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .payment-type-badge {
+    margin: 10px 0;
+  }
+  
+  .badge-installment,
+  .badge-full {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+  
+  .modal {
+    border-radius: 16px;
+  }
+  
+  .discount-modal .modal-header,
+  .payment-modal .modal-header {
+    border-radius: 16px 16px 0 0;
+    padding: 20px 24px;
+  }
+  
+  .discount-modal .modal-header h3,
+  .payment-modal .modal-header h3 {
+    font-size: 19px;
   }
 }

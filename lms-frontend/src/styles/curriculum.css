@@ -298,6 +298,19 @@
   flex-shrink: 0;
 }
 
+.header-actions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-width: 180px;
+}
+
+.header-actions-vertical button {
+  width: 100%;
+  justify-content: center;
+}
+
 /* Inline Forms */
 .inline-form {
   background: #f8fafc;
@@ -739,5 +752,229 @@
 
   .drag-handle {
     display: none;
+  }
+}
+
+/* Curriculum Modal Specific Styles */
+.curriculum-form-modal {
+  max-width: 600px !important;
+  width: 90% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.curriculum-form-modal .modal-body {
+  padding: 1.5rem;
+  overflow-x: hidden;
+}
+
+.curriculum-form-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.curriculum-form-modal input,
+.curriculum-form-modal textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.curriculum-form-modal input:focus,
+.curriculum-form-modal textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.curriculum-form-modal label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.curriculum-form-modal .installment-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.curriculum-form-modal .modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .curriculum-page {
+    padding: 0.5rem;
+  }
+
+  .page-header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .curriculum-layout {
+    flex-direction: column;
+  }
+
+  .curriculum-list {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .curriculum-details {
+    width: 100%;
+  }
+
+  .details-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .header-actions-vertical {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .header-actions-vertical button {
+    width: 100%;
+  }
+
+  /* Make curriculum items more touch-friendly */
+  .curriculum-item {
+    padding: 1rem;
+    min-height: 60px;
+  }
+
+  .curriculum-name {
+    font-size: 1rem;
+  }
+
+  .curriculum-meta {
+    font-size: 0.8rem;
+  }
+
+  /* Subject and topic cards */
+  .subject-card {
+    padding: 1rem;
+  }
+
+  .subject-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .subject-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .subject-actions button {
+    width: 100%;
+  }
+
+  .topic-item {
+    padding: 0.75rem;
+  }
+
+  .topic-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .topic-actions button {
+    width: 100%;
+    padding: 0.5rem;
+  }
+
+  /* Modal adjustments for mobile */
+  .curriculum-form-modal {
+    width: 95% !important;
+    max-height: 95vh !important;
+  }
+
+  .curriculum-form-modal .modal-body {
+    padding: 1rem;
+  }
+
+  .curriculum-form-modal input,
+  .curriculum-form-modal textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Grid adjustments for mobile */
+  .curriculum-form-modal .installment-fields-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Form actions stack on mobile */
+  .curriculum-form-modal .modal-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .curriculum-form-modal .modal-actions button {
+    width: 100%;
+  }
+
+  /* Inline forms */
+  .inline-form {
+    padding: 1rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .curriculum-form-modal {
+    width: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .curriculum-item {
+    padding: 0.875rem;
+  }
+
+  .subject-card {
+    padding: 0.875rem;
+  }
+
+  .topic-item {
+    padding: 0.625rem;
   }
 }

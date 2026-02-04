@@ -26,6 +26,7 @@ const ParentProgress = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [progressData, setProgressData] = useState([]);
   const [attendance, setAttendance] = useState(null);
+  const [feesStatus, setFeesStatus] = useState(null);
   const [expandedSubjects, setExpandedSubjects] = useState([]);
   const [expandedTopics, setExpandedTopics] = useState([]);
   
@@ -59,6 +60,18 @@ const ParentProgress = () => {
       setCurriculum(res.data.curriculum);
       setProgressData(res.data.progress);
       setAttendance(res.data.attendance);
+      
+      // Fetch fees status using public endpoint
+      try {
+        const feesRes = await api.post('/fees/student/installment-status/parent', {
+          student_name: studentName,
+          date_of_birth: dateOfBirth
+        });
+        setFeesStatus(feesRes.data);
+      } catch (feesErr) {
+        console.error('Failed to load fees status:', feesErr);
+        setFeesStatus(null);
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Student not found. Please check the name and date of birth.');
     } finally {
@@ -221,6 +234,33 @@ const ParentProgress = () => {
             )}
           </div>
         </div>
+
+        {/* Fees Due Alert */}
+        {feesStatus && feesStatus.has_fees && feesStatus.amount_pending > 0 && (
+          <div className="fees-alert-banner">
+            <div className="fees-alert-content">
+              <h3>FEES PAYMENT PENDING</h3>
+              <p>
+                <strong>{feesStatus.student_name}</strong> has pending fees payment for <strong>{feesStatus.curriculum_name}</strong>.
+                {feesStatus.payment_type === 'installment' && feesStatus.is_installment_due && (
+                  <span> Payment reminder: student has attended {feesStatus.current_attendance} classes ({feesStatus.classes_covered_by_payments} classes covered by payments).</span>
+                )}
+              </p>
+              <div className="fees-alert-details">
+                {feesStatus.payment_type === 'installment' ? (
+                  <>
+                    <span>Current Installment: {(feesStatus.installment_number || 0) + 1}/{feesStatus.total_installments}</span>
+                    <span>Pending for Current Installment: ₹{parseFloat(feesStatus.current_installment_pending || 0).toLocaleString('en-IN')}</span>
+                    <span>Total Pending: ₹{parseFloat(feesStatus.amount_pending).toLocaleString('en-IN')}</span>
+                    <span>Classes: {feesStatus.current_attendance} attended / {feesStatus.classes_covered_by_payments} covered by payments</span>
+                  </>
+                ) : (
+                  <span>Total Pending: ₹{parseFloat(feesStatus.amount_pending).toLocaleString('en-IN')}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Attendance Calendar */}
         {attendance && (

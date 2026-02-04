@@ -21,7 +21,7 @@ const CenterStudents = () => {
     student_class: '', school_name_external: '', curriculum_id: '',
     parent_name: '', parent_contact: '', parent_alternate_contact: '',
     parent_email: '', parent_address: '', parent_qualification: '', parent_occupation: '',
-    referral_source: '', program_type: 'long_term', attended_before: false, class_format: 'weekday',
+    referral_source: '', program_type: 'long_term', attended_before: false, class_format: '',
     special_remarks: ''
   });
 
@@ -53,7 +53,7 @@ const CenterStudents = () => {
       student_class: '', school_name_external: '', curriculum_id: '',
       parent_name: '', parent_contact: '', parent_alternate_contact: '',
       parent_email: '', parent_address: '', parent_qualification: '', parent_occupation: '',
-      referral_source: '', program_type: 'long_term', attended_before: false, class_format: 'weekday',
+      referral_source: '', program_type: 'long_term', attended_before: false, class_format: '',
       special_remarks: ''
     });
     setEditingStudent(null);
@@ -389,8 +389,9 @@ const CenterStudents = () => {
                 </select>
               </div>
               <div className="form-field">
-                <label>Class Format</label>
-                <select value={form.class_format} onChange={(e) => setForm({...form, class_format: e.target.value})}>
+                <label>Class Format <span className="required">*</span></label>
+                <select value={form.class_format} onChange={(e) => setForm({...form, class_format: e.target.value})} required>
+                  <option value="">Select class format</option>
                   <option value="weekday">Weekday</option>
                   <option value="weekend">Weekend</option>
                 </select>
@@ -432,12 +433,12 @@ const CenterStudents = () => {
       <div className="table-wrapper">
         <table className="data-table">
           <thead>
-            <tr><th>Name</th><th>DOB</th><th>School</th><th>Curriculum</th><th>Program</th><th>Contact</th><th>Actions</th></tr>
+            <tr><th>Name</th><th>DOB</th><th>Age</th><th>Curriculum</th><th>Contact</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{textAlign: 'center', padding: '40px', color: '#6b7280'}}>
+                <td colSpan="6" style={{textAlign: 'center', padding: '40px', color: '#6b7280'}}>
                   {searchQuery ? 'No students found matching your search' : 'No students found'}
                 </td>
               </tr>
@@ -450,7 +451,7 @@ const CenterStudents = () => {
               >
                 <td>{s.first_name} {s.last_name}</td>
                 <td>{formatDateForDisplay(s.date_of_birth)}</td>
-                <td>{s.school_name_external || '-'}</td>
+                <td>{s.age || '-'}</td>
                 <td onClick={(e) => e.stopPropagation()}>
                   {canChangeCurriculum ? (
                     <select 
@@ -467,7 +468,6 @@ const CenterStudents = () => {
                     <span>{curriculums.find(c => c.id === s.curriculum_id)?.name || '-'}</span>
                   )}
                 </td>
-                <td>{s.program_type?.replace('_', ' ')}</td>
                 <td>{s.parent_contact || '-'}</td>
                 <td onClick={(e) => e.stopPropagation()}>
                   {canEditStudents ? (

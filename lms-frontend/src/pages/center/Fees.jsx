@@ -27,7 +27,8 @@ const CenterFees = () => {
   });
   const [discountForm, setDiscountForm] = useState({
     discount_percentage: '',
-    discount_reason: ''
+    discount_reason: '',
+    payment_type: 'full'
   });
 
   useEffect(() => {
@@ -82,7 +83,14 @@ const CenterFees = () => {
     setFilteredStudents(filtered);
   };
 
-  const getStatusClass = (status) => {
+  const getStatusClass = (status, student) => {
+    // If installment payment and current installment is complete but not all paid
+    if (student?.payment_type === 'installment' && 
+        student?.is_current_installment_complete && 
+        status === 'partial') {
+      return 'status-installment-complete';
+    }
+    
     switch (status) {
       case 'paid': return 'status-paid';
       case 'partial': return 'status-partial';
@@ -91,7 +99,14 @@ const CenterFees = () => {
     }
   };
 
-  const getStatusLabel = (status) => {
+  const getStatusLabel = (status, student) => {
+    // If installment payment and current installment is complete but not all paid
+    if (student?.payment_type === 'installment' && 
+        student?.is_current_installment_complete && 
+        status === 'partial') {
+      return 'On Track';
+    }
+    
     switch (status) {
       case 'paid': return 'Paid';
       case 'partial': return 'Partial';
@@ -109,7 +124,8 @@ const CenterFees = () => {
     if (isFirstPayment) {
       setDiscountForm({
         discount_percentage: '',
-        discount_reason: ''
+        discount_reason: '',
+        payment_type: 'full'
       });
       setShowDiscountModal(true);
     } else {
@@ -142,11 +158,12 @@ const CenterFees = () => {
     setSelectedStudent(null);
     setDiscountForm({
       discount_percentage: '',
-      discount_reason: ''
+      discount_reason: '',
+      payment_type: 'full'
     });
   };
 
-  const handleDiscountSubmit = () => {
+  const handleDiscountSubmit = async () => {
     // Validate discount if provided
     if (discountForm.discount_percentage !== '' && discountForm.discount_percentage !== null) {
       const discount = parseFloat(discountForm.discount_percentage);
@@ -156,32 +173,39 @@ const CenterFees = () => {
       }
     }
     
-    // Calculate new pending amount after discount
-    const originalFees = parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees);
-    let newPendingAmount = originalFees;
-    
-    if (discountForm.discount_percentage && parseFloat(discountForm.discount_percentage) > 0) {
-      const discountAmount = (originalFees * parseFloat(discountForm.discount_percentage)) / 100;
-      newPendingAmount = originalFees - discountAmount;
+    try {
+      // Call backend to set discount and payment type
+      const response = await api.post('/fees/discount', {
+        student_id: selectedStudent.id,
+        curriculum_id: selectedStudent.curriculum_id,
+        discount_percentage: discountForm.discount_percentage || 0,
+        discount_reason: discountForm.discount_reason,
+        payment_type: discountForm.payment_type
+      });
+      
+      // Update selected student with response data
+      setSelectedStudent({
+        ...selectedStudent,
+        amount_pending: response.data.total_fees_after_discount,
+        total_fees: response.data.total_fees_after_discount,
+        payment_type: response.data.payment_type,
+        total_installments: response.data.total_installments,
+        installment_amount: response.data.installment_amount
+      });
+      
+      // Close discount modal and open payment modal
+      setShowDiscountModal(false);
+      setPaymentForm({
+        amount: response.data.payment_type === 'installment' ? response.data.installment_amount.toString() : '',
+        payment_method: 'cash',
+        payment_date: new Date().toISOString().split('T')[0],
+        transaction_reference: '',
+        remarks: ''
+      });
+      setShowPaymentModal(true);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to apply discount');
     }
-    
-    // Update selected student with new pending amount
-    setSelectedStudent({
-      ...selectedStudent,
-      amount_pending: newPendingAmount,
-      total_fees: newPendingAmount
-    });
-    
-    // Close discount modal and open payment modal
-    setShowDiscountModal(false);
-    setPaymentForm({
-      amount: '',
-      payment_method: 'cash',
-      payment_date: new Date().toISOString().split('T')[0],
-      transaction_reference: '',
-      remarks: ''
-    });
-    setShowPaymentModal(true);
   };
 
   const handlePayment = async (e) => {
@@ -341,65 +365,93 @@ const CenterFees = () => {
         </div>
       </div>
 
-      {/* Students Table */}
+      {/* Students Table - Simplified Professional Design */}
       <div className="table-wrapper">
         <table className="fees-table">
           <thead>
             <tr>
-              <th>Student Name</th>
-              <th>Curriculum</th>
-              <th>Total Fees</th>
-              <th>Discount</th>
-              <th>Paid</th>
-              <th>Pending</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>Student</th>
+              <th>Program</th>
+              <th className="text-right">Amount Due</th>
+              <th className="text-center">Payment Status</th>
+              <th className="text-right">Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                  {searchQuery || filterStatus !== 'all' ? 'No students found matching your filters' : 'No students with curriculum assigned'}
+                <td colSpan="5" style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>No Students Found</div>
+                  <div style={{ fontSize: '14px' }}>
+                    {searchQuery || filterStatus !== 'all' ? 'Try adjusting your filters' : 'No students with curriculum assigned'}
+                  </div>
                 </td>
               </tr>
             ) : (
               filteredStudents.map(student => (
-                <tr key={student.id} className={`fees-row ${getStatusClass(student.payment_status)}`}>
+                <tr key={student.id} className={`fees-row ${getStatusClass(student.payment_status, student)}`}>
+                  {/* Student Info */}
                   <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }}>
-                    <div className="student-name-cell">
-                      <div className="student-name">{student.first_name} {student.last_name}</div>
-                    </div>
-                  </td>
-                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }}>{student.curriculum_name || '-'}</td>
-                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }} className="amount-cell">₹{parseFloat(student.total_fees || 0).toLocaleString('en-IN')}</td>
-                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }} className="discount-cell">
-                    {student.discount_percentage > 0 ? (
-                      <span className="discount-badge">
-                        {student.discount_percentage}% (₹{parseFloat(student.discount_amount || 0).toLocaleString('en-IN')})
-                      </span>
-                    ) : (
-                      <span style={{ color: '#9ca3af' }}>-</span>
-                    )}
-                  </td>
-                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }} className="amount-cell success">₹{parseFloat(student.amount_paid || 0).toLocaleString('en-IN')}</td>
-                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }} className="amount-cell warning">₹{parseFloat(student.amount_pending || 0).toLocaleString('en-IN')}</td>
-                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }}>
-                    <span className={`status-badge ${getStatusClass(student.payment_status)}`}>
-                      {getStatusLabel(student.payment_status)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      {canManageFees && student.payment_status !== 'paid' && (
-                        <button
-                          onClick={() => openPaymentModal(student)}
-                          className="btn-sm btn-primary"
-                        >
-                          Add Payment
-                        </button>
+                    <div className="student-info-compact">
+                      <div className="student-name-main">{student.first_name} {student.last_name}</div>
+                      {student.discount_percentage > 0 && (
+                        <div className="student-meta">
+                          <span className="discount-tag">{student.discount_percentage}% OFF</span>
+                        </div>
                       )}
                     </div>
+                  </td>
+
+                  {/* Program */}
+                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }}>
+                    <div className="program-info">
+                      <div className="program-name">{student.curriculum_name || '-'}</div>
+                      <div className="program-meta">₹{parseFloat(student.total_fees || 0).toLocaleString('en-IN')} Total</div>
+                    </div>
+                  </td>
+
+                  {/* Amount Due */}
+                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }} className="text-right">
+                    <div className="amount-due-cell">
+                      <div className="amount-main">₹{parseFloat(student.amount_pending || 0).toLocaleString('en-IN')}</div>
+                      <div className="amount-sub">₹{parseFloat(student.amount_paid || 0).toLocaleString('en-IN')} paid</div>
+                    </div>
+                  </td>
+
+                  {/* Payment Status */}
+                  <td onClick={() => viewStudentDetails(student)} style={{ cursor: 'pointer' }} className="text-center">
+                    <div className="status-cell">
+                      <span className={`status-badge-new ${getStatusClass(student.payment_status, student)}`}>
+                        {getStatusLabel(student.payment_status, student)}
+                      </span>
+                      {student.payment_type === 'installment' && student.payment_status !== 'paid' && (
+                        <div className="installment-compact">
+                          {student.is_installment_due && !student.is_current_installment_complete ? (
+                            <span className="due-indicator">⚠ Payment Due</span>
+                          ) : (
+                            <span className="installment-progress">
+                              {(student.installment_number || 0) + (student.is_current_installment_complete ? 0 : 0)}/{student.total_installments} installments
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Action */}
+                  <td className="text-right">
+                    {canManageFees && student.payment_status !== 'paid' && (
+                      <button
+                        onClick={() => openPaymentModal(student)}
+                        className={`btn-action ${student.is_installment_due && !student.is_current_installment_complete ? 'btn-urgent' : 'btn-normal'}`}
+                      >
+                        {student.payment_type === 'installment' ? (
+                          student.is_current_installment_complete ? 'Next Installment' : 
+                          student.is_installment_due ? 'Pay Now' : 'Add Payment'
+                        ) : 'Add Payment'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
@@ -421,11 +473,41 @@ const CenterFees = () => {
                 <p><strong>Student:</strong> {selectedStudent.first_name} {selectedStudent.last_name}</p>
                 <p><strong>Curriculum:</strong> {selectedStudent.curriculum_name}</p>
                 <p><strong>Original Fees:</strong> ₹{parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees).toLocaleString('en-IN')}</p>
+                {selectedStudent.duration_months && (
+                  <p><strong>Duration:</strong> {selectedStudent.duration_months} months</p>
+                )}
               </div>
               <div className="discount-notice">
-                <p>⚠️ <strong>Important:</strong> Discount can only be set during the first payment and cannot be changed later.</p>
+                <p>⚠️ <strong>Important:</strong> Discount and payment plan can only be set during the first payment and cannot be changed later.</p>
                 <p>Leave blank or enter 0 if no discount is needed.</p>
               </div>
+              
+              <div className="form-group">
+                <label>Payment Type</label>
+                <div className="radio-group">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="payment_type"
+                      value="full"
+                      checked={discountForm.payment_type === 'full'}
+                      onChange={(e) => setDiscountForm({ ...discountForm, payment_type: e.target.value })}
+                    />
+                    <span>Full Payment</span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="payment_type"
+                      value="installment"
+                      checked={discountForm.payment_type === 'installment'}
+                      onChange={(e) => setDiscountForm({ ...discountForm, payment_type: e.target.value })}
+                    />
+                    <span>Monthly Installments ({selectedStudent.duration_months || 12} months)</span>
+                  </label>
+                </div>
+              </div>
+              
               <div className="form-group">
                 <label>Discount Percentage (%)</label>
                 <input
@@ -454,6 +536,32 @@ const CenterFees = () => {
                   <p>Discount ({discountForm.discount_percentage}%): -₹{((parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees) * parseFloat(discountForm.discount_percentage)) / 100).toLocaleString('en-IN')}</p>
                   <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#10b981' }}>
                     Final Fees: ₹{(parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees) - ((parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees) * parseFloat(discountForm.discount_percentage)) / 100)).toLocaleString('en-IN')}
+                  </p>
+                  {discountForm.payment_type === 'installment' && (
+                    <>
+                      <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#3b82f6', marginTop: '8px' }}>
+                        Monthly Installment: ₹{Math.ceil((parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees) - ((parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees) * parseFloat(discountForm.discount_percentage)) / 100)) / (selectedStudent.duration_months || 12)).toLocaleString('en-IN')}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        Next installment due after {selectedStudent.class_format === 'weekend'
+                          ? (selectedStudent.classes_per_installment_weekend || 4)
+                          : (selectedStudent.classes_per_installment_weekday || 8)} present classes
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+              {discountForm.payment_type === 'installment' && (!discountForm.discount_percentage || parseFloat(discountForm.discount_percentage) === 0) && (
+                <div className="discount-preview">
+                  <p><strong>Installment Plan:</strong></p>
+                  <p>Total Fees: ₹{parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees).toLocaleString('en-IN')}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#3b82f6' }}>
+                    Monthly Installment: ₹{Math.ceil(parseFloat(selectedStudent.curriculum_fees || selectedStudent.total_fees) / (selectedStudent.duration_months || 12)).toLocaleString('en-IN')}
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                    Next installment due after {selectedStudent.class_format === 'weekend'
+                      ? (selectedStudent.classes_per_installment_weekend || 4)
+                      : (selectedStudent.classes_per_installment_weekday || 8)} present classes
                   </p>
                 </div>
               )}
@@ -488,8 +596,24 @@ const CenterFees = () => {
                     ✓ Discount Applied: {discountForm.discount_percentage}%
                   </p>
                 )}
-                <p><strong>Already Paid:</strong> ₹{parseFloat(selectedStudent.amount_paid).toLocaleString('en-IN')}</p>
-                <p><strong>Pending:</strong> ₹{parseFloat(selectedStudent.amount_pending).toLocaleString('en-IN')}</p>
+                {selectedStudent.payment_type === 'installment' && (
+                  <div style={{ background: '#f1f5f9', padding: '12px', borderRadius: '8px', marginTop: '8px', marginBottom: '8px' }}>
+                    <p style={{ fontWeight: '600', color: '#1e293b', marginBottom: '6px' }}>
+                      Current Installment: {(selectedStudent.installment_number || 0) + 1}/{selectedStudent.total_installments}
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#64748b' }}>
+                      <strong>Installment Amount:</strong> ₹{parseFloat(selectedStudent.installment_amount).toLocaleString('en-IN')}
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#64748b' }}>
+                      <strong>Paid for Current:</strong> ₹{parseFloat(selectedStudent.current_installment_paid || 0).toLocaleString('en-IN')}
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#f59e0b', fontWeight: '600' }}>
+                      <strong>Pending for Current:</strong> ₹{parseFloat(selectedStudent.current_installment_pending || selectedStudent.installment_amount).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                )}
+                <p><strong>Total Paid:</strong> ₹{parseFloat(selectedStudent.amount_paid).toLocaleString('en-IN')}</p>
+                <p><strong>Total Pending:</strong> ₹{parseFloat(selectedStudent.amount_pending).toLocaleString('en-IN')}</p>
               </div>
               <form onSubmit={handlePayment}>
                 <div className="form-group">

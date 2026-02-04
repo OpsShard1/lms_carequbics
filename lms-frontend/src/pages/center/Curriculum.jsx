@@ -21,8 +21,9 @@ const CurriculumManagement = () => {
   const [showSubjectForm, setShowSubjectForm] = useState(false);
   const [showTopicForm, setShowTopicForm] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [editingCurriculum, setEditingCurriculum] = useState(false);
   
-  const [curriculumForm, setCurriculumForm] = useState({ name: '', description: '', fees: '' });
+  const [curriculumForm, setCurriculumForm] = useState({ name: '', description: '', fees: '', duration_months: 12, classes_per_installment_weekday: 8, classes_per_installment_weekend: 4 });
   const [subjectForm, setSubjectForm] = useState({ name: '', description: '' });
   const [topicForm, setTopicForm] = useState({ name: '', description: '' });
   const [showFeesModal, setShowFeesModal] = useState(false);
@@ -168,12 +169,27 @@ const CurriculumManagement = () => {
   const handleCreateCurriculum = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/curriculum', curriculumForm);
+      if (editingCurriculum) {
+        // Update existing curriculum
+        await api.put(`/curriculum/${selectedCurriculum.id}`, {
+          name: curriculumForm.name,
+          description: curriculumForm.description,
+          fees: curriculumForm.fees,
+          duration_months: curriculumForm.duration_months,
+          classes_per_installment_weekday: curriculumForm.classes_per_installment_weekday,
+          classes_per_installment_weekend: curriculumForm.classes_per_installment_weekend
+        });
+        loadCurriculumFull(selectedCurriculum.id);
+      } else {
+        // Create new curriculum
+        await api.post('/curriculum', curriculumForm);
+      }
       setShowCurriculumForm(false);
-      setCurriculumForm({ name: '', description: '', fees: '' });
+      setEditingCurriculum(false);
+      setCurriculumForm({ name: '', description: '', fees: '', duration_months: 12, classes_per_installment_weekday: 8, classes_per_installment_weekend: 4 });
       loadCurriculums();
     } catch (err) {
-      alert('Failed to create curriculum');
+      alert(editingCurriculum ? 'Failed to update curriculum' : 'Failed to create curriculum');
     }
   };
 
@@ -278,41 +294,15 @@ const CurriculumManagement = () => {
       <div className="page-header">
         <h2>Center Curriculum Management</h2>
         {canEditCurriculum && (
-          <button onClick={() => setShowCurriculumForm(!showCurriculumForm)} className="btn-primary">
-            {showCurriculumForm ? 'Cancel' : '+ New Curriculum'}
+          <button onClick={() => {
+            setEditingCurriculum(false);
+            setCurriculumForm({ name: '', description: '', fees: '', duration_months: 12, classes_per_installment_weekday: 8, classes_per_installment_weekend: 4 });
+            setShowCurriculumForm(true);
+          }} className="btn-primary">
+            + New Curriculum
           </button>
         )}
       </div>
-
-      {showCurriculumForm && (
-        <div className="form-card">
-          <h3>Create New Curriculum</h3>
-          <form onSubmit={handleCreateCurriculum}>
-            <input 
-              placeholder="Curriculum Name (e.g., Primary Curriculum)"
-              value={curriculumForm.name}
-              onChange={(e) => setCurriculumForm({...curriculumForm, name: e.target.value})}
-              required
-            />
-            <textarea 
-              placeholder="Description"
-              value={curriculumForm.description}
-              onChange={(e) => setCurriculumForm({...curriculumForm, description: e.target.value})}
-              rows={3}
-            />
-            <input 
-              type="number"
-              step="1"
-              min="0"
-              placeholder="Course Fees (₹)"
-              value={curriculumForm.fees}
-              onChange={(e) => setCurriculumForm({...curriculumForm, fees: e.target.value})}
-              onWheel={(e) => e.target.blur()}
-            />
-            <button type="submit" className="btn-primary">Create Curriculum</button>
-          </form>
-        </div>
-      )}
 
       <div className="curriculum-layout">
         <div className="curriculum-list">
@@ -359,17 +349,34 @@ const CurriculumManagement = () => {
                   {selectedCurriculum.description && <p className="description">{selectedCurriculum.description}</p>}
                   <p className="fees-display">Course Fees: ₹{parseFloat(selectedCurriculum.fees || 0).toLocaleString('en-IN')}</p>
                 </div>
-                <div className="header-actions">
+                <div className="header-actions-vertical">
                   {canEditCurriculum && !showSubjectForm && (
                     <>
+                      <button 
+                        onClick={() => {
+                          setCurriculumForm({
+                            name: selectedCurriculum.name,
+                            description: selectedCurriculum.description,
+                            fees: selectedCurriculum.fees,
+                            duration_months: selectedCurriculum.duration_months || 12,
+                            classes_per_installment_weekday: selectedCurriculum.classes_per_installment || 8,
+                            classes_per_installment_weekend: selectedCurriculum.classes_per_installment_weekend || 4
+                          });
+                          setEditingCurriculum(true);
+                          setShowCurriculumForm(true);
+                        }} 
+                        className="btn-secondary"
+                      >
+                        Edit Curriculum
+                      </button>
                       <button 
                         onClick={() => setEditingSubjects(!editingSubjects)} 
                         className={`btn-secondary ${editingSubjects ? 'active' : ''}`}
                       >
-                        {editingSubjects ? '✓ Done Editing' : '✎ Edit Order'}
+                        {editingSubjects ? 'Done Editing' : 'Edit Order'}
                       </button>
                       <button onClick={() => setShowSubjectForm(true)} className="btn-primary">
-                        + Add Subject
+                        Add Subject
                       </button>
                     </>
                   )}
@@ -560,6 +567,107 @@ const CurriculumManagement = () => {
                 <div className="modal-actions">
                   <button type="button" onClick={() => setShowFeesModal(false)} className="btn-secondary">Cancel</button>
                   <button type="submit" className="btn-primary">Update Fees</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Curriculum Form Modal */}
+      {showCurriculumForm && (
+        <div className="modal-overlay" onClick={() => {
+          setShowCurriculumForm(false);
+          setEditingCurriculum(false);
+        }}>
+          <div className="modal curriculum-form-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{editingCurriculum ? 'Edit Curriculum' : 'Create New Curriculum'}</h3>
+              <button onClick={() => {
+                setShowCurriculumForm(false);
+                setEditingCurriculum(false);
+              }} className="close-btn">×</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleCreateCurriculum}>
+                <div className="form-group">
+                  <input 
+                    placeholder="Curriculum Name (e.g., Primary Curriculum)"
+                    value={curriculumForm.name}
+                    onChange={(e) => setCurriculumForm({...curriculumForm, name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <textarea 
+                    placeholder="Description"
+                    value={curriculumForm.description}
+                    onChange={(e) => setCurriculumForm({...curriculumForm, description: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+                <div className="form-group">
+                  <input 
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="Course Fees (₹)"
+                    value={curriculumForm.fees}
+                    onChange={(e) => setCurriculumForm({...curriculumForm, fees: e.target.value})}
+                    onWheel={(e) => e.target.blur()}
+                  />
+                </div>
+                <div className="installment-fields-grid">
+                  <div className="form-group">
+                    <label>Duration (Months)</label>
+                    <input 
+                      type="number"
+                      step="1"
+                      min="1"
+                      placeholder="12"
+                      value={curriculumForm.duration_months}
+                      onChange={(e) => setCurriculumForm({...curriculumForm, duration_months: e.target.value})}
+                      onWheel={(e) => e.target.blur()}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Classes/Installment (Weekday)</label>
+                    <input 
+                      type="number"
+                      step="1"
+                      min="1"
+                      placeholder="8"
+                      value={curriculumForm.classes_per_installment_weekday}
+                      onChange={(e) => setCurriculumForm({...curriculumForm, classes_per_installment_weekday: e.target.value})}
+                      onWheel={(e) => e.target.blur()}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Classes/Installment (Weekend)</label>
+                    <input 
+                      type="number"
+                      step="1"
+                      min="1"
+                      placeholder="4"
+                      value={curriculumForm.classes_per_installment_weekend}
+                      onChange={(e) => setCurriculumForm({...curriculumForm, classes_per_installment_weekend: e.target.value})}
+                      onWheel={(e) => e.target.blur()}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button type="button" onClick={() => {
+                    setShowCurriculumForm(false);
+                    setEditingCurriculum(false);
+                  }} className="btn-secondary">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    {editingCurriculum ? 'Update Curriculum' : 'Create Curriculum'}
+                  </button>
                 </div>
               </form>
             </div>

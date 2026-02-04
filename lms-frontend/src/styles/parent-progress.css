@@ -687,3 +687,103 @@
     font-size: 12px;
   }
 }
+
+/* Fees Alert Banner */
+.fees-alert-banner {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-left: 6px solid #dc2626;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+.fees-alert-banner.warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.fees-alert-content {
+  width: 100%;
+}
+
+.fees-alert-content h3 {
+  color: #991b1b;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.fees-alert-banner.warning .fees-alert-content h3 {
+  color: #92400e;
+}
+
+.fees-alert-content p {
+  color: #7f1d1d;
+  font-size: 15px;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.fees-alert-banner.warning .fees-alert-content p {
+  color: #78350f;
+}
+
+.fees-alert-details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.fees-alert-details span {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #991b1b;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.fees-alert-banner.warning .fees-alert-details span {
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .fees-alert-banner {
+    padding: 20px;
+  }
+  
+  .fees-alert-content h3 {
+    font-size: 18px;
+  }
+  
+  .fees-alert-content p {
+    font-size: 14px;
+  }
+  
+  .fees-alert-details {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .fees-alert-details span {
+    text-align: center;
+  }
+}
