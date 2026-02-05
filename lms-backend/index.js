@@ -27,11 +27,9 @@ process.on('unhandledRejection', (reason, promise) => {
 // Middleware
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'https://lms.carequbics.com',
-  'https://lmstest.carequbics.com',
   'https://lms.carequbics.com',
   'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000'
+
 ];
 
 app.use(cors({
