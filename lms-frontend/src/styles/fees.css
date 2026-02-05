@@ -517,6 +517,8 @@
   justify-content: center;
   border-radius: 6px;
   transition: all 0.2s;
+  position: relative;
+  z-index: 10;
 }
 
 .close-btn:hover {
@@ -548,31 +550,48 @@
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
-  color: #374151;
+  margin-bottom: 10px;
+  color: #1e293b;
   font-weight: 600;
   font-size: 14px;
+  letter-spacing: 0.3px;
 }
 
 .form-group .required {
   color: #ef4444;
+  margin-left: 2px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s;
   font-family: inherit;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  background: #fafbff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 /* Remove number input spinner arrows */
@@ -590,7 +609,7 @@
 /* Amount Input Wrapper */
 .amount-input-wrapper {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: stretch;
 }
 
@@ -610,139 +629,176 @@
 }
 
 .pay-full-btn {
-  padding: 10px 16px;
-  background: #10b981;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .pay-full-btn:hover {
-  background: #059669;
+  background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-group textarea {
-  resize: vertical;
+.pay-full-btn:active {
+  transform: translateY(0);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 14px;
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 2px solid #f1f5f9;
 }
 
 /* Fees Detail Page */
 .fees-detail-page {
-  padding: 24px;
-  max-width: 1000px;
+  padding: 32px;
+  max-width: 1400px;
   margin: 0 auto;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.fees-detail-page .page-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px 28px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.fees-detail-page .page-header > div {
+  flex: 1;
+}
+
+.fees-detail-page .page-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px 0;
+}
+
+.fees-detail-page .subtitle {
+  color: #6b7280;
+  font-size: 15px;
+  margin: 0;
+  font-weight: 500;
 }
 
 .back-btn {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  padding: 8px 16px;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border: 2px solid #d1d5db;
+  padding: 10px 20px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 600;
   color: #374151;
-  transition: all 0.2s;
-  margin-right: 16px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .back-btn:hover {
-  background: #e5e7eb;
+  background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .fees-detail-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  margin-top: 24px;
+  gap: 28px;
 }
 
 .fees-summary-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 100%;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
 }
 
 .summary-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f1f5f9;
 }
 
 .summary-header h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 700;
   color: #111827;
 }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
 .summary-item {
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border-left: 4px solid #667eea;
+  padding: 24px;
+  background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+  border-radius: 16px;
+  border-left: 5px solid #667eea;
+  transition: all 0.3s;
+}
+
+.summary-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .summary-item.success {
   border-left-color: #10b981;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
 }
 
 .summary-item.warning {
   border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
 }
 
 .summary-label {
   font-size: 12px;
   color: #6b7280;
   text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
 }
 
 .summary-value {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   color: #111827;
   font-family: 'Courier New', monospace;
 }
 
 .progress-bar-container {
-  margin-top: 20px;
+  margin-top: 24px;
   max-width: 100%;
 }
 
@@ -750,7 +806,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   font-size: 14px;
   color: #374151;
   font-weight: 600;
@@ -765,101 +821,140 @@
 .progress-label span:last-child {
   flex-shrink: 0;
   margin-left: auto;
+  font-size: 16px;
+  font-weight: 700;
+  color: #10b981;
 }
 
 .progress-bar {
-  height: 12px;
+  height: 16px;
   background: #e5e7eb;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
   width: 100%;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #10b981, #059669);
-  transition: width 0.3s ease;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
 }
 
 /* Current Curriculum Card */
 .current-curriculum-card {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.current-curriculum-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
 }
 
 .current-curriculum-card h4 {
   margin: 0 0 8px 0;
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 
 .current-curriculum-card p {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
 }
 
 /* Curriculum Breakdown */
 .curriculum-breakdown-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
 }
 
 .curriculum-breakdown-card h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  margin: 0 0 24px 0;
+  font-size: 22px;
+  font-weight: 700;
   color: #111827;
 }
 
 .curriculum-breakdown-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .curriculum-breakdown-item {
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 16px;
-  border-left: 4px solid #667eea;
+  background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+  border-radius: 16px;
+  padding: 24px;
+  border-left: 5px solid #667eea;
+  transition: all 0.3s;
+}
+
+.curriculum-breakdown-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .breakdown-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .discount-info {
-  background: #dbeafe;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  border: 2px solid #3b82f6;
 }
 
 .discount-label {
   font-size: 13px;
   color: #1e40af;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .discount-value {
-  font-size: 14px;
+  font-size: 15px;
   color: #1e40af;
-  font-weight: 700;
+  font-weight: 800;
   background: white;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .discount-reason {
@@ -867,59 +962,73 @@
   font-size: 12px;
   color: #1e40af;
   font-style: italic;
-  margin-top: 4px;
+  margin-top: 6px;
+  font-weight: 500;
 }
 
 .breakdown-curriculum-name {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #111827;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .current-badge {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 4px 12px;
+  border-radius: 16px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .breakdown-amounts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
 }
 
 .breakdown-amount-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 12px 16px;
   background: white;
-  border-radius: 6px;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s;
+}
+
+.breakdown-amount-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .breakdown-amount-item.success {
-  background: #d1fae5;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-color: #10b981;
 }
 
 .breakdown-amount-item.warning {
-  background: #fef3c7;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
 }
 
 .amount-label {
   font-size: 12px;
   color: #6b7280;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .amount-value {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: #111827;
   font-family: 'Courier New', monospace;
 }
@@ -927,65 +1036,86 @@
 /* Transactions */
 .transactions-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
 }
 
 .transactions-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .transactions-card h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
+  font-weight: 700;
   color: #111827;
 }
 
 .curriculum-filter {
-  padding: 8px 12px;
+  padding: 10px 16px;
   border: 2px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
+  font-weight: 600;
   background: white;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  color: #374151;
 }
 
 .curriculum-filter:focus {
   outline: none;
   border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.curriculum-filter:hover {
+  border-color: #667eea;
+  background: #fafbff;
 }
 
 .transactions-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .transaction-item {
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 16px;
-  border-left: 4px solid #667eea;
+  background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+  border-radius: 16px;
+  padding: 24px;
+  border-left: 5px solid #10b981;
+  transition: all 0.3s;
+}
+
+.transaction-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .transaction-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .transaction-date {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 600;
   color: #374151;
+  font-size: 15px;
 }
 
 .date-icon {
@@ -993,8 +1123,8 @@
 }
 
 .transaction-amount {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   color: #10b981;
   font-family: 'Courier New', monospace;
 }
@@ -1002,45 +1132,171 @@
 .transaction-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .detail-row {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   font-size: 14px;
+  align-items: center;
 }
 
 .detail-label {
   color: #6b7280;
-  font-weight: 500;
-  min-width: 120px;
+  font-weight: 600;
+  min-width: 140px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
 }
 
 .detail-value {
   color: #111827;
   font-weight: 600;
+  flex: 1;
 }
 
 .curriculum-tag {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
   color: #1e40af;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 4px 12px;
+  border-radius: 8px;
   font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #3b82f6;
 }
 
 .no-transactions {
   text-align: center;
-  padding: 40px;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+
+.no-transactions div:first-child {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.no-transactions p {
+  font-size: 16px;
+  font-weight: 600;
   color: #6b7280;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .fees-page,
-  .fees-detail-page {
+  .fees-page {
     padding: 16px;
+  }
+
+  .fees-detail-page {
+    padding: 20px 16px;
+  }
+
+  .fees-detail-page .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .fees-detail-page .page-header h2 {
+    font-size: 24px;
+  }
+
+  .back-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .fees-summary-card,
+  .curriculum-breakdown-card,
+  .transactions-card {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .summary-header h3,
+  .curriculum-breakdown-card h3,
+  .transactions-card h3 {
+    font-size: 18px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .summary-item {
+    padding: 18px;
+  }
+
+  .summary-value {
+    font-size: 24px;
+  }
+
+  .current-curriculum-card {
+    padding: 20px;
+  }
+
+  .current-curriculum-card p {
+    font-size: 18px;
+  }
+
+  .breakdown-curriculum-name {
+    font-size: 16px;
+  }
+
+  .breakdown-amounts {
+    grid-template-columns: 1fr;
+  }
+
+  .transactions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .curriculum-filter {
+    width: 100%;
+  }
+
+  .transaction-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .transaction-amount {
+    font-size: 20px;
+  }
+
+  .transaction-date {
+    font-size: 13px;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .detail-label {
+    min-width: auto;
+    font-size: 11px;
+  }
+
+  .detail-value {
+    font-size: 13px;
+  }
+
+  .no-transactions {
+    padding: 40px 20px;
+  }
+
+  .no-transactions div:first-child {
+    font-size: 48px;
   }
 
   .fees-stats {
@@ -1242,46 +1498,90 @@
 
 
 /* Radio Group Styles */
-.radio-group {
+.discount-modal .radio-group,
+.payment-modal .radio-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 14px;
+  margin-top: 12px;
 }
 
-.radio-label {
+.discount-modal .radio-label,
+.payment-modal .radio-label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 14px;
+  padding: 16px 20px;
   border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   background: white;
+  position: relative;
 }
 
-.radio-label:hover {
-  border-color: #3b82f6;
-  background: #f0f9ff;
+.discount-modal .radio-label::before,
+.payment-modal .radio-label::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 2px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-.radio-label input[type="radio"] {
-  width: 18px;
-  height: 18px;
+.discount-modal .radio-label:hover,
+.payment-modal .radio-label:hover {
+  border-color: #667eea;
+  background: #fafbff;
+  transform: translateX(4px);
+}
+
+.discount-modal .radio-label input[type="radio"],
+.payment-modal .radio-label input[type="radio"] {
+  width: 22px;
+  height: 22px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: #667eea;
+  flex-shrink: 0;
+  margin: 0;
 }
 
-.radio-label input[type="radio"]:checked + span {
-  font-weight: 600;
-  color: #3b82f6;
+.discount-modal .radio-label input[type="radio"]:checked,
+.payment-modal .radio-label input[type="radio"]:checked {
+  accent-color: #667eea;
 }
 
-.radio-label span {
+.discount-modal .radio-label:has(input[type="radio"]:checked),
+.payment-modal .radio-label:has(input[type="radio"]:checked) {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #fafbff, #f0f4ff);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+}
+
+.discount-modal .radio-label:has(input[type="radio"]:checked)::before,
+.payment-modal .radio-label:has(input[type="radio"]:checked)::before {
+  opacity: 1;
+}
+
+.discount-modal .radio-label span,
+.payment-modal .radio-label span {
   font-size: 15px;
-  color: #1e293b;
-  transition: all 0.2s;
+  color: #475569;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.discount-modal .radio-label:has(input[type="radio"]:checked) span,
+.payment-modal .radio-label:has(input[type="radio"]:checked) span {
+  font-weight: 700;
+  color: #667eea;
 }
 
 /* Installment Status Badge */
@@ -1689,14 +1989,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -1710,155 +2010,472 @@
 
 .modal {
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
   max-height: 90vh;
   overflow-y: auto;
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(30px);
+    transform: translateY(40px) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
-.discount-modal .modal-header,
-.payment-modal .modal-header {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border-radius: 20px 20px 0 0;
-  padding: 24px 28px;
+/* Discount Modal Specific Styles */
+.discount-modal {
+  max-width: 650px;
+  width: 95%;
 }
 
-.discount-modal .modal-header h3,
-.payment-modal .modal-header h3 {
+.discount-modal .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  font-size: 22px;
+  border-radius: 24px 24px 0 0;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.discount-modal .modal-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.discount-modal .modal-header h3 {
+  color: white;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.discount-modal .close-btn {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  transition: all 0.2s;
+  position: relative;
+  z-index: 10;
+}
+
+.discount-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.discount-modal .modal-body {
+  padding: 32px 36px;
+}
+
+.discount-modal .student-info-box {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-left: 5px solid #3b82f6;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.discount-modal .student-info-box p {
+  margin: 10px 0;
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.6;
+}
+
+.discount-modal .student-info-box strong {
+  color: #0f172a;
   font-weight: 700;
 }
 
-.discount-modal .close-btn,
-.payment-modal .close-btn {
-  color: white;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.discount-modal .close-btn:hover,
-.payment-modal .close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  color: white;
-}
-
-.discount-modal .student-info-box,
-.payment-modal .student-info-box {
-  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-  border-left: 4px solid #3b82f6;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-}
-
 .discount-notice {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   border: 2px solid #f59e0b;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 24px;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
 }
 
 .discount-notice p {
-  margin: 10px 0;
+  margin: 12px 0;
   font-size: 14px;
   color: #78350f;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .discount-notice p:first-child {
   font-weight: 700;
   font-size: 15px;
+  margin-top: 0;
 }
 
 .discount-preview {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border: 2px solid #10b981;
-  border-radius: 12px;
-  padding: 18px;
-  margin-top: 20px;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+  position: relative;
 }
 
 .discount-preview p {
-  margin: 10px 0;
+  margin: 12px 0;
   font-size: 14px;
   color: #065f46;
+  line-height: 1.6;
+}
+
+.discount-preview p:first-child {
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 0;
 }
 
 .discount-preview p strong {
   color: #064e3b;
+  font-weight: 700;
+}
+
+/* Payment Modal Specific Styles */
+.payment-modal {
+  max-width: 600px;
+  width: 95%;
+}
+
+.payment-modal .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 24px 24px 0 0;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.payment-modal .modal-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.payment-modal .modal-header h3 {
+  color: white;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.payment-modal .close-btn {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  transition: all 0.2s;
+  position: relative;
+  z-index: 10;
+}
+
+.payment-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.payment-modal .modal-body {
+  padding: 32px 36px;
+}
+
+.payment-modal .student-info-box {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-left: 5px solid #3b82f6;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.payment-modal .student-info-box p {
+  margin: 10px 0;
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.6;
+}
+
+.payment-modal .student-info-box strong {
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .btn-primary,
 .btn-secondary {
-  padding: 12px 28px;
-  border-radius: 10px;
+  padding: 14px 32px;
+  border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: #f3f4f6;
+  background: white;
   color: #374151;
   border: 2px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary:hover {
-  background: #e5e7eb;
+  background: #f9fafb;
+  border-color: #d1d5db;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
 /* Mobile Responsive for New Elements */
 @media (max-width: 768px) {
-  .installment-progress-bar {
-    gap: 6px;
+  /* Modal improvements */
+  .discount-modal,
+  .payment-modal {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 20px;
+    max-height: 95vh;
   }
-  
-  .installment-block {
-    min-width: 35px;
-    height: 45px;
-    font-size: 12px;
+
+  .discount-modal .modal-header,
+  .payment-modal .modal-header {
+    padding: 24px 20px;
+    border-radius: 20px 20px 0 0;
   }
-  
-  .current-installment-details {
-    grid-template-columns: 1fr 1fr;
+
+  .discount-modal .modal-header h3,
+  .payment-modal .modal-header h3 {
+    font-size: 22px;
   }
-  
-  .detail-box .detail-value {
-    font-size: 16px;
+
+  .discount-modal .modal-body,
+  .payment-modal .modal-body {
+    padding: 24px 20px;
   }
-  
+
+  .discount-modal .student-info-box,
+  .payment-modal .student-info-box {
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .discount-modal .student-info-box p,
+  .payment-modal .student-info-box p {
+    font-size: 14px;
+  }
+
+  .discount-notice {
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .discount-notice p {
+    font-size: 13px;
+  }
+
+  .discount-preview {
+    padding: 18px;
+    margin-top: 20px;
+  }
+
+  .discount-preview p {
+    font-size: 13px;
+  }
+
+  /* Form elements mobile */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  /* Radio buttons mobile */
+  .discount-modal .radio-label,
+  .payment-modal .radio-label {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .discount-modal .radio-label:hover,
+  .payment-modal .radio-label:hover {
+    transform: none;
+  }
+
+  .discount-modal .radio-label span,
+  .payment-modal .radio-label span {
+    font-size: 14px;
+  }
+
+  /* Amount input wrapper mobile */
+  .amount-input-wrapper {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pay-full-btn {
+    width: 100%;
+    padding: 12px 20px;
+  }
+
+  /* Modal actions mobile */
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  /* Close button mobile */
+  .discount-modal .close-btn,
+  .payment-modal .close-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+  }
+
+  /* Installment tracker mobile */
+  .installment-tracker {
+    padding: 16px;
+  }
+
   .tracker-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+
+  .tracker-header h4 {
+    font-size: 15px;
+  }
+
+  .installment-count {
+    font-size: 12px;
+  }
+
+  .installment-progress-bar {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  
+  .installment-block {
+    min-width: 40px;
+    max-width: 60px;
+    flex: 1 1 calc(25% - 6px);
+    height: 50px;
+    font-size: 13px;
+  }
+  
+  .current-installment-details {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .detail-box {
+    padding: 12px;
+  }
+
+  .detail-box .detail-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .detail-box .detail-value {
+    font-size: 16px;
+  }
+
+  .installment-status-message {
+    font-size: 13px;
+    padding: 10px 14px;
   }
   
   .payment-type-badge {
@@ -1870,19 +2487,54 @@
     font-size: 11px;
     padding: 5px 12px;
   }
-  
-  .modal {
-    border-radius: 16px;
+
+  /* Breakdown amounts mobile */
+  .breakdown-amounts {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
-  
-  .discount-modal .modal-header,
-  .payment-modal .modal-header {
-    border-radius: 16px 16px 0 0;
-    padding: 20px 24px;
+
+  .breakdown-amount-item {
+    padding: 10px 14px;
   }
-  
-  .discount-modal .modal-header h3,
-  .payment-modal .modal-header h3 {
-    font-size: 19px;
+
+  .amount-label {
+    font-size: 11px;
+  }
+
+  .amount-value {
+    font-size: 14px;
+  }
+
+  /* Curriculum breakdown mobile */
+  .curriculum-breakdown-item {
+    padding: 18px;
+  }
+
+  .breakdown-curriculum-name {
+    font-size: 15px;
+  }
+
+  .current-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+
+  .discount-info {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .discount-label {
+    font-size: 12px;
+  }
+
+  .discount-value {
+    font-size: 13px;
+    padding: 3px 10px;
+  }
+
+  .discount-reason {
+    font-size: 11px;
   }
 }

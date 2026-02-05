@@ -139,7 +139,10 @@ const Layout = () => {
     <div className="app-layout">
       <header className="header">
         <div className="header-left">
-          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button 
+            className={`mobile-menu-btn ${isMobileMenuOpen ? 'open' : ''}`} 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
             <span className="hamburger-icon">
               <span></span>
               <span></span>

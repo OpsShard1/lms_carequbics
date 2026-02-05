@@ -65,17 +65,50 @@ router.post('/school/mark', authenticate, authorize('developer', 'trainer', 'tra
 router.post('/school/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { school_id, class_id, attendance_date, records } = req.body;
-    if (!school_id || !attendance_date || !records || records.length === 0) {
-      return res.status(400).json({ error: 'School, date, and attendance records are required' });
+    if (!school_id || !attendance_date) {
+      return res.status(400).json({ error: 'School and date are required' });
     }
+    
+    // Get all students for this class to handle deletions
+    const [allStudents] = await pool.query(
+      `SELECT id FROM students WHERE class_id = ? AND is_active = true`,
+      [class_id]
+    );
+    
+    // Create a set of student IDs that have records
+    const recordedStudentIds = new Set(records.map(r => r.student_id));
+    
+    // Process each record (insert or update)
     for (const record of records) {
-      const [existing] = await pool.query(`SELECT id FROM attendance WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'school' AND class_id = ?`, [record.student_id, attendance_date, class_id]);
+      const [existing] = await pool.query(
+        `SELECT id FROM attendance WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'school' AND class_id = ?`,
+        [record.student_id, attendance_date, class_id]
+      );
       if (existing.length > 0) {
-        await pool.query(`UPDATE attendance SET status = ?, marked_by = ? WHERE id = ?`, [record.status, req.user.id, existing[0].id]);
+        await pool.query(
+          `UPDATE attendance SET status = ?, marked_by = ? WHERE id = ?`,
+          [record.status, req.user.id, existing[0].id]
+        );
       } else {
-        await pool.query(`INSERT INTO attendance (student_id, attendance_type, school_id, class_id, attendance_date, status, marked_by) VALUES (?, 'school', ?, ?, ?, ?, ?)`, [record.student_id, school_id, class_id, attendance_date, record.status, req.user.id]);
+        await pool.query(
+          `INSERT INTO attendance (student_id, attendance_type, school_id, class_id, attendance_date, status, marked_by) 
+           VALUES (?, 'school', ?, ?, ?, ?, ?)`,
+          [record.student_id, school_id, class_id, attendance_date, record.status, req.user.id]
+        );
       }
     }
+    
+    // Delete records for students that were unmarked (not in the records array)
+    for (const student of allStudents) {
+      if (!recordedStudentIds.has(student.id)) {
+        await pool.query(
+          `DELETE FROM attendance 
+           WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'school' AND class_id = ?`,
+          [student.id, attendance_date, class_id]
+        );
+      }
+    }
+    
     res.json({ message: 'Attendance marked successfully', count: records.length });
   } catch (error) {
     console.error('Mark school attendance bulk error:', error);
@@ -143,17 +176,50 @@ router.post('/center/mark', authenticate, authorize('developer', 'trainer', 'tra
 router.post('/center/mark-bulk', authenticate, authorize('developer', 'trainer', 'trainer_head', 'registrar'), async (req, res) => {
   try {
     const { center_id, attendance_date, records } = req.body;
-    if (!center_id || !attendance_date || !records || records.length === 0) {
-      return res.status(400).json({ error: 'Center, date, and attendance records are required' });
+    if (!center_id || !attendance_date) {
+      return res.status(400).json({ error: 'Center and date are required' });
     }
+    
+    // Get all students for this center to handle deletions
+    const [allStudents] = await pool.query(
+      `SELECT id FROM students WHERE center_id = ? AND is_active = true`,
+      [center_id]
+    );
+    
+    // Create a set of student IDs that have records
+    const recordedStudentIds = new Set(records.map(r => r.student_id));
+    
+    // Process each record (insert or update)
     for (const record of records) {
-      const [existing] = await pool.query(`SELECT id FROM attendance WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'center'`, [record.student_id, attendance_date]);
+      const [existing] = await pool.query(
+        `SELECT id FROM attendance WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'center'`,
+        [record.student_id, attendance_date]
+      );
       if (existing.length > 0) {
-        await pool.query(`UPDATE attendance SET status = ?, marked_by = ? WHERE id = ?`, [record.status, req.user.id, existing[0].id]);
+        await pool.query(
+          `UPDATE attendance SET status = ?, marked_by = ? WHERE id = ?`,
+          [record.status, req.user.id, existing[0].id]
+        );
       } else {
-        await pool.query(`INSERT INTO attendance (student_id, attendance_type, center_id, attendance_date, status, marked_by) VALUES (?, 'center', ?, ?, ?, ?)`, [record.student_id, center_id, attendance_date, record.status, req.user.id]);
+        await pool.query(
+          `INSERT INTO attendance (student_id, attendance_type, center_id, attendance_date, status, marked_by) 
+           VALUES (?, 'center', ?, ?, ?, ?)`,
+          [record.student_id, center_id, attendance_date, record.status, req.user.id]
+        );
       }
     }
+    
+    // Delete records for students that were unmarked (not in the records array)
+    for (const student of allStudents) {
+      if (!recordedStudentIds.has(student.id)) {
+        await pool.query(
+          `DELETE FROM attendance 
+           WHERE student_id = ? AND attendance_date = ? AND attendance_type = 'center'`,
+          [student.id, attendance_date]
+        );
+      }
+    }
+    
     res.json({ message: 'Attendance marked successfully', count: records.length });
   } catch (error) {
     console.error('Mark center attendance bulk error:', error);

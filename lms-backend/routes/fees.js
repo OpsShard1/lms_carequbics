@@ -48,10 +48,10 @@ router.get('/center/:centerId/overview', authenticate, async (req, res) => {
     // For each student, check if installment is due based on attendance
     for (let student of students) {
       if (student.payment_type === 'installment' && student.payment_status !== 'paid') {
-        // Get current attendance count
+        // Get current attendance count (count both 'present' and 'late' as valid attendance)
         const [attendance] = await pool.query(
           `SELECT COUNT(*) as count FROM attendance 
-           WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+           WHERE student_id = ? AND status IN ('present', 'late') AND center_id = ?`,
           [student.id, req.params.centerId]
         );
         
@@ -276,11 +276,11 @@ router.post('/payment', authenticate, authorize('developer', 'trainer_head', 're
       return res.status(400).json({ error: `Payment amount cannot exceed pending amount of ₹${pendingAmount}` });
     }
     
-    // Get current attendance for installment tracking
+    // Get current attendance for installment tracking (count both 'present' and 'late')
     const [student] = await connection.query('SELECT center_id FROM students WHERE id = ?', [student_id]);
     const [attendance] = await connection.query(
       `SELECT COUNT(*) as count FROM attendance 
-       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+       WHERE student_id = ? AND status IN ('present', 'late') AND center_id = ?`,
       [student_id, student[0].center_id]
     );
     const currentAttendance = attendance[0].count;
@@ -422,10 +422,10 @@ router.get('/student/:studentId/installment-status', authenticate, async (req, r
     
     const fp = feesPayment[0];
     
-    // Get current attendance
+    // Get current attendance (count both 'present' and 'late')
     const [attendance] = await pool.query(
       `SELECT COUNT(*) as count FROM attendance 
-       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+       WHERE student_id = ? AND status IN ('present', 'late') AND center_id = ?`,
       [req.params.studentId, student[0].center_id]
     );
     
@@ -634,10 +634,10 @@ router.post('/discount', authenticate, authorize('developer', 'trainer_head', 'r
     const installmentAmount = payment_type === 'installment' ? 
       Math.ceil(totalFeesAfterDiscount / totalInstallments) : 0;
     
-    // Get current attendance count
+    // Get current attendance count (count both 'present' and 'late')
     const [attendance] = await connection.query(
       `SELECT COUNT(*) as count FROM attendance 
-       WHERE student_id = ? AND status = 'present' AND center_id = ?`,
+       WHERE student_id = ? AND status IN ('present', 'late') AND center_id = ?`,
       [student_id, student[0].center_id]
     );
     const currentAttendance = attendance[0].count;
