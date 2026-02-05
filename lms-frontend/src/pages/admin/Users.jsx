@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
+import Modal from '../../components/Modal';
 
 const AdminUsers = () => {
   const { user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', role_id: '', section_type: 'school' });
 
   useEffect(() => {
@@ -46,11 +49,12 @@ const AdminUsers = () => {
     e.preventDefault();
     try {
       await api.post('/users', form);
-      setShowForm(false);
+      setShowModal(false);
       setForm({ email: '', password: '', first_name: '', last_name: '', role_id: '', section_type: 'school' });
       loadUsers();
+      showSuccess('User created successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create user');
+      showError(err.response?.data?.error || 'Failed to create user');
     }
   };
 
@@ -61,35 +65,65 @@ const AdminUsers = () => {
     <div className="users-page">
       <div className="page-header">
         <h2>User Management</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          {showForm ? 'Cancel' : 'Add User'}
+        <button onClick={() => setShowModal(true)} className="btn-primary">
+          Add User
         </button>
       </div>
 
-      {showForm && (
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        title="Add New User"
+      >
         <form onSubmit={handleSubmit} className="form-card">
-          <div className="form-row">
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required />
-            <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} required />
+          <div className="info-box">
+            <p><strong>Create User Account</strong></p>
+            <p>Add a new user to the system with appropriate role and section access.</p>
           </div>
+          
           <div className="form-row">
-            <input placeholder="First Name" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} required />
-            <input placeholder="Last Name" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} />
+            <div>
+              <label>Email Address <span className="required">*</span></label>
+              <input placeholder="Enter email address" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required />
+            </div>
+            <div>
+              <label>Password <span className="required">*</span></label>
+              <input placeholder="Enter password" type="password" value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} required />
+            </div>
           </div>
+          
           <div className="form-row">
-            <select value={form.role_id} onChange={(e) => setForm({...form, role_id: e.target.value})} required>
-              <option value="">Select Role</option>
-              {availableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-            <select value={form.section_type} onChange={(e) => setForm({...form, section_type: e.target.value})}>
-              <option value="school">School Only</option>
-              <option value="center">Center Only</option>
-              <option value="both">Both</option>
-            </select>
+            <div>
+              <label>First Name <span className="required">*</span></label>
+              <input placeholder="Enter first name" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} required />
+            </div>
+            <div>
+              <label>Last Name</label>
+              <input placeholder="Enter last name" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} />
+            </div>
           </div>
+          
+          <div className="form-row">
+            <div>
+              <label>Role <span className="required">*</span></label>
+              <select value={form.role_id} onChange={(e) => setForm({...form, role_id: e.target.value})} required>
+                <option value="">Select Role</option>
+                {availableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label>Section Access</label>
+              <select value={form.section_type} onChange={(e) => setForm({...form, section_type: e.target.value})}>
+                <option value="school">School Only</option>
+                <option value="center">Center Only</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+          </div>
+          
           <button type="submit" className="btn-primary">Create User</button>
         </form>
-      )}
+      </Modal>
 
       <div className="table-wrapper">
         <table className="data-table">

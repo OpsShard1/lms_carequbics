@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import '../../styles/student-registration.css';
 
 const CenterStudents = () => {
   const { selectedCenter, user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const navigate = useNavigate();
   const canChangeCurriculum = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
   const canRegisterStudents = ['developer', 'trainer_head', 'trainer', 'registrar'].includes(user?.role_name);
@@ -77,8 +79,9 @@ const CenterStudents = () => {
       setShowForm(false);
       resetForm();
       loadStudents();
+      showSuccess(editingStudent ? 'Student updated successfully!' : 'Student registered successfully!');
     } catch (err) {
-      alert('Failed to save student');
+      showError('Failed to save student');
     }
   };
 
@@ -121,8 +124,9 @@ const CenterStudents = () => {
     try {
       await api.put(`/students/${studentId}`, { curriculum_id: curriculumId || null });
       loadStudents();
+      showSuccess('Curriculum updated successfully!');
     } catch (err) {
-      alert('Failed to update curriculum');
+      showError('Failed to update curriculum');
     }
   };
 
@@ -132,10 +136,10 @@ const CenterStudents = () => {
     }
     try {
       await api.delete(`/students/${student.id}`);
-      alert('Student deleted successfully');
+      showSuccess('Student deleted successfully');
       loadStudents();
     } catch (err) {
-      alert('Failed to delete student');
+      showError('Failed to delete student');
     }
   };
 

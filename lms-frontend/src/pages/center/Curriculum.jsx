@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import '../../styles/curriculum.css';
 
 const CurriculumManagement = () => {
   const { user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const canEditCurriculum = ['developer', 'trainer_head'].includes(user?.role_name);
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
@@ -188,8 +190,9 @@ const CurriculumManagement = () => {
       setEditingCurriculum(false);
       setCurriculumForm({ name: '', description: '', fees: '', duration_months: 12, classes_per_installment_weekday: 8, classes_per_installment_weekend: 4 });
       loadCurriculums();
+      showSuccess(editingCurriculum ? 'Curriculum updated successfully!' : 'Curriculum created successfully!');
     } catch (err) {
-      alert(editingCurriculum ? 'Failed to update curriculum' : 'Failed to create curriculum');
+      showError(editingCurriculum ? 'Failed to update curriculum' : 'Failed to create curriculum');
     }
   };
 
@@ -204,8 +207,9 @@ const CurriculumManagement = () => {
       setShowSubjectForm(false);
       setSubjectForm({ name: '', description: '' });
       loadCurriculumFull(selectedCurriculum.id);
+      showSuccess('Subject created successfully!');
     } catch (err) {
-      alert('Failed to create subject');
+      showError('Failed to create subject');
     }
   };
 
@@ -220,8 +224,9 @@ const CurriculumManagement = () => {
       });
       setTopicForm({ name: '', description: '' });
       loadCurriculumFull(selectedCurriculum.id);
+      showSuccess('Topic created successfully!');
     } catch (err) {
-      alert('Failed to create topic');
+      showError('Failed to create topic');
     }
   };
 
@@ -236,8 +241,9 @@ const CurriculumManagement = () => {
     try {
       await api.delete(`/curriculum/subjects/${id}`);
       loadCurriculumFull(selectedCurriculum.id);
+      showSuccess('Subject deleted successfully!');
     } catch (err) {
-      alert('Failed to delete subject');
+      showError('Failed to delete subject');
     }
   };
 
@@ -246,8 +252,9 @@ const CurriculumManagement = () => {
     try {
       await api.delete(`/curriculum/topics/${id}`);
       loadCurriculumFull(selectedCurriculum.id);
+      showSuccess('Topic deleted successfully!');
     } catch (err) {
-      alert('Failed to delete topic');
+      showError('Failed to delete topic');
     }
   };
 
@@ -257,8 +264,9 @@ const CurriculumManagement = () => {
       await api.delete(`/curriculum/${id}`);
       setSelectedCurriculum(null);
       loadCurriculums();
+      showSuccess('Curriculum deleted successfully!');
     } catch (err) {
-      alert('Failed to delete curriculum');
+      showError('Failed to delete curriculum');
     }
   };
 
@@ -276,14 +284,14 @@ const CurriculumManagement = () => {
       await api.put(`/fees/curriculum/${feesForm.curriculum_id}/fees`, {
         fees: parseFloat(feesForm.fees) || 0
       });
-      alert('Fees updated successfully');
+      showSuccess('Fees updated successfully');
       setShowFeesModal(false);
       loadCurriculums();
       if (selectedCurriculum?.id === feesForm.curriculum_id) {
         loadCurriculumFull(feesForm.curriculum_id);
       }
     } catch (err) {
-      alert('Failed to update fees');
+      showError('Failed to update fees');
     }
   };
 

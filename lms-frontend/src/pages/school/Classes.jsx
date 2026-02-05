@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const SchoolClasses = () => {
   const { selectedSchool, selectSchool, availableSchools, user } = useAuth();
+  const { showSuccess, showError, showWarning } = useNotificationContext();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -83,7 +85,7 @@ const SchoolClasses = () => {
   const handleAssignCurriculum = async (e) => {
     e.preventDefault();
     if (!selectedCurriculumId) {
-      alert('Please select a curriculum');
+      showWarning('Please select a curriculum');
       return;
     }
 
@@ -94,9 +96,9 @@ const SchoolClasses = () => {
       });
       setShowCurriculumModal(false);
       loadClasses();
-      alert('Curriculum assigned successfully!');
+      showSuccess('Curriculum assigned successfully!');
     } catch (err) {
-      alert('Failed to assign curriculum: ' + (err.response?.data?.error || err.message));
+      showError('Failed to assign curriculum: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -128,7 +130,7 @@ const SchoolClasses = () => {
 
   const addStudentToList = () => {
     if (!newStudent.first_name || !newStudent.date_of_birth) {
-      alert('First name and date of birth are required');
+      showWarning('First name and date of birth are required');
       return;
     }
     
@@ -150,7 +152,7 @@ const SchoolClasses = () => {
   const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!selectedSchool?.id) {
-      alert('Please select a school first');
+      showWarning('Please select a school first');
       return;
     }
 
@@ -159,9 +161,9 @@ const SchoolClasses = () => {
       setShowCreateModal(false);
       setForm({ name: '', grade: '', section: '', room_number: '' });
       loadClasses();
-      alert('Class created successfully!');
+      showSuccess('Class created successfully!');
     } catch (err) {
-      alert('Failed to create class: ' + (err.response?.data?.error || err.message));
+      showError('Failed to create class: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -192,9 +194,9 @@ const SchoolClasses = () => {
       setEditingClass(null);
       setStudents([]);
       loadClasses();
-      alert('Class updated successfully!');
+      showSuccess('Class updated successfully!');
     } catch (err) {
-      alert('Failed to update class: ' + (err.response?.data?.error || err.message));
+      showError('Failed to update class: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -203,8 +205,9 @@ const SchoolClasses = () => {
     try {
       await api.delete(`/classes/${classId}`);
       loadClasses();
+      showSuccess('Class deleted successfully!');
     } catch (err) {
-      alert('Failed to delete class');
+      showError('Failed to delete class');
     }
   };
 

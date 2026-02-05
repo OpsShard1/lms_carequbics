@@ -1,11 +1,14 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotificationContext } from '../context/NotificationContext';
+import NotificationContainer from './NotificationContainer';
 import api from '../api/axios';
 import '../styles/layout.css';
 
 const Layout = () => {
   const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter } = useAuth();
+  const { notifications, removeNotification } = useNotificationContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarSettings, setSidebarSettings] = useState(null);
@@ -250,6 +253,11 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
+      
+      <NotificationContainer 
+        notifications={notifications} 
+        onRemove={removeNotification} 
+      />
     </div>
   );
 };

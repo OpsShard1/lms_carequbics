@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 
 const SchoolAssignments = () => {
+  const { showSuccess, showError } = useNotificationContext();
   const [schools, setSchools] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [principals, setPrincipals] = useState([]);
@@ -51,8 +53,9 @@ const SchoolAssignments = () => {
       });
       setShowAssignModal(false);
       loadData();
+      showSuccess('Assignment created successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create assignment');
+      showError(err.response?.data?.error || 'Failed to create assignment');
     }
   };
 
@@ -61,8 +64,9 @@ const SchoolAssignments = () => {
     try {
       await api.delete(`/school-assignments/${assignmentId}`);
       loadData();
+      showSuccess('Assignment removed successfully!');
     } catch (err) {
-      alert('Failed to remove assignment');
+      showError('Failed to remove assignment');
     }
   };
 

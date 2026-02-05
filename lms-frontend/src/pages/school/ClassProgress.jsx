@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import '../../styles/class-progress.css';
 
 const ClassProgress = () => {
   const { user, selectedSchool } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [curriculums, setCurriculums] = useState([]);
@@ -67,8 +69,9 @@ const ClassProgress = () => {
       setShowAssignForm(false);
       setSelectedCurriculum('');
       loadClassProgress(selectedClass);
+      showSuccess('Curriculum assigned successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to assign curriculum');
+      showError(err.response?.data?.error || 'Failed to assign curriculum');
     }
   };
 
@@ -102,8 +105,9 @@ const ClassProgress = () => {
         completion_date: status === 'completed' ? new Date().toISOString().split('T')[0] : null,
         remarks: ''
       });
+      showSuccess('Progress updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update progress');
+      showError(err.response?.data?.error || 'Failed to update progress');
       // Reload on error to get correct state
       loadClassProgress(selectedClass, true);
     }

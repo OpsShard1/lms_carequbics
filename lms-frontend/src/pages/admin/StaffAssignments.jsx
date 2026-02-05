@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const StaffAssignments = () => {
+  const { showSuccess, showError } = useNotificationContext();
   const [assignments, setAssignments] = useState([]);
   const [staff, setStaff] = useState([]);
   const [schools, setSchools] = useState([]);
@@ -52,8 +54,9 @@ const StaffAssignments = () => {
       setShowForm(false);
       setFormData({ staff_id: '', assignment_type: 'center', school_id: '', center_id: '' });
       loadData();
+      showSuccess('Assignment created successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create assignment');
+      showError(err.response?.data?.error || 'Failed to create assignment');
     }
   };
 
@@ -62,8 +65,9 @@ const StaffAssignments = () => {
     try {
       await api.delete(`/staff-assignments/${id}`);
       loadData();
+      showSuccess('Assignment removed successfully!');
     } catch (err) {
-      alert('Failed to remove assignment');
+      showError('Failed to remove assignment');
     }
   };
 

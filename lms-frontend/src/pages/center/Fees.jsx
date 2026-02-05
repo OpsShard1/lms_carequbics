@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import '../../styles/fees.css';
 
 const CenterFees = () => {
   const { selectedCenter, user } = useAuth();
+  const { showSuccess, showError, showWarning } = useNotificationContext();
   const navigate = useNavigate();
   const canManageFees = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
   
@@ -168,7 +170,7 @@ const CenterFees = () => {
     if (discountForm.discount_percentage !== '' && discountForm.discount_percentage !== null) {
       const discount = parseFloat(discountForm.discount_percentage);
       if (discount < 0 || discount > 100) {
-        alert('Discount percentage must be between 0 and 100');
+        showError('Discount percentage must be between 0 and 100');
         return;
       }
     }
@@ -204,7 +206,7 @@ const CenterFees = () => {
       });
       setShowPaymentModal(true);
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to apply discount');
+      showError(err.response?.data?.error || 'Failed to apply discount');
     }
   };
 
@@ -215,24 +217,24 @@ const CenterFees = () => {
     const pendingAmount = parseFloat(selectedStudent.amount_pending);
     
     if (!selectedStudent || !paymentForm.amount || amount <= 0) {
-      alert('Please enter a valid amount');
+      showError('Please enter a valid amount');
       return;
     }
 
     // Check if amount is a whole number
     if (!Number.isInteger(amount)) {
-      alert('Amount must be a whole number (no decimals)');
+      showError('Amount must be a whole number (no decimals)');
       return;
     }
 
     if (amount < 1) {
-      alert('Minimum payment amount is ₹1');
+      showError('Minimum payment amount is ₹1');
       return;
     }
 
     // Check if amount exceeds pending amount
     if (amount > pendingAmount) {
-      alert(`Payment amount cannot exceed pending amount of ₹${pendingAmount.toLocaleString('en-IN')}`);
+      showError(`Payment amount cannot exceed pending amount of ₹${pendingAmount.toLocaleString('en-IN')}`);
       return;
     }
 
@@ -255,7 +257,7 @@ const CenterFees = () => {
 
       await api.post('/fees/payment', paymentData);
       
-      alert('Payment recorded successfully');
+      showSuccess('Payment recorded successfully');
       closePaymentModal();
       // Reset discount form
       setDiscountForm({
@@ -266,7 +268,7 @@ const CenterFees = () => {
       loadStats();
     } catch (err) {
       console.error('Payment error:', err);
-      alert(err.response?.data?.error || 'Failed to record payment');
+      showError(err.response?.data?.error || 'Failed to record payment');
     }
   };
 

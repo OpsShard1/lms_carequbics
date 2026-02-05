@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import '../../styles/attendance.css';
 
 const SchoolAttendance = () => {
   const { selectedSchool, canAddExtraStudents, canMarkAttendance, user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -133,11 +135,11 @@ const SchoolAttendance = () => {
         });
       }
       
-      alert('Attendance saved successfully!');
+      showSuccess('Attendance saved successfully!');
       loadMonthAttendance();
     } catch (err) {
       console.error('Failed to save attendance:', err);
-      alert('Failed to save attendance');
+      showError('Failed to save attendance');
     } finally {
       setSaving(false);
     }

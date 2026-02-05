@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
+import Modal from '../../components/Modal';
 
 const AdminCenters = () => {
   const { user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const [centers, setCenters] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', contact_number: '', email: '' });
 
   // Only developer and owner can delete centers
@@ -24,12 +27,12 @@ const AdminCenters = () => {
     e.preventDefault();
     try {
       await api.post('/centers', form);
-      setShowForm(false);
+      setShowModal(false);
       setForm({ name: '', address: '', contact_number: '', email: '' });
       loadCenters();
-      alert('Center created successfully!');
+      showSuccess('Center created successfully!');
     } catch (err) {
-      alert('Failed to create center: ' + (err.response?.data?.error || err.message));
+      showError('Failed to create center: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -38,9 +41,9 @@ const AdminCenters = () => {
     try {
       await api.delete(`/centers/${id}`);
       loadCenters();
-      alert('Center deleted successfully!');
+      showSuccess('Center deleted successfully!');
     } catch (err) {
-      alert('Failed to delete center: ' + (err.response?.data?.error || err.message));
+      showError('Failed to delete center: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -48,22 +51,46 @@ const AdminCenters = () => {
     <div className="centers-page">
       <div className="page-header">
         <h2>Centers Management</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          {showForm ? 'Cancel' : 'Add Center'}
+        <button onClick={() => setShowModal(true)} className="btn-primary">
+          Add Center
         </button>
       </div>
 
-      {showForm && (
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        title="Add New Center"
+      >
         <form onSubmit={handleSubmit} className="form-card">
-          <input placeholder="Center Name" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required />
-          <textarea placeholder="Address" value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} />
-          <div className="form-row">
-            <input placeholder="Contact Number" value={form.contact_number} onChange={(e) => setForm({...form, contact_number: e.target.value})} />
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} />
+          <div className="info-box">
+            <p><strong>Create Training Center</strong></p>
+            <p>Add a new training center to the system for curriculum-based learning programs.</p>
           </div>
+          
+          <div>
+            <label>Center Name <span className="required">*</span></label>
+            <input placeholder="Enter center name" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required />
+          </div>
+          
+          <div>
+            <label>Address</label>
+            <textarea placeholder="Enter center address" value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} />
+          </div>
+          
+          <div className="form-row">
+            <div>
+              <label>Contact Number</label>
+              <input placeholder="Enter contact number" value={form.contact_number} onChange={(e) => setForm({...form, contact_number: e.target.value})} />
+            </div>
+            <div>
+              <label>Email Address</label>
+              <input placeholder="Enter email address" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} />
+            </div>
+          </div>
+          
           <button type="submit" className="btn-primary">Create Center</button>
         </form>
-      )}
+      </Modal>
 
       <div className="table-wrapper">
         <table className="data-table">

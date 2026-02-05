@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import '../../styles/timetable.css';
 
@@ -15,6 +16,7 @@ const DAYS = [
 
 const SchoolTimetable = () => {
   const { selectedSchool, user } = useAuth();
+  const { showSuccess, showError, showWarning } = useNotificationContext();
   const isTrainer = ['trainer', 'trainer_head'].includes(user?.role_name);
   const canEdit = ['developer', 'owner', 'school_teacher'].includes(user?.role_name);
   
@@ -124,10 +126,10 @@ const SchoolTimetable = () => {
       });
       setShowCreateWizard(false);
       loadTimetable();
-      alert('Timetable created successfully!');
+      showSuccess('Timetable created successfully!');
     } catch (err) {
       console.error('Failed to create timetable:', err);
-      alert(err.response?.data?.error || 'Failed to create timetable');
+      showError(err.response?.data?.error || 'Failed to create timetable');
     }
   };
 
@@ -137,10 +139,10 @@ const SchoolTimetable = () => {
       await api.delete(`/timetables/${timetableData.timetable.id}`);
       setTimetableData(null);
       setSchedule([]);
-      alert('Timetable deleted successfully');
+      showSuccess('Timetable deleted successfully');
     } catch (err) {
       console.error('Failed to delete timetable:', err);
-      alert('Failed to delete timetable');
+      showError('Failed to delete timetable');
     }
   };
 
@@ -158,10 +160,10 @@ const SchoolTimetable = () => {
       await api.put(`/timetables/${timetableData.timetable.id}/schedule`, { schedule });
       setEditMode(false);
       loadTimetable();
-      alert('Schedule updated successfully!');
+      showSuccess('Schedule updated successfully!');
     } catch (err) {
       console.error('Failed to save schedule:', err);
-      alert('Failed to save schedule');
+      showError('Failed to save schedule');
     }
   };
 
@@ -187,7 +189,7 @@ const SchoolTimetable = () => {
     );
 
     if (exists) {
-      alert('This class is already scheduled in this slot');
+      showWarning('This class is already scheduled in this slot');
       return;
     }
 

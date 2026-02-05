@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
 import api from '../../api/axios';
 import '../../styles/progress.css';
 
@@ -15,6 +16,7 @@ const SKILL_FIELDS = [
 
 const CenterProgress = () => {
   const { selectedCenter, user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
   const canChangeCurriculum = ['developer', 'trainer_head'].includes(user?.role_name);
   const canUpdateProgress = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
   const [students, setStudents] = useState([]);
@@ -150,7 +152,7 @@ const CenterProgress = () => {
       setSelectedSubject('');
       setSelectedTopic('');
     } catch (err) {
-      alert('Failed to assign curriculum');
+      showError('Failed to assign curriculum');
     } finally {
       setAssigningCurriculum(false);
     }
@@ -166,9 +168,9 @@ const CenterProgress = () => {
     setSaving(true);
     try {
       await api.put(`/curriculum/progress/student/${selectedStudent.id}/topic/${selectedTopic}`, progress);
-      alert('Progress saved successfully!');
+      showSuccess('Progress saved successfully!');
     } catch (err) {
-      alert('Failed to save progress');
+      showError('Failed to save progress');
     } finally {
       setSaving(false);
     }
