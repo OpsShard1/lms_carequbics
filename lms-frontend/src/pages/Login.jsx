@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import InteractiveBackground from '../components/InteractiveBackground';
 import '../styles/login.css';
 
 const Login = () => {
@@ -46,11 +47,13 @@ const Login = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
+    <>
+      <InteractiveBackground />
+      <div className="login-page">
+        <div className="login-card">
         <h1>LMS</h1>
         
-        <div className="login-toggle">
+        <div className={`login-toggle ${isParentMode ? 'parent-mode' : ''}`}>
           <button 
             className={`toggle-btn ${!isParentMode ? 'active' : ''}`}
             onClick={() => { setIsParentMode(false); setError(''); }}
@@ -124,6 +127,7 @@ const Login = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

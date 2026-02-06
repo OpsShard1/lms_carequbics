@@ -4,32 +4,73 @@
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  position: relative;
+  z-index: 1;
+  padding: 20px;
 }
 
 .login-card { 
-  background: white; 
-  padding: 2.5rem; 
-  border-radius: 16px; 
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); 
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 2rem; 
+  border-radius: 24px; 
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 255, 255, 0.5) inset;
   width: 100%; 
-  max-width: 420px; 
+  max-width: 420px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-card h1 { 
   text-align: center; 
-  margin-bottom: 1.5rem; 
-  color: #1a1a2e; 
-  font-size: 2rem; 
-  font-weight: 700; 
+  margin-bottom: 1.25rem; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 2.5rem; 
+  font-weight: 800;
+  letter-spacing: -1px;
 }
 
 .login-toggle {
   display: flex;
-  background: #f1f5f9;
-  border-radius: 10px;
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 12px;
   padding: 4px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  position: relative;
+}
+
+.login-toggle::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  z-index: 0;
+}
+
+.login-toggle.parent-mode::before {
+  transform: translateX(calc(100% + 4px));
 }
 
 .toggle-btn {
@@ -37,29 +78,103 @@
   padding: 0.75rem 1rem;
   border: none;
   background: transparent;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-weight: 600;
   color: #64748b;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 1;
 }
 
 .toggle-btn.active {
-  background: white;
-  color: #1a1a2e;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: white;
 }
 
 .toggle-btn:hover:not(.active) {
-  color: #1a1a2e;
+  color: #475569;
 }
 
 .parent-info {
   text-align: center;
   color: #64748b;
   font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   line-height: 1.5;
+}
+
+/* Form container with smooth height transitions */
+.login-card form {
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Enhanced form inputs for login */
+.login-card form input,
+.login-card form select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.875rem;
+}
+
+.login-card form input:focus,
+.login-card form select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  transform: translateY(-1px);
+}
+
+.login-card form input::placeholder {
+  color: #94a3b8;
+}
+
+.login-card .error-message {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #fca5a5;
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.login-card button[type="submit"] {
+  margin-top: 0.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card button[type="submit"]::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.login-card button[type="submit"]:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn-full {
@@ -77,28 +192,28 @@
 
 .login-hint { 
   text-align: center; 
-  margin-top: 1.5rem; 
+  margin-top: 1.25rem; 
   color: #64748b; 
   font-size: 0.875rem; 
-  padding: 0.75rem; 
-  background: #f8fafc; 
+  padding: 0.625rem; 
+  background: rgba(248, 250, 252, 0.8);
   border-radius: 8px; 
 }
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .login-page {
-    padding: 20px;
+    padding: 15px;
   }
 
   .login-card {
-    padding: 2rem 1.5rem;
+    padding: 1.75rem 1.5rem;
     max-width: 100%;
   }
 
   .login-card h1 {
-    font-size: 1.5rem;
-    margin-bottom: 1.25rem;
+    font-size: 2rem;
+    margin-bottom: 1rem;
   }
 
   .toggle-btn {
@@ -108,10 +223,18 @@
 
   .parent-info {
     font-size: 0.85rem;
+    margin-bottom: 1rem;
   }
 
   .login-hint {
     font-size: 0.8rem;
-    padding: 0.625rem;
+    padding: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .login-card form input,
+  .login-card form select {
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 0.75rem;
   }
 }

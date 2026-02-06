@@ -29,7 +29,6 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'https://lms.carequbics.com',
   'https://lms.carequbics.com',
   'http://localhost:5173',
-
 ];
 
 app.use(cors({
