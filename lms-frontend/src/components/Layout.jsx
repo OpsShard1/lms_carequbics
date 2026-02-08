@@ -3,16 +3,61 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import NotificationContainer from './NotificationContainer';
+import UnassignedUser from './UnassignedUser';
 import api from '../api/axios';
 import '../styles/layout.css';
 
 const Layout = () => {
-  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter } = useAuth();
+  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, availableSchools, availableCenters } = useAuth();
   const { notifications, removeNotification } = useNotificationContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarSettings, setSidebarSettings] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Check if user needs assignments based on their role
+  const needsAssignment = () => {
+    if (!user) return false;
+    
+    // Roles that don't need assignments (they have global access)
+    const rolesWithoutAssignments = ['developer', 'owner'];
+    if (rolesWithoutAssignments.includes(user.role_name)) {
+      return false;
+    }
+    
+    // Check if user has any assignments based on their role
+    const roleName = user.role_name;
+    
+    if (roleName === 'school_teacher' || roleName === 'principal') {
+      // These roles need at least one school assignment
+      return availableSchools.length === 0;
+    }
+    
+    if (roleName === 'registrar') {
+      // Registrars need at least one center assignment
+      return availableCenters.length === 0;
+    }
+    
+    if (roleName === 'trainer' || roleName === 'trainer_head') {
+      // Trainers need at least one school OR center assignment
+      return availableSchools.length === 0 && availableCenters.length === 0;
+    }
+    
+    return false;
+  };
+
+  // If user needs assignment, show the unassigned user screen
+  if (needsAssignment()) {
+    return (
+      <>
+        <UnassignedUser user={user} />
+        <NotificationContainer 
+          notifications={notifications} 
+          onRemove={removeNotification} 
+        />
+      </>
+    );
+  }
 
   // Load sidebar visibility settings
   useEffect(() => {
