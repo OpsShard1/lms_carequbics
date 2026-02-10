@@ -25,10 +25,10 @@
 
 .modal-content {
   background: white;
-  border-radius: 24px;
+  border-radius: 24px !important;
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
-  max-width: 600px;
-  width: 95%;
+  max-width: 650px;
+  width: 70%;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -48,9 +48,9 @@
 
 .modal-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 24px 24px 0 0;
-  padding: 32px 36px;
+  color: white !important;
+  border-radius: 24px 24px 0 0 !important;
+  padding: 28px 32px;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -70,7 +70,7 @@
 }
 
 .modal-header h3 {
-  color: white;
+  color: white !important;
   font-size: 26px;
   font-weight: 700;
   margin: 0;
@@ -79,10 +79,12 @@
 }
 
 .modal-close {
-  color: white;
+  color: white !important;
   background: rgba(255, 255, 255, 0.2);
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border-radius: 12px;
   transition: all 0.2s;
   position: relative;
@@ -93,16 +95,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .modal-close:hover {
   background: rgba(255, 255, 255, 0.3);
-  color: white;
+  color: white !important;
   transform: rotate(90deg);
 }
 
 .modal-body {
-  padding: 32px 36px;
+  padding: 32px;
 }
 
 .modal-body .form-card {
@@ -115,12 +118,27 @@
 
 .modal-body .form-row {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
 .modal-body .form-row > * {
   flex: 1;
+}
+
+.modal-body label {
+  display: block;
+  margin-bottom: 10px;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.modal-body .required {
+  color: #ef4444;
+  margin-left: 2px;
 }
 
 .modal-body input,
@@ -131,7 +149,7 @@
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   font-size: 15px;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   background: white;
 }
@@ -147,21 +165,21 @@
 
 .modal-body textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
 }
 
 .modal-body .btn-primary {
   width: 100%;
-  padding: 14px 32px;
+  padding: 16px 32px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  margin-top: 8px;
+  margin-top: 12px;
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
@@ -217,22 +235,7 @@
   display: none;
 }
 
-/* Form labels */
-.modal-body label {
-  display: block;
-  margin-bottom: 10px;
-  color: #1e293b;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.3px;
-}
-
-.modal-body .required {
-  color: #ef4444;
-  margin-left: 2px;
-}
-
-/* Info box styling for user/school/center info */
+/* Info box styling - matching fees section */
 .info-box {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border-left: 5px solid #3b82f6;
@@ -247,6 +250,14 @@
   font-size: 15px;
   color: #1e293b;
   line-height: 1.6;
+}
+
+.info-box p:first-child {
+  margin-top: 0;
+}
+
+.info-box p:last-child {
+  margin-bottom: 0;
 }
 
 .info-box strong {

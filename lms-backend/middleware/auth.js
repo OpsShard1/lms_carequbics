@@ -40,6 +40,12 @@ const authorize = (...allowedRoles) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
+    
+    // Super admin has access to everything
+    if (req.user.role_name === 'super_admin') {
+      return next();
+    }
+    
     if (!allowedRoles.includes(req.user.role_name)) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -52,6 +58,12 @@ const checkSectionAccess = (sectionType) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
+    
+    // Super admin has access to all sections
+    if (req.user.role_name === 'super_admin') {
+      return next();
+    }
+    
     const userSection = req.user.section_type;
     if (userSection !== 'both' && userSection !== sectionType) {
       return res.status(403).json({ error: `Access denied. You don't have ${sectionType} section access.` });

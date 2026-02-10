@@ -16,6 +16,34 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   text-align: center;
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.unassigned-logout-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.unassigned-logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+.unassigned-logout-btn:active {
+  transform: translateY(0);
 }
 
 @keyframes slideUp {
@@ -39,6 +67,26 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   color: white;
+}
+
+.unassigned-icon.deactivated-icon {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.unassigned-user-card.deactivated {
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.unassigned-user-card.deactivated .unassigned-title {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.deactivated-status {
+  color: #ef4444;
+  font-weight: 600;
 }
 
 .unassigned-title {
@@ -121,6 +169,18 @@
 @media (max-width: 640px) {
   .unassigned-user-card {
     padding: 2rem 1.5rem;
+  }
+
+  .unassigned-logout-btn {
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+  }
+
+  .unassigned-logout-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .unassigned-icon {

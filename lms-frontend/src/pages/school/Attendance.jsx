@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import api from '../../api/axios';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import '../../styles/attendance.css';
@@ -8,6 +9,7 @@ import '../../styles/attendance.css';
 const SchoolAttendance = () => {
   const { selectedSchool, canAddExtraStudents, canMarkAttendance, user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -112,6 +114,11 @@ const SchoolAttendance = () => {
   };
 
   const saveAttendance = async () => {
+    if (!checkEdit()) {
+      setSaving(false);
+      return;
+    }
+    
     setSaving(true);
     try {
       const recordsByDate = {};
@@ -217,7 +224,7 @@ const SchoolAttendance = () => {
               + Add Extra Student
             </button>
           )}
-          {selectedClass && students.length > 0 && canMarkAttendance() && (
+          {selectedClass && students.length > 0 && canMarkAttendance() && canEdit && (
             <button onClick={saveAttendance} className="btn-primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save Attendance'}
             </button>

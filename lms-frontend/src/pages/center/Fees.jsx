@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import '../../styles/fees.css';
@@ -8,8 +9,9 @@ import '../../styles/fees.css';
 const CenterFees = () => {
   const { selectedCenter, user } = useAuth();
   const { showSuccess, showError, showWarning } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const navigate = useNavigate();
-  const canManageFees = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
+  const canManageFees = ['developer', 'owner', 'trainer_head', 'registrar'].includes(user?.role_name) && canEdit;
   
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);

@@ -8,8 +8,8 @@ import api from '../api/axios';
 import '../styles/layout.css';
 
 const Layout = () => {
-  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, availableSchools, availableCenters } = useAuth();
-  const { notifications, removeNotification } = useNotificationContext();
+  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, availableSchools, availableCenters, ownerEditMode, toggleOwnerEditMode } = useAuth();
+  const { notifications, removeNotification, showWarning } = useNotificationContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarSettings, setSidebarSettings] = useState(null);
@@ -20,7 +20,7 @@ const Layout = () => {
     if (!user) return false;
     
     // Roles that don't need assignments (they have global access)
-    const rolesWithoutAssignments = ['developer', 'owner'];
+    const rolesWithoutAssignments = ['developer', 'owner', 'super_admin'];
     if (rolesWithoutAssignments.includes(user.role_name)) {
       return false;
     }
@@ -93,8 +93,8 @@ const Layout = () => {
     loadSettings();
   }, []);
 
-  // Developer and owner always see everything (bypass sidebar settings)
-  const isAdminRole = ['developer', 'owner'].includes(user?.role_name);
+  // Only super_admin bypasses sidebar settings (can see everything)
+  const isAdminRole = user?.role_name === 'super_admin';
 
   // Check if a menu item should be visible based on settings
   const isVisible = (settingKey) => {
@@ -122,6 +122,14 @@ const Layout = () => {
     setIsMobileMenuOpen(false); // Close mobile menu after switching
   };
 
+  const handleEditModeToggle = () => {
+    if (!ownerEditMode) {
+      // Turning ON edit mode - show warning
+      showWarning('Edit Mode Enabled: You can now make changes to the system. Please be careful with your modifications.');
+    }
+    toggleOwnerEditMode();
+  };
+
   const handleNavClick = () => {
     setIsMobileMenuOpen(false); // Close mobile menu when navigating
   };
@@ -146,12 +154,12 @@ const Layout = () => {
   ];
 
   const adminMenuItems = [
-    { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_users' },
-    { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_schools' },
-    { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_centers' },
-    { path: '/admin/staff-assignments', label: 'Staff Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_staff_assignments' },
-    { path: '/admin/school-assignments', label: 'School Assignments', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'admin_school_assignments' },
-    { path: '/admin/settings', label: 'Settings', roles: ['developer'], settingKey: null }, // Always visible for developer
+    { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_users' },
+    { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_schools' },
+    { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_centers' },
+    { path: '/admin/staff-assignments', label: 'Staff Assignments', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_staff_assignments' },
+    { path: '/admin/school-assignments', label: 'School Assignments', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_school_assignments' },
+    { path: '/admin/settings', label: 'Settings', roles: ['super_admin'], settingKey: null }, // Only super_admin can see settings
   ];
 
   // Filter menu items by role AND visibility settings
@@ -223,6 +231,21 @@ const Layout = () => {
           <span className="current-entity">
             {effectiveSection === 'school' ? selectedSchool?.name : selectedCenter?.name}
           </span>
+          {user?.role_name === 'owner' && (
+            <div className="edit-mode-toggle">
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={ownerEditMode} 
+                  onChange={handleEditModeToggle}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className={`toggle-label ${ownerEditMode ? 'active' : ''}`}>
+                {ownerEditMode ? 'Edit Mode' : 'View Only'}
+              </span>
+            </div>
+          )}
           <span className="user-info">{user?.first_name} ({user?.role_name})</span>
           <button onClick={handleLogout} className="logout-btn">Logout</button>
         </div>

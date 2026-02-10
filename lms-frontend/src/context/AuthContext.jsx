@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [currentSection, setCurrentSection] = useState('school');
   const [availableSchools, setAvailableSchools] = useState([]);
   const [availableCenters, setAvailableCenters] = useState([]);
+  const [ownerEditMode, setOwnerEditMode] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -32,10 +33,14 @@ export const AuthProvider = ({ children }) => {
       const savedSchool = localStorage.getItem('selectedSchool');
       const savedCenter = localStorage.getItem('selectedCenter');
       const savedSection = localStorage.getItem('currentSection');
+      const savedEditMode = localStorage.getItem('ownerEditMode');
       
       if (savedSchool) setSelectedSchool(JSON.parse(savedSchool));
       if (savedCenter) setSelectedCenter(JSON.parse(savedCenter));
       if (savedSection) setCurrentSection(savedSection);
+      if (savedEditMode && parsedUser.role_name === 'owner') {
+        setOwnerEditMode(savedEditMode === 'true');
+      }
       
       // Load available schools/centers based on role
       loadAvailableEntities(parsedUser);
@@ -119,8 +124,8 @@ export const AuthProvider = ({ children }) => {
         // Principals only have school section
         setCurrentSection('school');
         localStorage.setItem('currentSection', 'school');
-      } else if (['developer', 'owner'].includes(userData.role_name)) {
-        // Developer and owner get ALL schools and centers
+      } else if (['developer', 'owner', 'super_admin'].includes(userData.role_name)) {
+        // Developer, owner, and super_admin get ALL schools and centers
         const [schoolsRes, centersRes] = await Promise.all([
           api.get('/schools'),
           api.get('/centers')
@@ -222,11 +227,13 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('selectedSchool');
     localStorage.removeItem('selectedCenter');
     localStorage.removeItem('currentSection');
+    localStorage.removeItem('ownerEditMode');
     setUser(null);
     setSelectedSchool(null);
     setSelectedCenter(null);
     setAvailableSchools([]);
     setAvailableCenters([]);
+    setOwnerEditMode(false);
   };
 
   const selectSchool = (school) => {
@@ -242,6 +249,19 @@ export const AuthProvider = ({ children }) => {
   const switchSection = (section) => {
     setCurrentSection(section);
     localStorage.setItem('currentSection', section);
+  };
+
+  const toggleOwnerEditMode = () => {
+    const newMode = !ownerEditMode;
+    setOwnerEditMode(newMode);
+    localStorage.setItem('ownerEditMode', newMode.toString());
+  };
+
+  // Check if user can edit (for owner role, depends on edit mode)
+  const canEdit = () => {
+    if (!user) return false;
+    if (user.role_name === 'owner') return ownerEditMode;
+    return true; // All other roles (including super_admin) can edit by default
   };
 
   // Check if user can access a section based on their available schools/centers
@@ -270,7 +290,7 @@ export const AuthProvider = ({ children }) => {
       return section === 'school' && availableSchools.length > 0;
     }
     
-    // For other roles (developer, owner), use section_type
+    // For other roles (developer, owner, super_admin), use section_type
     return user.section_type === 'both' || user.section_type === section;
   };
 
@@ -287,7 +307,7 @@ export const AuthProvider = ({ children }) => {
 
   const canMarkAttendance = () => {
     if (!user) return false;
-    return ['developer', 'trainer', 'trainer_head'].includes(user.role_name);
+    return ['developer', 'owner', 'super_admin', 'trainer', 'trainer_head', 'registrar'].includes(user.role_name);
   };
 
   const canAddExtraStudents = () => {
@@ -297,7 +317,7 @@ export const AuthProvider = ({ children }) => {
 
   const canAssignTrainers = () => {
     if (!user) return false;
-    return ['developer', 'owner', 'trainer_head'].includes(user.role_name);
+    return ['developer', 'owner', 'super_admin', 'trainer_head'].includes(user.role_name);
   };
 
   const value = {
@@ -319,7 +339,10 @@ export const AuthProvider = ({ children }) => {
     canMarkAttendance,
     canAddExtraStudents,
     canAssignTrainers,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    ownerEditMode,
+    toggleOwnerEditMode,
+    canEdit
   };
 
   return (

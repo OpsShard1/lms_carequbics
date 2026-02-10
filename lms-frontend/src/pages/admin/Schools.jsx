@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import api from '../../api/axios';
 import Modal from '../../components/Modal';
 
 const AdminSchools = () => {
   const { user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const [schools, setSchools] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', contact_number: '', email: '' });
 
-  // Only developer and owner can delete schools
-  const canDelete = ['developer', 'owner'].includes(user?.role_name);
+  // Only developer and owner can delete schools (and owner needs edit mode)
+  const canDelete = ['developer', 'owner'].includes(user?.role_name) && canEdit;
 
   useEffect(() => {
     loadSchools();
@@ -25,6 +27,8 @@ const AdminSchools = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       await api.post('/schools', form);
       setShowModal(false);
@@ -37,7 +41,9 @@ const AdminSchools = () => {
   };
 
   const handleDelete = async (id, name) => {
+    if (!checkEdit()) return;
     if (!confirm(`Are you sure you want to delete "${name}"? This will deactivate the school.`)) return;
+    
     try {
       await api.delete(`/schools/${id}`);
       loadSchools();
@@ -51,9 +57,11 @@ const AdminSchools = () => {
     <div className="schools-page">
       <div className="page-header">
         <h2>Schools Management</h2>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          Add School
-        </button>
+        {canEdit && (
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            Add School
+          </button>
+        )}
       </div>
 
       <Modal 

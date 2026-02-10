@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import api from '../../api/axios';
 import '../../styles/progress.css';
 
@@ -17,8 +18,9 @@ const SKILL_FIELDS = [
 const CenterProgress = () => {
   const { selectedCenter, user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
-  const canChangeCurriculum = ['developer', 'trainer_head'].includes(user?.role_name);
-  const canUpdateProgress = ['developer', 'trainer_head', 'trainer'].includes(user?.role_name);
+  const { canEdit, checkEdit } = useEditMode();
+  const canChangeCurriculum = ['developer', 'owner', 'trainer_head'].includes(user?.role_name) && canEdit;
+  const canUpdateProgress = ['developer', 'owner', 'trainer_head', 'trainer'].includes(user?.role_name) && canEdit;
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -164,6 +166,7 @@ const CenterProgress = () => {
 
   const handleSaveProgress = async () => {
     if (!selectedStudent || !selectedTopic) return;
+    if (!checkEdit()) return;
     
     setSaving(true);
     try {

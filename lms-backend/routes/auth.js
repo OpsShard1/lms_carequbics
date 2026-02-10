@@ -15,22 +15,32 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const [users] = await pool.query(`
+    // First check if user exists (regardless of active status)
+    const [allUsers] = await pool.query(`
       SELECT u.*, r.name as role_name 
       FROM users u 
       JOIN roles r ON u.role_id = r.id 
-      WHERE u.email = ? AND u.is_active = true
+      WHERE u.email = ?
     `, [email]);
 
-    if (users.length === 0) {
+    if (allUsers.length === 0) {
       return res.status(401).json({ error: 'Wrong email or password' });
     }
 
-    const user = users[0];
+    const user = allUsers[0];
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Wrong email or password' });
+    }
+
+    // Check if user is deactivated
+    if (!user.is_active) {
+      return res.status(403).json({ 
+        error: 'Account Deactivated',
+        message: 'Your account has been deactivated. Please contact your administrator for assistance.',
+        isDeactivated: true
+      });
     }
 
     const [assignments] = await pool.query(`

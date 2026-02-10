@@ -26,8 +26,15 @@ const Login = () => {
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
-      const errorMessage = err.response?.data?.error || 'Wrong email or password';
-      setError(errorMessage);
+      
+      // Check if account is deactivated
+      if (err.response?.data?.isDeactivated) {
+        setError(err.response.data.message || 'Your account has been deactivated. Please contact your administrator.');
+      } else {
+        const errorMessage = err.response?.data?.error || 'Wrong email or password';
+        setError(errorMessage);
+      }
+      
       setPassword(''); // Clear only password field
       setLoading(false);
       return false; // Prevent any default behavior

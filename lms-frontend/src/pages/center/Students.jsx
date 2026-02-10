@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import '../../styles/student-registration.css';
@@ -8,10 +9,11 @@ import '../../styles/student-registration.css';
 const CenterStudents = () => {
   const { selectedCenter, user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const navigate = useNavigate();
-  const canChangeCurriculum = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
-  const canRegisterStudents = ['developer', 'trainer_head', 'trainer', 'registrar'].includes(user?.role_name);
-  const canEditStudents = ['developer', 'trainer_head', 'registrar'].includes(user?.role_name);
+  const canChangeCurriculum = ['developer', 'owner', 'trainer_head', 'registrar'].includes(user?.role_name) && canEdit;
+  const canRegisterStudents = ['developer', 'owner', 'trainer_head', 'trainer', 'registrar'].includes(user?.role_name) && canEdit;
+  const canEditStudents = ['developer', 'owner', 'trainer_head', 'registrar'].includes(user?.role_name) && canEdit;
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +65,8 @@ const CenterStudents = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       if (editingStudent) {
         await api.put(`/students/${editingStudent.id}`, { 
@@ -121,6 +125,8 @@ const CenterStudents = () => {
   };
 
   const handleCurriculumChange = async (studentId, curriculumId) => {
+    if (!checkEdit()) return;
+    
     try {
       await api.put(`/students/${studentId}`, { curriculum_id: curriculumId || null });
       loadStudents();
@@ -131,6 +137,7 @@ const CenterStudents = () => {
   };
 
   const handleDelete = async (student) => {
+    if (!checkEdit()) return;
     if (!window.confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}? This action cannot be undone.`)) {
       return;
     }

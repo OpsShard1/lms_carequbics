@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
+import Modal from '../../components/Modal';
 import api from '../../api/axios';
 import '../../styles/curriculum.css';
 
 const CurriculumManagement = () => {
   const { user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
-  const canEditCurriculum = ['developer', 'trainer_head'].includes(user?.role_name);
+  const { canEdit, checkEdit } = useEditMode();
+  const canEditCurriculum = ['developer', 'owner', 'trainer_head'].includes(user?.role_name) && canEdit;
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -105,6 +108,7 @@ const CurriculumManagement = () => {
   const handleDropSubject = async (e, dropIndex) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!checkEdit()) return;
     setDraggedOver(null);
     
     const dragType = e.dataTransfer.getData('type');
@@ -136,6 +140,7 @@ const CurriculumManagement = () => {
   const handleDropTopic = async (e, subjectId, dropIndex) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!checkEdit()) return;
     setDraggedOver(null);
     
     const dragType = e.dataTransfer.getData('type');
@@ -170,6 +175,8 @@ const CurriculumManagement = () => {
 
   const handleCreateCurriculum = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       if (editingCurriculum) {
         // Update existing curriculum
@@ -198,6 +205,8 @@ const CurriculumManagement = () => {
 
   const handleCreateSubject = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       const maxOrder = selectedCurriculum.subjects?.length || 0;
       await api.post(`/curriculum/${selectedCurriculum.id}/subjects`, {
@@ -215,6 +224,8 @@ const CurriculumManagement = () => {
 
   const handleCreateTopic = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       const subject = selectedCurriculum.subjects.find(s => s.id === selectedSubject);
       const maxOrder = subject?.topics?.length || 0;
@@ -237,7 +248,9 @@ const CurriculumManagement = () => {
   };
 
   const handleDeleteSubject = async (id) => {
+    if (!checkEdit()) return;
     if (!confirm('Delete this subject and all its topics?')) return;
+    
     try {
       await api.delete(`/curriculum/subjects/${id}`);
       loadCurriculumFull(selectedCurriculum.id);
@@ -248,7 +261,9 @@ const CurriculumManagement = () => {
   };
 
   const handleDeleteTopic = async (id) => {
+    if (!checkEdit()) return;
     if (!confirm('Delete this topic?')) return;
+    
     try {
       await api.delete(`/curriculum/topics/${id}`);
       loadCurriculumFull(selectedCurriculum.id);
@@ -259,7 +274,9 @@ const CurriculumManagement = () => {
   };
 
   const handleDeleteCurriculum = async (id) => {
+    if (!checkEdit()) return;
     if (!confirm('Delete this curriculum and all its subjects/topics?')) return;
+    
     try {
       await api.delete(`/curriculum/${id}`);
       setSelectedCurriculum(null);
@@ -280,6 +297,8 @@ const CurriculumManagement = () => {
 
   const handleUpdateFees = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       await api.put(`/fees/curriculum/${feesForm.curriculum_id}/fees`, {
         fees: parseFloat(feesForm.fees) || 0
@@ -547,141 +566,115 @@ const CurriculumManagement = () => {
       </div>
 
       {/* Update Fees Modal */}
-      {showFeesModal && (
-        <div className="modal-overlay" onClick={() => setShowFeesModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Update Course Fees</h3>
-              <button onClick={() => setShowFeesModal(false)} className="close-btn">×</button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={handleUpdateFees}>
-                <div className="form-group">
-                  <label>Course Fees (₹) *</label>
-                  <input 
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={feesForm.fees}
-                    onChange={(e) => setFeesForm({...feesForm, fees: e.target.value})}
-                    placeholder="e.g., 5000"
-                    onWheel={(e) => e.target.blur()}
-                    required
-                  />
-                  <small style={{ color: '#6b7280', marginTop: '8px', display: 'block' }}>
-                    Amount must be a whole number (minimum ₹1)
-                  </small>
-                </div>
-                <div className="modal-actions">
-                  <button type="button" onClick={() => setShowFeesModal(false)} className="btn-secondary">Cancel</button>
-                  <button type="submit" className="btn-primary">Update Fees</button>
-                </div>
-              </form>
-            </div>
+      <Modal
+        isOpen={showFeesModal}
+        onClose={() => setShowFeesModal(false)}
+        title="Update Course Fees"
+      >
+        <form onSubmit={handleUpdateFees} className="form-card">
+          <div className="form-group">
+            <label>Course Fees (₹) *</label>
+            <input 
+              type="number"
+              step="1"
+              min="0"
+              value={feesForm.fees}
+              onChange={(e) => setFeesForm({...feesForm, fees: e.target.value})}
+              placeholder="e.g., 5000"
+              onWheel={(e) => e.target.blur()}
+              required
+            />
+            <small style={{ color: '#6b7280', marginTop: '8px', display: 'block' }}>
+              Amount must be a whole number (minimum ₹1)
+            </small>
           </div>
-        </div>
-      )}
+          <button type="submit" className="btn-primary">Update Fees</button>
+        </form>
+      </Modal>
 
       {/* Curriculum Form Modal */}
-      {showCurriculumForm && (
-        <div className="modal-overlay" onClick={() => {
+      <Modal
+        isOpen={showCurriculumForm}
+        onClose={() => {
           setShowCurriculumForm(false);
           setEditingCurriculum(false);
-        }}>
-          <div className="modal curriculum-form-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{editingCurriculum ? 'Edit Curriculum' : 'Create New Curriculum'}</h3>
-              <button onClick={() => {
-                setShowCurriculumForm(false);
-                setEditingCurriculum(false);
-              }} className="close-btn">×</button>
+        }}
+        title={editingCurriculum ? 'Edit Curriculum' : 'Create New Curriculum'}
+      >
+        <form onSubmit={handleCreateCurriculum} className="form-card">
+          <div className="form-group">
+            <input 
+              placeholder="Curriculum Name (e.g., Primary Curriculum)"
+              value={curriculumForm.name}
+              onChange={(e) => setCurriculumForm({...curriculumForm, name: e.target.value})}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <textarea 
+              placeholder="Description"
+              value={curriculumForm.description}
+              onChange={(e) => setCurriculumForm({...curriculumForm, description: e.target.value})}
+              rows={3}
+            />
+          </div>
+          <div className="form-group">
+            <input 
+              type="number"
+              step="1"
+              min="0"
+              placeholder="Course Fees (₹)"
+              value={curriculumForm.fees}
+              onChange={(e) => setCurriculumForm({...curriculumForm, fees: e.target.value})}
+              onWheel={(e) => e.target.blur()}
+            />
+          </div>
+          <div className="form-group">
+            <label>Duration (Months)</label>
+            <input 
+              type="number"
+              step="1"
+              min="1"
+              placeholder="12"
+              value={curriculumForm.duration_months}
+              onChange={(e) => setCurriculumForm({...curriculumForm, duration_months: e.target.value})}
+              onWheel={(e) => e.target.blur()}
+              required
+            />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Classes/Installment (Weekday)</label>
+              <input 
+                type="number"
+                step="1"
+                min="1"
+                placeholder="8"
+                value={curriculumForm.classes_per_installment_weekday}
+                onChange={(e) => setCurriculumForm({...curriculumForm, classes_per_installment_weekday: e.target.value})}
+                onWheel={(e) => e.target.blur()}
+                required
+              />
             </div>
-            <div className="modal-body">
-              <form onSubmit={handleCreateCurriculum}>
-                <div className="form-group">
-                  <input 
-                    placeholder="Curriculum Name (e.g., Primary Curriculum)"
-                    value={curriculumForm.name}
-                    onChange={(e) => setCurriculumForm({...curriculumForm, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <textarea 
-                    placeholder="Description"
-                    value={curriculumForm.description}
-                    onChange={(e) => setCurriculumForm({...curriculumForm, description: e.target.value})}
-                    rows={3}
-                  />
-                </div>
-                <div className="form-group">
-                  <input 
-                    type="number"
-                    step="1"
-                    min="0"
-                    placeholder="Course Fees (₹)"
-                    value={curriculumForm.fees}
-                    onChange={(e) => setCurriculumForm({...curriculumForm, fees: e.target.value})}
-                    onWheel={(e) => e.target.blur()}
-                  />
-                </div>
-                <div className="installment-fields-grid">
-                  <div className="form-group">
-                    <label>Duration (Months)</label>
-                    <input 
-                      type="number"
-                      step="1"
-                      min="1"
-                      placeholder="12"
-                      value={curriculumForm.duration_months}
-                      onChange={(e) => setCurriculumForm({...curriculumForm, duration_months: e.target.value})}
-                      onWheel={(e) => e.target.blur()}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Classes/Installment (Weekday)</label>
-                    <input 
-                      type="number"
-                      step="1"
-                      min="1"
-                      placeholder="8"
-                      value={curriculumForm.classes_per_installment_weekday}
-                      onChange={(e) => setCurriculumForm({...curriculumForm, classes_per_installment_weekday: e.target.value})}
-                      onWheel={(e) => e.target.blur()}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Classes/Installment (Weekend)</label>
-                    <input 
-                      type="number"
-                      step="1"
-                      min="1"
-                      placeholder="4"
-                      value={curriculumForm.classes_per_installment_weekend}
-                      onChange={(e) => setCurriculumForm({...curriculumForm, classes_per_installment_weekend: e.target.value})}
-                      onWheel={(e) => e.target.blur()}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="modal-actions">
-                  <button type="button" onClick={() => {
-                    setShowCurriculumForm(false);
-                    setEditingCurriculum(false);
-                  }} className="btn-secondary">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary">
-                    {editingCurriculum ? 'Update Curriculum' : 'Create Curriculum'}
-                  </button>
-                </div>
-              </form>
+            <div className="form-group">
+              <label>Classes/Installment (Weekend)</label>
+              <input 
+                type="number"
+                step="1"
+                min="1"
+                placeholder="4"
+                value={curriculumForm.classes_per_installment_weekend}
+                onChange={(e) => setCurriculumForm({...curriculumForm, classes_per_installment_weekend: e.target.value})}
+                onWheel={(e) => e.target.blur()}
+                required
+              />
             </div>
           </div>
-        </div>
-      )}
+          <button type="submit" className="btn-primary">
+            {editingCurriculum ? 'Update Curriculum' : 'Create Curriculum'}
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 };

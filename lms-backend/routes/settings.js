@@ -43,8 +43,8 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// Update settings (developer only)
-router.put('/:key', authenticate, authorize('developer'), async (req, res) => {
+// Update settings (super_admin only)
+router.put('/:key', authenticate, authorize('super_admin'), async (req, res) => {
   try {
     const { key } = req.params;
     const { value } = req.body;
@@ -65,7 +65,7 @@ router.put('/:key', authenticate, authorize('developer'), async (req, res) => {
 });
 
 // Initialize settings table if not exists
-router.post('/init', authenticate, authorize('developer'), async (req, res) => {
+router.post('/init', authenticate, authorize('super_admin'), async (req, res) => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS app_settings (

@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import api from '../../api/axios';
 import Modal from '../../components/Modal';
 
 const AdminCenters = () => {
   const { user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const [centers, setCenters] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', contact_number: '', email: '' });
 
-  // Only developer and owner can delete centers
-  const canDelete = ['developer', 'owner'].includes(user?.role_name);
+  // Only developer and owner can delete centers (and owner needs edit mode)
+  const canDelete = ['developer', 'owner'].includes(user?.role_name) && canEdit;
 
   useEffect(() => {
     loadCenters();
@@ -25,6 +27,8 @@ const AdminCenters = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       await api.post('/centers', form);
       setShowModal(false);
@@ -37,7 +41,9 @@ const AdminCenters = () => {
   };
 
   const handleDelete = async (id, name) => {
+    if (!checkEdit()) return;
     if (!confirm(`Are you sure you want to delete "${name}"? This will deactivate the center.`)) return;
+    
     try {
       await api.delete(`/centers/${id}`);
       loadCenters();
@@ -51,9 +57,11 @@ const AdminCenters = () => {
     <div className="centers-page">
       <div className="page-header">
         <h2>Centers Management</h2>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          Add Center
-        </button>
+        {canEdit && (
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            Add Center
+          </button>
+        )}
       </div>
 
       <Modal 

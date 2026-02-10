@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import '../../styles/settings.css';
 
 const Settings = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [settings, setSettings] = useState({
     school_section: true,
     center_section: true,
@@ -120,6 +124,22 @@ const Settings = () => {
 
   if (loading) {
     return <div className="settings-page"><p>Loading settings...</p></div>;
+  }
+
+  // Check if user is super_admin
+  if (user?.role_name !== 'super_admin') {
+    return (
+      <div className="settings-page">
+        <div className="access-denied">
+          <div className="access-denied-icon">🔒</div>
+          <h2>Access Denied</h2>
+          <p>Only Super Administrators can access the Settings page.</p>
+          <button onClick={() => navigate(-1)} className="btn-secondary">
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

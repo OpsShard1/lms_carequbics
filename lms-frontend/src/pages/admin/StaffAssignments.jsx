@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const StaffAssignments = () => {
   const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const [assignments, setAssignments] = useState([]);
   const [staff, setStaff] = useState([]);
   const [schools, setSchools] = useState([]);
@@ -43,6 +45,8 @@ const StaffAssignments = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       const payload = {
         staff_id: formData.staff_id,
@@ -61,7 +65,9 @@ const StaffAssignments = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!checkEdit()) return;
     if (!confirm('Remove this assignment?')) return;
+    
     try {
       await api.delete(`/staff-assignments/${id}`);
       loadData();
@@ -96,9 +102,11 @@ const StaffAssignments = () => {
           <h2>Staff Assignments</h2>
           <p className="subtitle">Assign trainers and registrars to schools and centers. Trainer heads automatically get access based on their section type.</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
-          + New Assignment
-        </button>
+        {canEdit && (
+          <button onClick={() => setShowForm(true)} className="btn-primary">
+            + New Assignment
+          </button>
+        )}
       </div>
 
       {showForm && (

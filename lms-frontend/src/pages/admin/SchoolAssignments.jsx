@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
 import api from '../../api/axios';
 
 const SchoolAssignments = () => {
   const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const [schools, setSchools] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [principals, setPrincipals] = useState([]);
@@ -46,6 +48,8 @@ const SchoolAssignments = () => {
 
   const handleAssign = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       await api.post('/school-assignments', {
         user_id: selectedUser,
@@ -60,7 +64,9 @@ const SchoolAssignments = () => {
   };
 
   const handleRemove = async (assignmentId) => {
+    if (!checkEdit()) return;
     if (!confirm('Remove this assignment?')) return;
+    
     try {
       await api.delete(`/school-assignments/${assignmentId}`);
       loadData();
@@ -98,12 +104,14 @@ const SchoolAssignments = () => {
                 <div className="assignment-group">
                   <div className="group-header">
                     <h4>Principals</h4>
-                    <button 
-                      onClick={() => openAssignModal(school, 'principal')}
-                      className="btn-sm btn-primary"
-                    >
-                      + Assign
-                    </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => openAssignModal(school, 'principal')}
+                        className="btn-sm btn-primary"
+                      >
+                        + Assign
+                      </button>
+                    )}
                   </div>
                   {school.principals.length === 0 ? (
                     <p className="no-assignments">No principals assigned</p>
@@ -130,12 +138,14 @@ const SchoolAssignments = () => {
                 <div className="assignment-group">
                   <div className="group-header">
                     <h4>Teachers</h4>
-                    <button 
-                      onClick={() => openAssignModal(school, 'teacher')}
-                      className="btn-sm btn-primary"
-                    >
-                      + Assign
-                    </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => openAssignModal(school, 'teacher')}
+                        className="btn-sm btn-primary"
+                      >
+                        + Assign
+                      </button>
+                    )}
                   </div>
                   {school.teachers.length === 0 ? (
                     <p className="no-assignments">No teachers assigned</p>

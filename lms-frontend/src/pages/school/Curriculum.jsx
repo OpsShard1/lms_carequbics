@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotificationContext } from '../../context/NotificationContext';
+import { useEditMode } from '../../hooks/useEditMode';
+import Modal from '../../components/Modal';
 import api from '../../api/axios';
 import '../../styles/curriculum.css';
 
 const SchoolCurriculum = () => {
   const { user } = useAuth();
+  const { showSuccess, showError } = useNotificationContext();
+  const { canEdit, checkEdit } = useEditMode();
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState(null);
   const [curriculumDetails, setCurriculumDetails] = useState(null);
@@ -34,7 +39,7 @@ const SchoolCurriculum = () => {
     description: ''
   });
 
-  const canEdit = ['developer', 'trainer_head'].includes(user?.role_name);
+  const canEditCurriculum = ['developer', 'owner', 'trainer_head'].includes(user?.role_name) && canEdit;
 
   useEffect(() => {
     loadCurriculums();
@@ -67,6 +72,8 @@ const SchoolCurriculum = () => {
 
   const handleCreateCurriculum = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       await api.post('/school-curriculum', curriculumForm);
       setCurriculumForm({ name: '', grade_name: '', description: '' });
@@ -78,7 +85,9 @@ const SchoolCurriculum = () => {
   };
 
   const handleDeleteCurriculum = async (id) => {
+    if (!checkEdit()) return;
     if (!confirm('Are you sure you want to delete this curriculum? This will remove all subjects and projects.')) return;
+    
     try {
       await api.delete(`/school-curriculum/${id}`);
       setSelectedCurriculum(null);
@@ -90,7 +99,9 @@ const SchoolCurriculum = () => {
   };
 
   const handleDeleteSubject = async (subjectId) => {
+    if (!checkEdit()) return;
     if (!confirm('Are you sure you want to delete this subject? This will remove all its projects.')) return;
+    
     try {
       await api.delete(`/school-curriculum/subjects/${subjectId}`);
       loadCurriculumDetails(selectedCurriculum);
@@ -100,7 +111,9 @@ const SchoolCurriculum = () => {
   };
 
   const handleDeleteProject = async (projectId) => {
+    if (!checkEdit()) return;
     if (!confirm('Are you sure you want to delete this project?')) return;
+    
     try {
       await api.delete(`/school-curriculum/projects/${projectId}`);
       loadCurriculumDetails(selectedCurriculum);
@@ -111,6 +124,8 @@ const SchoolCurriculum = () => {
 
   const handleAddSubject = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       const maxOrder = curriculumDetails.subjects?.length || 0;
       await api.post(`/school-curriculum/${selectedCurriculum}/subjects`, {
@@ -127,6 +142,8 @@ const SchoolCurriculum = () => {
 
   const handleAddProject = async (e) => {
     e.preventDefault();
+    if (!checkEdit()) return;
+    
     try {
       const subject = curriculumDetails.subjects.find(s => s.id === selectedSubject);
       const maxOrder = subject?.projects?.length || 0;
@@ -197,6 +214,7 @@ const SchoolCurriculum = () => {
   const handleDropSubject = async (e, dropIndex) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!checkEdit()) return;
     setDraggedOver(null);
     
     const dragType = e.dataTransfer.getData('type');
@@ -229,6 +247,7 @@ const SchoolCurriculum = () => {
   const handleDropProject = async (e, subjectId, dropIndex) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!checkEdit()) return;
     setDraggedOver(null);
     
     const dragType = e.dataTransfer.getData('type');
@@ -273,34 +292,35 @@ const SchoolCurriculum = () => {
         )}
       </div>
 
-      {showCurriculumForm && (
-        <div className="form-card">
-          <h3>Create New Curriculum</h3>
-          <form onSubmit={handleCreateCurriculum}>
-            <div className="form-row">
-              <input
-                placeholder="Learning Level (e.g., Beginner, Intermediate, Advanced)"
-                value={curriculumForm.name}
-                onChange={(e) => setCurriculumForm({ ...curriculumForm, name: e.target.value })}
-                required
-              />
-              <input
-                placeholder="Grade/Class Name (e.g., Grade 5)"
-                value={curriculumForm.grade_name}
-                onChange={(e) => setCurriculumForm({ ...curriculumForm, grade_name: e.target.value })}
-                required
-              />
-            </div>
-            <textarea
-              placeholder="Description"
-              value={curriculumForm.description}
-              onChange={(e) => setCurriculumForm({ ...curriculumForm, description: e.target.value })}
-              rows="3"
+      <Modal
+        isOpen={showCurriculumForm}
+        onClose={() => setShowCurriculumForm(false)}
+        title="Create New Curriculum"
+      >
+        <form onSubmit={handleCreateCurriculum} className="form-card">
+          <div className="form-row">
+            <input
+              placeholder="Learning Level (e.g., Beginner, Intermediate, Advanced)"
+              value={curriculumForm.name}
+              onChange={(e) => setCurriculumForm({ ...curriculumForm, name: e.target.value })}
+              required
             />
-            <button type="submit" className="btn-primary">Create Curriculum</button>
-          </form>
-        </div>
-      )}
+            <input
+              placeholder="Grade/Class Name (e.g., Grade 5)"
+              value={curriculumForm.grade_name}
+              onChange={(e) => setCurriculumForm({ ...curriculumForm, grade_name: e.target.value })}
+              required
+            />
+          </div>
+          <textarea
+            placeholder="Description"
+            value={curriculumForm.description}
+            onChange={(e) => setCurriculumForm({ ...curriculumForm, description: e.target.value })}
+            rows="3"
+          />
+          <button type="submit" className="btn-primary">Create Curriculum</button>
+        </form>
+      </Modal>
 
       <div className="curriculum-layout">
         <div className="curriculum-list">
