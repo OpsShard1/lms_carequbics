@@ -15,10 +15,15 @@ const DAYS = [
 ];
 
 const SchoolTimetable = () => {
-  const { selectedSchool, user } = useAuth();
+  const { selectedSchool, user, ownerEditMode } = useAuth();
   const { showSuccess, showError, showWarning } = useNotificationContext();
-  const isTrainer = ['trainer', 'trainer_head'].includes(user?.role_name);
-  const canEdit = ['developer', 'owner', 'school_teacher'].includes(user?.role_name);
+  // Owner needs edit mode enabled, others can edit by default
+  const canEditSchedule = user?.role_name === 'owner'
+    ? ownerEditMode
+    : ['developer', 'school_teacher', 'trainer', 'trainer_head'].includes(user?.role_name);
+  const canManageTimetable = user?.role_name === 'owner'
+    ? ownerEditMode
+    : ['developer', 'school_teacher', 'trainer', 'trainer_head'].includes(user?.role_name);
   
   const [timetableData, setTimetableData] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -46,10 +51,7 @@ const SchoolTimetable = () => {
   const loadTimetable = async () => {
     setLoading(true);
     try {
-      const endpoint = isTrainer 
-        ? `/timetables/school/${selectedSchool.id}/consolidated`
-        : `/timetables/school/${selectedSchool.id}`;
-      const res = await api.get(endpoint);
+      const res = await api.get(`/timetables/school/${selectedSchool.id}`);
       setTimetableData(res.data);
       if (res.data) {
         setSchedule(res.data.schedule || []);
@@ -220,74 +222,6 @@ const SchoolTimetable = () => {
     return <div className="no-data"><p>Please select a school first.</p></div>;
   }
 
-  // Trainer View
-  if (isTrainer) {
-    return (
-      <div className="timetable-page">
-        <div className="page-header">
-          <h2>Class Schedule</h2>
-          <p className="subtitle">View which classes come at which times</p>
-        </div>
-
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : !timetableData ? (
-          <div className="no-timetable">
-            <p>No timetable has been created yet.</p>
-          </div>
-        ) : (
-          <div className="timetable-view">
-            <h3>{timetableData.timetable.name}</h3>
-            
-            <div className="timetable-grid">
-              <table className="schedule-table">
-                <thead>
-                  <tr>
-                    <th>Period</th>
-                    {timetableData.days.map(day => (
-                      <th key={day.day_of_week}>
-                        {DAYS.find(d => d.value === day.day_of_week)?.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {timetableData.periods.map(period => (
-                    <tr key={period.period_number}>
-                      <td className="period-cell">
-                        <div>Period {period.period_number}</div>
-                        <div className="period-time">{period.start_time} - {period.end_time}</div>
-                      </td>
-                      {timetableData.days.map(day => {
-                        const classesInSlot = getClassesForSlot(day.day_of_week, period.period_number);
-                        return (
-                          <td key={day.day_of_week} className={classesInSlot.length > 0 ? 'has-classes' : 'empty-slot'}>
-                            {classesInSlot.length > 0 ? (
-                              <div className="classes-list">
-                                {classesInSlot.map((cls, idx) => (
-                                  <div key={idx} className="class-chip">
-                                    {cls.class_name} (Grade {cls.grade})
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="no-class">—</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Teacher/Admin View
   return (
     <div className="timetable-page">
       <div className="page-header">
@@ -300,7 +234,7 @@ const SchoolTimetable = () => {
       ) : !timetableData ? (
         <div className="no-timetable">
           <p>No timetable exists for this school yet.</p>
-          {canEdit && (
+          {canManageTimetable && (
             <button onClick={startCreateWizard} className="btn-primary btn-large">
               Create Timetable
             </button>
@@ -310,10 +244,12 @@ const SchoolTimetable = () => {
         <div className="timetable-view">
           <div className="timetable-header">
             <h3>{timetableData.timetable.name}</h3>
-            {canEdit && !editMode && (
+            {canEditSchedule && !editMode && (
               <div className="header-actions">
                 <button onClick={startEdit} className="btn-primary">Edit Schedule</button>
-                <button onClick={deleteTimetable} className="btn-danger">Delete Timetable</button>
+                {canManageTimetable && (
+                  <button onClick={deleteTimetable} className="btn-danger">Delete Timetable</button>
+                )}
               </div>
             )}
             {editMode && (

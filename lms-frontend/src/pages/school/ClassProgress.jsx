@@ -148,7 +148,7 @@ const ClassProgress = () => {
               className={`class-item ${selectedClass === cls.id ? 'active' : ''}`}
               onClick={() => loadClassProgress(cls.id)}
             >
-              <div className="class-name">{cls.name}</div>
+              <div className="class-name">{cls.name} {cls.section && `- ${cls.section}`}</div>
               <div className="class-meta">{cls.student_count || 0} students</div>
             </div>
           ))}

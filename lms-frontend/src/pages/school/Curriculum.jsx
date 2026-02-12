@@ -48,7 +48,13 @@ const SchoolCurriculum = () => {
   const loadCurriculums = async () => {
     try {
       const res = await api.get('/school-curriculum');
-      setCurriculums(res.data);
+      // Sort by grade_name numerically
+      const sorted = res.data.sort((a, b) => {
+        const gradeA = parseInt(a.grade_name) || 0;
+        const gradeB = parseInt(b.grade_name) || 0;
+        return gradeA - gradeB;
+      });
+      setCurriculums(sorted);
     } catch (err) {
       console.error('Failed to load curriculums:', err);
     }
@@ -333,7 +339,6 @@ const SchoolCurriculum = () => {
               <div onClick={() => loadCurriculumDetails(curr.id)} style={{ flex: 1, cursor: 'pointer' }}>
                 <div className="curriculum-name">{curr.name}</div>
                 <div className="curriculum-meta">
-                  <span className="grade-badge">{curr.grade_name}</span>
                   <span className="subject-count">{curr.subject_count} subjects</span>
                 </div>
               </div>
@@ -365,7 +370,6 @@ const SchoolCurriculum = () => {
               <div className="details-header">
                 <div>
                   <h3>{curriculumDetails.name}</h3>
-                  <p className="grade-label">Grade: {curriculumDetails.grade_name}</p>
                   {curriculumDetails.description && <p className="description">{curriculumDetails.description}</p>}
                 </div>
                 <div className="header-actions">

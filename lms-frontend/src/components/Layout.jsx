@@ -8,7 +8,7 @@ import api from '../api/axios';
 import '../styles/layout.css';
 
 const Layout = () => {
-  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, selectSchool, selectCenter, availableSchools, availableCenters, ownerEditMode, toggleOwnerEditMode } = useAuth();
+  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, selectSchool, selectCenter, availableSchools, availableCenters, ownerEditMode, toggleOwnerEditMode, loadingEntities } = useAuth();
   const { notifications, removeNotification, showWarning } = useNotificationContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,7 +48,8 @@ const Layout = () => {
   };
 
   // If user needs assignment, show the unassigned user screen
-  if (needsAssignment()) {
+  // But don't show it while entities are still loading
+  if (!loadingEntities && needsAssignment()) {
     return (
       <>
         <UnassignedUser user={user} />
@@ -57,6 +58,15 @@ const Layout = () => {
           onRemove={removeNotification} 
         />
       </>
+    );
+  }
+
+  // Show loading while entities are being fetched
+  if (loadingEntities) {
+    return (
+      <div className="loading-screen">
+        <div className="loading">Loading...</div>
+      </div>
     );
   }
 
@@ -139,7 +149,7 @@ const Layout = () => {
     { path: '/school/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'principal', 'school_teacher', 'trainer_head', 'trainer'], settingKey: 'school_dashboard' },
     { path: '/school/classes', label: 'Classes', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer_head', 'trainer'], settingKey: 'school_classes' },
     { path: '/school/students', label: 'Students', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_students' },
-    { path: '/school/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head', 'trainer'], settingKey: 'school_curriculum' },
+    { path: '/school/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'school_curriculum' },
     { path: '/school/class-progress', label: 'Class Progress', roles: ['developer', 'owner', 'principal', 'trainer_head', 'trainer'], settingKey: 'school_class_progress' },
     { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_timetable' },
     { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_attendance' },

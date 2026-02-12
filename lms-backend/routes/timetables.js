@@ -93,7 +93,7 @@ router.get('/school/:schoolId', authenticate, checkSectionAccess('school'), asyn
 });
 
 // Create new timetable with periods and days
-router.post('/', authenticate, authorize('developer', 'owner', 'school_teacher'), checkSectionAccess('school'), async (req, res) => {
+router.post('/', authenticate, authorize('developer', 'owner', 'school_teacher', 'trainer', 'trainer_head'), checkSectionAccess('school'), async (req, res) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -172,7 +172,7 @@ router.post('/', authenticate, authorize('developer', 'owner', 'school_teacher')
 });
 
 // Update class schedule (assign/remove classes to time slots)
-router.put('/:id/schedule', authenticate, authorize('developer', 'owner', 'school_teacher'), async (req, res) => {
+router.put('/:id/schedule', authenticate, authorize('developer', 'owner', 'school_teacher', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     const { schedule } = req.body;
 
@@ -205,7 +205,7 @@ router.put('/:id/schedule', authenticate, authorize('developer', 'owner', 'schoo
 });
 
 // Delete timetable
-router.delete('/:id', authenticate, authorize('developer', 'owner', 'school_teacher'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'owner', 'school_teacher', 'trainer', 'trainer_head'), async (req, res) => {
   try {
     await pool.query('UPDATE school_timetables SET is_active = false WHERE id = ?', [req.params.id]);
     res.json({ message: 'Timetable deleted successfully' });

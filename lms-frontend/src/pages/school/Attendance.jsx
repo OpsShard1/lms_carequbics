@@ -258,15 +258,28 @@ const SchoolAttendance = () => {
                   />
                 </div>
               </div>
-              <div className="form-group">
-                <label>Date of Birth *</label>
-                <DatePicker
-                  selected={extraStudent.date_of_birth ? new Date(extraStudent.date_of_birth) : null}
-                  onChange={(date) => setExtraStudent({...extraStudent, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
-                  placeholder="Select date of birth"
-                  required
-                  maxDate={new Date()}
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Date of Birth *</label>
+                  <DatePicker
+                    selected={extraStudent.date_of_birth ? new Date(extraStudent.date_of_birth) : null}
+                    onChange={(date) => setExtraStudent({...extraStudent, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
+                    placeholder="Select date of birth"
+                    required
+                    maxDate={new Date()}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Gender</label>
+                  <select 
+                    value={extraStudent.gender || ''}
+                    onChange={(e) => setExtraStudent({...extraStudent, gender: e.target.value})}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -325,11 +338,12 @@ const SchoolAttendance = () => {
               </thead>
               <tbody>
                 {students.map(student => (
-                  <tr key={student.id} className={student.is_extra ? 'extra-student-row' : ''}>
-                    <td className={`sticky-col student-name-cell ${student.is_extra ? 'extra-student' : ''}`}>
+                  <tr key={student.id} className={student.is_extra === 1 ? 'extra-student-row' : student.is_extra === 2 ? 'disapproved-student-row' : ''}>
+                    <td className={`sticky-col student-name-cell ${student.is_extra === 1 ? 'extra-student' : student.is_extra === 2 ? 'disapproved-student' : ''}`}>
                       <div className="student-name">
                         {student.first_name} {student.last_name}
-                        {student.is_extra && <span className="extra-badge">EXTRA</span>}
+                        {student.is_extra === 1 && <span className="extra-badge">EXTRA</span>}
+                        {student.is_extra === 2 && <span className="not-approved-badge">NOT APPROVED</span>}
                       </div>
                     </td>
                     {daysInMonth.map(day => {

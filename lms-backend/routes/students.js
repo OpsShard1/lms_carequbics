@@ -163,4 +163,28 @@ router.delete('/:id', authenticate, authorize('developer', 'trainer_head', 'regi
   }
 });
 
+// Approve extra student (removes is_extra flag)
+router.post('/:id/approve', authenticate, authorize('developer', 'owner', 'school_teacher'), async (req, res) => {
+  try {
+    await pool.query('UPDATE students SET is_extra = false WHERE id = ? AND is_extra IN (true, 2)', [req.params.id]);
+    const [updated] = await pool.query('SELECT * FROM students WHERE id = ?', [req.params.id]);
+    res.json(updated[0]);
+  } catch (error) {
+    console.error('Approve student error:', error);
+    res.status(500).json({ error: 'Failed to approve student' });
+  }
+});
+
+// Disapprove extra student (sets is_extra to 2)
+router.post('/:id/disapprove', authenticate, authorize('developer', 'owner', 'school_teacher'), async (req, res) => {
+  try {
+    await pool.query('UPDATE students SET is_extra = 2 WHERE id = ? AND is_extra = true', [req.params.id]);
+    const [updated] = await pool.query('SELECT * FROM students WHERE id = ?', [req.params.id]);
+    res.json(updated[0]);
+  } catch (error) {
+    console.error('Disapprove student error:', error);
+    res.status(500).json({ error: 'Failed to disapprove student' });
+  }
+});
+
 module.exports = router;

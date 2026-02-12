@@ -14,6 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingEntities, setLoadingEntities] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [selectedCenter, setSelectedCenter] = useState(null);
   const [currentSection, setCurrentSection] = useState('school');
@@ -43,39 +44,154 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Load available schools/centers based on role
-      loadAvailableEntities(parsedUser);
+      loadAvailableEntities(parsedUser).finally(() => {
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+      setLoadingEntities(false);
     }
-    setLoading(false);
   }, []);
 
   const loadAvailableEntities = async (userData) => {
+    setLoadingEntities(true);
     try {
       // Trainers and Registrars get their assigned schools/centers from trainer_assignments table
       if (userData.role_name === 'trainer' || userData.role_name === 'registrar') {
-        const [schoolsRes, centersRes] = await Promise.all([
-          api.get('/staff-assignments/my-schools'),
-          api.get('/staff-assignments/my-centers')
-        ]);
-        const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
-        const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
-        
-        // Registrars only have center access
-        if (userData.role_name === 'registrar') {
-          setAvailableSchools([]);
-          setAvailableCenters(centers);
+        try {
+          const [schoolsRes, centersRes] = await Promise.all([
+            api.get('/staff-assignments/my-schools').catch(() => ({ data: [] })),
+            api.get('/staff-assignments/my-centers').catch(() => ({ data: [] }))
+          ]);
+          const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
           
-          if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
-            selectCenter(centers[0]);
+          // Registrars only have center access
+          if (userData.role_name === 'registrar') {
+            setAvailableSchools([]);
+            setAvailableCenters(centers);
+            
+            if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
+              selectCenter(centers[0]);
+            }
+            
+            setCurrentSection('center');
+            localStorage.setItem('currentSection', 'center');
+          } else {
+            // Trainers can have both
+            setAvailableSchools(schools);
+            setAvailableCenters(centers);
+            
+            // Auto-select first available and set section based on what's available
+            if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+              selectSchool(schools[0]);
+            }
+            if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
+              selectCenter(centers[0]);
+            }
+            
+            // Set default section based on what trainer has access to
+            if (!localStorage.getItem('currentSection')) {
+              if (schools.length > 0) {
+                setCurrentSection('school');
+                localStorage.setItem('currentSection', 'school');
+              } else if (centers.length > 0) {
+                setCurrentSection('center');
+                localStorage.setItem('currentSection', 'center');
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading trainer/registrar assignments:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
+        }
+      } else if (userData.role_name === 'school_teacher') {
+        // School teachers get their assigned schools from user_assignments/teacher-assignments
+        try {
+          const schoolsRes = await api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] }));
+          const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          setAvailableSchools(schools);
+          setAvailableCenters([]); // Teachers don't have center access
+          
+          // Auto-select first school
+          if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+            selectSchool(schools[0]);
           }
           
-          setCurrentSection('center');
-          localStorage.setItem('currentSection', 'center');
-        } else {
-          // Trainers can have both
+          // Teachers only have school section
+          setCurrentSection('school');
+          localStorage.setItem('currentSection', 'school');
+        } catch (error) {
+          console.error('Error loading teacher schools:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
+        }
+      } else if (userData.role_name && userData.role_name.includes('principal')) {
+        // Principals get their assigned schools from user_assignments
+        try {
+          const schoolsRes = await api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] }));
+          const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          setAvailableSchools(schools);
+          setAvailableCenters([]); // Principals don't have center access
+          
+          // Auto-select first school
+          if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+            selectSchool(schools[0]);
+          }
+          
+          // Principals only have school section
+          setCurrentSection('school');
+          localStorage.setItem('currentSection', 'school');
+        } catch (error) {
+          console.error('Error loading principal schools:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
+        }
+      } else if (['developer', 'owner', 'super_admin'].includes(userData.role_name)) {
+        // Developer, owner, and super_admin get ALL schools and centers
+        try {
+          const [schoolsRes, centersRes] = await Promise.all([
+            api.get('/schools').catch(() => ({ data: [] })),
+            api.get('/centers').catch(() => ({ data: [] }))
+          ]);
+          const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
           setAvailableSchools(schools);
           setAvailableCenters(centers);
           
-          // Auto-select first available and set section based on what's available
+          // Auto-select first if not already selected
+          if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+            selectSchool(schools[0]);
+          }
+          if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
+            selectCenter(centers[0]);
+          }
+        } catch (error) {
+          console.error('Error loading admin schools/centers:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
+        }
+      } else if (userData.role_name === 'trainer_head') {
+        // Trainer_head gets schools/centers based on their section_type
+        try {
+          let schools = [];
+          let centers = [];
+          
+          if (userData.section_type === 'school' || userData.section_type === 'both') {
+            const schoolsRes = await api.get('/schools').catch(() => ({ data: [] }));
+            schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          }
+          
+          if (userData.section_type === 'center' || userData.section_type === 'both') {
+            const centersRes = await api.get('/centers').catch(() => ({ data: [] }));
+            centers = Array.isArray(centersRes.data) ? centersRes.data : [];
+          }
+          
+          setAvailableSchools(schools);
+          setAvailableCenters(centers);
+          
+          // Auto-select first if not already selected
           if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
             selectSchool(schools[0]);
           }
@@ -83,127 +199,58 @@ export const AuthProvider = ({ children }) => {
             selectCenter(centers[0]);
           }
           
-          // Set default section based on what trainer has access to
+          // Set default section based on section_type
           if (!localStorage.getItem('currentSection')) {
-            if (schools.length > 0) {
+            if (userData.section_type === 'school') {
               setCurrentSection('school');
               localStorage.setItem('currentSection', 'school');
-            } else if (centers.length > 0) {
+            } else if (userData.section_type === 'center') {
+              setCurrentSection('center');
+              localStorage.setItem('currentSection', 'center');
+            } else if (userData.section_type === 'both' && schools.length > 0) {
+              setCurrentSection('school');
+              localStorage.setItem('currentSection', 'school');
+            } else if (userData.section_type === 'both' && centers.length > 0) {
               setCurrentSection('center');
               localStorage.setItem('currentSection', 'center');
             }
           }
-        }
-      } else if (userData.role_name === 'school_teacher') {
-        // School teachers get their assigned schools from user_assignments/teacher-assignments
-        const schoolsRes = await api.get('/teacher-assignments/my-schools');
-        const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
-        setAvailableSchools(schools);
-        setAvailableCenters([]); // Teachers don't have center access
-        
-        // Auto-select first school
-        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
-          selectSchool(schools[0]);
-        }
-        
-        // Teachers only have school section
-        setCurrentSection('school');
-        localStorage.setItem('currentSection', 'school');
-      } else if (userData.role_name && userData.role_name.includes('principal')) {
-        // Principals get their assigned schools from user_assignments
-        const schoolsRes = await api.get('/teacher-assignments/my-schools');
-        const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
-        setAvailableSchools(schools);
-        setAvailableCenters([]); // Principals don't have center access
-        
-        // Auto-select first school
-        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
-          selectSchool(schools[0]);
-        }
-        
-        // Principals only have school section
-        setCurrentSection('school');
-        localStorage.setItem('currentSection', 'school');
-      } else if (['developer', 'owner', 'super_admin'].includes(userData.role_name)) {
-        // Developer, owner, and super_admin get ALL schools and centers
-        const [schoolsRes, centersRes] = await Promise.all([
-          api.get('/schools'),
-          api.get('/centers')
-        ]);
-        const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
-        const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
-        setAvailableSchools(schools);
-        setAvailableCenters(centers);
-        
-        // Auto-select first if not already selected
-        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
-          selectSchool(schools[0]);
-        }
-        if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
-          selectCenter(centers[0]);
-        }
-      } else if (userData.role_name === 'trainer_head') {
-        // Trainer_head gets schools/centers based on their section_type
-        let schools = [];
-        let centers = [];
-        
-        if (userData.section_type === 'school' || userData.section_type === 'both') {
-          const schoolsRes = await api.get('/schools');
-          schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
-        }
-        
-        if (userData.section_type === 'center' || userData.section_type === 'both') {
-          const centersRes = await api.get('/centers');
-          centers = Array.isArray(centersRes.data) ? centersRes.data : [];
-        }
-        
-        setAvailableSchools(schools);
-        setAvailableCenters(centers);
-        
-        // Auto-select first if not already selected
-        if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
-          selectSchool(schools[0]);
-        }
-        if (centers.length > 0 && !localStorage.getItem('selectedCenter')) {
-          selectCenter(centers[0]);
-        }
-        
-        // Set default section based on section_type
-        if (!localStorage.getItem('currentSection')) {
-          if (userData.section_type === 'school') {
-            setCurrentSection('school');
-            localStorage.setItem('currentSection', 'school');
-          } else if (userData.section_type === 'center') {
-            setCurrentSection('center');
-            localStorage.setItem('currentSection', 'center');
-          } else if (userData.section_type === 'both' && schools.length > 0) {
-            setCurrentSection('school');
-            localStorage.setItem('currentSection', 'school');
-          } else if (userData.section_type === 'both' && centers.length > 0) {
-            setCurrentSection('center');
-            localStorage.setItem('currentSection', 'center');
-          }
+        } catch (error) {
+          console.error('Error loading trainer_head schools/centers:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
         }
       } else {
         // Other roles get from their user_assignments
-        const schoolAssignments = userData.assignments?.filter(a => a.school_id) || [];
-        const centerAssignments = userData.assignments?.filter(a => a.center_id) || [];
-        
-        setAvailableSchools(schoolAssignments.map(a => ({ id: a.school_id, name: a.school_name })));
-        setAvailableCenters(centerAssignments.map(a => ({ id: a.center_id, name: a.center_name })));
-        
-        // Auto-select first
-        if (schoolAssignments.length > 0 && !localStorage.getItem('selectedSchool')) {
-          const school = { id: schoolAssignments[0].school_id, name: schoolAssignments[0].school_name };
-          selectSchool(school);
-        }
-        if (centerAssignments.length > 0 && !localStorage.getItem('selectedCenter')) {
-          const center = { id: centerAssignments[0].center_id, name: centerAssignments[0].center_name };
-          selectCenter(center);
+        try {
+          const schoolAssignments = userData.assignments?.filter(a => a.school_id) || [];
+          const centerAssignments = userData.assignments?.filter(a => a.center_id) || [];
+          
+          setAvailableSchools(schoolAssignments.map(a => ({ id: a.school_id, name: a.school_name })));
+          setAvailableCenters(centerAssignments.map(a => ({ id: a.center_id, name: a.center_name })));
+          
+          // Auto-select first
+          if (schoolAssignments.length > 0 && !localStorage.getItem('selectedSchool')) {
+            const school = { id: schoolAssignments[0].school_id, name: schoolAssignments[0].school_name };
+            selectSchool(school);
+          }
+          if (centerAssignments.length > 0 && !localStorage.getItem('selectedCenter')) {
+            const center = { id: centerAssignments[0].center_id, name: centerAssignments[0].center_name };
+            selectCenter(center);
+          }
+        } catch (error) {
+          console.error('Error loading user assignments:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
         }
       }
     } catch (err) {
       console.error('Failed to load available entities:', err);
+      // Set empty arrays to prevent blank page
+      setAvailableSchools([]);
+      setAvailableCenters([]);
+    } finally {
+      setLoadingEntities(false);
     }
   };
 
@@ -323,6 +370,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    loadingEntities,
     login,
     logout,
     selectedSchool,

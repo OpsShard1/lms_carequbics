@@ -331,9 +331,39 @@
   vertical-align: middle;
 }
 
+/* Disapproved Student Styling (Red) */
+.disapproved-student-row {
+  background: linear-gradient(90deg, #fee2e2, transparent) !important;
+}
+
+.disapproved-student {
+  background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+}
+
+.disapproved-student .student-name {
+  color: #dc2626 !important;
+}
+
+.not-approved-badge {
+  display: inline-block;
+  background: #dc2626;
+  color: white;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .legend-box.extra-box {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   border-color: #f59e0b;
+}
+
+.legend-box.disapproved-box {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-color: #dc2626;
 }
 
 /* Action buttons in controls */

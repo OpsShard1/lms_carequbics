@@ -6,13 +6,15 @@ import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const SchoolClasses = () => {
-  const { selectedSchool, selectSchool, availableSchools, user } = useAuth();
+  const { selectedSchool, selectSchool, availableSchools, user, canEdit, ownerEditMode } = useAuth();
   const { showSuccess, showError, showWarning } = useNotificationContext();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Permission check - trainer_head cannot create/edit classes
-  const canEditClasses = ['developer', 'owner', 'school_teacher'].includes(user?.role_name);
+  // Permission check - owner needs edit mode enabled, others can edit by default
+  const canEditClasses = user?.role_name === 'owner' 
+    ? ownerEditMode 
+    : ['developer', 'school_teacher'].includes(user?.role_name);
   
   // Trainers can assign curriculum
   const canAssignCurriculum = ['developer', 'owner', 'trainer_head', 'trainer'].includes(user?.role_name);
@@ -21,6 +23,8 @@ const SchoolClasses = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
+  const [selectedCurriculum, setSelectedCurriculum] = useState(null);
+  const [selectedCurriculumFilter, setSelectedCurriculumFilter] = useState(null);
   const [form, setForm] = useState({ name: '', grade: '', section: '', room_number: '' });
   
   // Students in class (only for edit modal)
@@ -44,13 +48,13 @@ const SchoolClasses = () => {
   useEffect(() => {
     if (selectedSchool?.id) {
       loadClasses();
-      if (canAssignCurriculum) {
-        loadCurriculums();
-      }
+      // Load curriculums for all users (for filtering), not just those who can edit
+      loadCurriculums();
       // Reset form and editing state when school changes
       setShowCreateModal(false);
       setShowEditModal(false);
       setEditingClass(null);
+      setSelectedCurriculum(null);
       setForm({ name: '', grade: '', section: '', room_number: '' });
       setStudents([]);
     } else {
@@ -71,7 +75,13 @@ const SchoolClasses = () => {
   const loadCurriculums = async () => {
     try {
       const res = await api.get('/school-curriculum');
-      setAvailableCurriculums(res.data);
+      // Sort by grade_name numerically
+      const sorted = res.data.sort((a, b) => {
+        const gradeA = parseInt(a.grade_name) || 0;
+        const gradeB = parseInt(b.grade_name) || 0;
+        return gradeA - gradeB;
+      });
+      setAvailableCurriculums(sorted);
     } catch (err) {
       console.error('Failed to load curriculums:', err);
     }
@@ -103,19 +113,34 @@ const SchoolClasses = () => {
     }
   };
 
-  const startNewClass = () => {
-    setForm({ name: '', grade: '', section: '', room_number: '' });
+  const startNewClass = (curriculum, e) => {
+    e.stopPropagation(); // Prevent triggering the filter
+    setSelectedCurriculum(curriculum);
+    setForm({ 
+      name: curriculum.name, 
+      grade: curriculum.grade_name, 
+      section: '', 
+      room_number: '' 
+    });
     setShowCreateModal(true);
   };
 
+  const handleCurriculumFilter = (curriculum) => {
+    if (selectedCurriculumFilter?.id === curriculum.id) {
+      // Deselect if clicking the same curriculum
+      setSelectedCurriculumFilter(null);
+    } else {
+      setSelectedCurriculumFilter(curriculum);
+    }
+  };
+
+  // Filter classes based on selected curriculum
+  const filteredClasses = selectedCurriculumFilter
+    ? classes.filter(c => c.curriculum_id === selectedCurriculumFilter.id)
+    : classes;
+
   const startEditClass = async (classItem) => {
     setEditingClass(classItem);
-    setForm({
-      name: classItem.name,
-      grade: classItem.grade || '',
-      section: classItem.section || '',
-      room_number: classItem.room_number || ''
-    });
     
     // Load students for this class
     try {
@@ -150,6 +175,30 @@ const SchoolClasses = () => {
     }
   };
 
+  const handleApproveStudent = async (studentId) => {
+    try {
+      await api.post(`/students/${studentId}/approve`);
+      // Reload students to reflect the change
+      const res = await api.get(`/students/class/${editingClass.id}`);
+      setStudents(res.data.map(s => ({ ...s, isExisting: true })));
+      showSuccess('Student approved successfully!');
+    } catch (err) {
+      showError('Failed to approve student: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleDisapproveStudent = async (studentId) => {
+    try {
+      await api.post(`/students/${studentId}/disapprove`);
+      // Reload students to reflect the change
+      const res = await api.get(`/students/class/${editingClass.id}`);
+      setStudents(res.data.map(s => ({ ...s, isExisting: true })));
+      showSuccess('Student disapproved');
+    } catch (err) {
+      showError('Failed to disapprove student: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!selectedSchool?.id) {
@@ -158,11 +207,23 @@ const SchoolClasses = () => {
     }
 
     try {
-      await api.post('/classes', { ...form, school_id: selectedSchool.id });
+      // Create class
+      const classRes = await api.post('/classes', { ...form, school_id: selectedSchool.id });
+      const newClassId = classRes.data.id;
+
+      // Assign curriculum to the class
+      if (selectedCurriculum) {
+        await api.post('/school-curriculum/assign', {
+          class_id: newClassId,
+          curriculum_id: selectedCurriculum.id
+        });
+      }
+
       setShowCreateModal(false);
+      setSelectedCurriculum(null);
       setForm({ name: '', grade: '', section: '', room_number: '' });
       loadClasses();
-      showSuccess('Class created successfully!');
+      showSuccess('Class created and curriculum assigned successfully!');
     } catch (err) {
       showError('Failed to create class: ' + (err.response?.data?.error || err.message));
     }
@@ -173,10 +234,7 @@ const SchoolClasses = () => {
     if (!editingClass) return;
 
     try {
-      // Update class details
-      await api.put(`/classes/${editingClass.id}`, { ...form, is_active: true });
-
-      // Handle students
+      // Handle students only
       for (const student of students) {
         if (student.isNew) {
           // Create new student
@@ -195,9 +253,9 @@ const SchoolClasses = () => {
       setEditingClass(null);
       setStudents([]);
       loadClasses();
-      showSuccess('Class updated successfully!');
+      showSuccess('Students updated successfully!');
     } catch (err) {
-      showError('Failed to update class: ' + (err.response?.data?.error || err.message));
+      showError('Failed to update students: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -218,11 +276,6 @@ const SchoolClasses = () => {
     <div className="classes-page">
       <div className="page-header">
         <h2>Classes Management</h2>
-        {canEditClasses && (
-          <button onClick={startNewClass} className="btn-primary" disabled={!selectedSchool}>
-            Create Class
-          </button>
-        )}
       </div>
 
       {!selectedSchool ? (
@@ -230,85 +283,116 @@ const SchoolClasses = () => {
           <h3>Select a School</h3>
           <p>Please select a school from the navbar to view and manage classes.</p>
         </div>
-      ) : classes.length === 0 ? (
-        <div className="no-data">
-          <p>No classes found.</p>
-          <p className="hint">Click "Create Class" to add a class.</p>
-        </div>
       ) : (
-        <div className="classes-grid">
-          {classes.map(c => (
-            <div key={c.id} className="class-card">
-              <div className="class-header">
-                <h3>{c.name}</h3>
-                <span className="grade-badge">Grade {c.grade || '-'}</span>
+        <div className="classes-layout">
+          {/* Left Panel - Curriculum Filter / Create Class */}
+          <div className="create-class-panel">
+            <h3>{canEditClasses ? 'Create Class' : 'Filter by Class'}</h3>
+            {availableCurriculums.length === 0 ? (
+              <div className="no-data">
+                <p>No curriculums available</p>
               </div>
-              <div className="class-details">
-                <p><strong>Section:</strong> {c.section || '-'}</p>
-                <p><strong>Room:</strong> {c.room_number || '-'}</p>
-                <p><strong>Students:</strong> {c.student_count || 0}</p>
-                {c.curriculum_name && (
-                  <p><strong>Curriculum:</strong> {c.curriculum_name} ({c.grade_name})</p>
-                )}
+            ) : (
+              <div className="curriculum-list">
+                {availableCurriculums.map(curr => (
+                  <div 
+                    key={curr.id} 
+                    className={`curriculum-item ${selectedCurriculumFilter?.id === curr.id ? 'selected' : ''}`}
+                    onClick={() => handleCurriculumFilter(curr)}
+                  >
+                    <span className="curriculum-name">{curr.name}</span>
+                    {canEditClasses && (
+                      <button 
+                        className="btn-add" 
+                        onClick={(e) => startNewClass(curr, e)}
+                        title="Create new class"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="class-actions">
-                {canAssignCurriculum && (
-                  <button onClick={() => openCurriculumModal(c)} className="btn-success btn-sm">
-                    {c.curriculum_name ? 'Change Curriculum' : 'Assign Curriculum'}
-                  </button>
-                )}
-                {canEditClasses && (
-                  <>
-                    <button onClick={() => startEditClass(c)} className="btn-secondary btn-sm">Edit / Manage Students</button>
-                    <button onClick={() => deleteClass(c.id)} className="btn-danger btn-sm">Delete</button>
-                  </>
-                )}
-              </div>
+            )}
+          </div>
+
+          {/* Right Panel - Existing Classes */}
+          <div className="existing-classes-panel">
+            <div className="existing-classes-header">
+              <h3>Existing Classes</h3>
+              {selectedCurriculumFilter && (
+                <button 
+                  className="btn-clear-filter" 
+                  onClick={() => setSelectedCurriculumFilter(null)}
+                >
+                  Clear Filter
+                </button>
+              )}
             </div>
-          ))}
+            {filteredClasses.length === 0 ? (
+              <div className="no-data">
+                <p>No classes found.</p>
+                {selectedCurriculumFilter && <p className="hint">No classes for {selectedCurriculumFilter.name}.</p>}
+                {canEditClasses && !selectedCurriculumFilter && <p className="hint">Select a curriculum from the left to create your first class.</p>}
+              </div>
+            ) : (
+              <div className="classes-grid">
+                {filteredClasses.map(c => (
+                  <div key={c.id} className="class-card">
+                    <div className="class-header">
+                      <h3>{c.name}</h3>
+                      <span className="grade-badge">Grade {c.grade || '-'}</span>
+                    </div>
+                    <div className="class-details">
+                      <p><strong>Section:</strong> {c.section || '-'}</p>
+                      <p><strong>Room:</strong> {c.room_number || '-'}</p>
+                      <p><strong>Students:</strong> {c.student_count || 0}</p>
+                      {c.curriculum_name && (
+                        <p><strong>Curriculum:</strong> {c.curriculum_name}</p>
+                      )}
+                    </div>
+                    <div className="class-actions">
+                      {canEditClasses && (
+                        <>
+                          <button onClick={() => startEditClass(c)} className="btn-secondary btn-sm">Manage Students</button>
+                          <button onClick={() => deleteClass(c.id)} className="btn-danger btn-sm">Delete</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Create Class Modal */}
-      {showCreateModal && (
+      {showCreateModal && selectedCurriculum && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Create New Class</h3>
+            <h3>Create Class: {selectedCurriculum.name}</h3>
+            <p className="modal-subtitle">Grade: {selectedCurriculum.grade_name} • {selectedCurriculum.subject_count} subjects</p>
             <form onSubmit={handleCreateClass}>
-              <div className="form-group">
-                <label>Class Name *</label>
-                <input 
-                  placeholder="e.g., Grade 5A" 
-                  value={form.name} 
-                  onChange={(e) => setForm({...form, name: e.target.value})} 
-                  required 
-                />
-              </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Grade</label>
+                  <label>Section *</label>
                   <input 
-                    placeholder="e.g., 1, 2, 3" 
-                    value={form.grade} 
-                    onChange={(e) => setForm({...form, grade: e.target.value})} 
+                    placeholder="e.g., A, B, C" 
+                    value={form.section} 
+                    onChange={(e) => setForm({...form, section: e.target.value})} 
+                    required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Section</label>
+                  <label>Room Number *</label>
                   <input 
-                    placeholder="e.g., A, B" 
-                    value={form.section} 
-                    onChange={(e) => setForm({...form, section: e.target.value})} 
+                    placeholder="e.g., 101, 202" 
+                    value={form.room_number} 
+                    onChange={(e) => setForm({...form, room_number: e.target.value})} 
+                    required
                   />
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Room Number</label>
-                <input 
-                  placeholder="e.g., 101" 
-                  value={form.room_number} 
-                  onChange={(e) => setForm({...form, room_number: e.target.value})} 
-                />
               </div>
               <div className="form-actions">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">Cancel</button>
@@ -356,45 +440,9 @@ const SchoolClasses = () => {
       {showEditModal && editingClass && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
-            <h3>Edit Class: {editingClass.name}</h3>
+            <h3>Manage Students: {editingClass.name}</h3>
+            <p className="modal-subtitle">Section: {editingClass.section || '-'} • Room: {editingClass.room_number || '-'}</p>
             <form onSubmit={handleUpdateClass}>
-              <div className="form-section">
-                <h4>Class Details</h4>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Class Name *</label>
-                    <input 
-                      value={form.name} 
-                      onChange={(e) => setForm({...form, name: e.target.value})} 
-                      required 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Grade</label>
-                    <input 
-                      value={form.grade} 
-                      onChange={(e) => setForm({...form, grade: e.target.value})} 
-                    />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Section</label>
-                    <input 
-                      value={form.section} 
-                      onChange={(e) => setForm({...form, section: e.target.value})} 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Room Number</label>
-                    <input 
-                      value={form.room_number} 
-                      onChange={(e) => setForm({...form, room_number: e.target.value})} 
-                    />
-                  </div>
-                </div>
-              </div>
-
               <div className="form-section">
                 <h4>Manage Students ({students.filter(s => !s.toRemove).length})</h4>
                 
@@ -433,18 +481,38 @@ const SchoolClasses = () => {
                       </thead>
                       <tbody>
                         {students.map((s, idx) => (
-                          <tr key={s.id} className={s.toRemove ? 'to-remove' : ''}>
-                            <td>{s.first_name} {s.last_name}</td>
+                          <tr key={s.id} className={`${s.toRemove ? 'to-remove' : ''} ${s.is_extra === 2 ? 'disapproved-student' : ''}`}>
+                            <td>
+                              {s.first_name} {s.last_name}
+                              {s.is_extra === 2 && <span style={{color: '#dc2626', fontWeight: 'bold', marginLeft: '8px'}}>(Not a Student)</span>}
+                            </td>
                             <td>{s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : '-'}</td>
                             <td>{s.gender || '-'}</td>
                             <td>{s.parent_name || '-'}</td>
                             <td>{s.parent_contact || '-'}</td>
                             <td>
                               {s.isNew && <span className="badge new">New</span>}
-                              {s.isExisting && !s.toRemove && <span className="badge existing">Existing</span>}
+                              {s.isExisting && !s.toRemove && !s.is_extra && <span className="badge existing">Existing</span>}
+                              {s.isExisting && s.is_extra === 1 && <span className="badge extra">Extra</span>}
+                              {s.isExisting && s.is_extra === 2 && <span className="badge not-approved">Not Approved</span>}
                               {s.toRemove && <span className="badge remove">Will Remove</span>}
                             </td>
                             <td>
+                              {s.is_extra === 1 && canEditClasses && (
+                                <>
+                                  <button type="button" onClick={() => handleApproveStudent(s.id)} className="btn-sm btn-success" style={{marginRight: '4px'}}>
+                                    Approve
+                                  </button>
+                                  <button type="button" onClick={() => handleDisapproveStudent(s.id)} className="btn-sm btn-warning" style={{marginRight: '4px'}}>
+                                    Disapprove
+                                  </button>
+                                </>
+                              )}
+                              {s.is_extra === 2 && canEditClasses && (
+                                <button type="button" onClick={() => handleApproveStudent(s.id)} className="btn-sm btn-success" style={{marginRight: '4px'}}>
+                                  Approve
+                                </button>
+                              )}
                               <button type="button" onClick={() => removeStudentFromList(idx)} className="btn-sm btn-danger">
                                 {s.toRemove ? 'Undo' : 'Remove'}
                               </button>
@@ -459,7 +527,7 @@ const SchoolClasses = () => {
 
               <div className="form-actions">
                 <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary">Update Class</button>
+                <button type="submit" className="btn-primary">Update Students</button>
               </div>
             </form>
           </div>

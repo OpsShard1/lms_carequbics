@@ -4,8 +4,8 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all school curriculums
-router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'trainer'), async (req, res) => {
+// Get all school curriculums - accessible to all authenticated users for filtering
+router.get('/', authenticate, async (req, res) => {
   try {
     const [curriculums] = await pool.query(`
       SELECT sc.*, 
@@ -21,8 +21,8 @@ router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 't
   }
 });
 
-// Get full curriculum with subjects and projects
-router.get('/:id/full', authenticate, authorize('developer', 'owner', 'trainer_head', 'trainer'), async (req, res) => {
+// Get full curriculum with subjects and projects - accessible to all authenticated users
+router.get('/:id/full', authenticate, async (req, res) => {
   try {
     const [curriculum] = await pool.query('SELECT * FROM school_curriculums WHERE id = ? AND is_active = true', [req.params.id]);
     if (curriculum.length === 0) {
@@ -174,8 +174,8 @@ router.delete('/projects/:id', authenticate, authorize('developer', 'trainer_hea
   }
 });
 
-// Assign curriculum to class
-router.post('/assign', authenticate, authorize('developer', 'trainer_head', 'trainer'), async (req, res) => {
+// Assign curriculum to class - only for users who can create classes
+router.post('/assign', authenticate, authorize('developer', 'owner', 'school_teacher'), async (req, res) => {
   try {
     const { class_id, curriculum_id } = req.body;
     const [result] = await pool.query(
@@ -189,8 +189,8 @@ router.post('/assign', authenticate, authorize('developer', 'trainer_head', 'tra
   }
 });
 
-// Get class curriculum and progress
-router.get('/class/:classId/progress', authenticate, authorize('developer', 'owner', 'trainer_head', 'trainer'), async (req, res) => {
+// Get class curriculum and progress - accessible to all authenticated users
+router.get('/class/:classId/progress', authenticate, async (req, res) => {
   try {
     // Get assigned curriculum
     const [assignment] = await pool.query(`
