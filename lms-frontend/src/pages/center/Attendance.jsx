@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { useEditMode } from '../../hooks/useEditMode';
+import MonthPicker from '../../components/MonthPicker';
 import api from '../../api/axios';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import '../../styles/attendance.css';
@@ -178,10 +179,10 @@ const CenterAttendance = () => {
         <div className="date-time-picker">
           <div className="form-group">
             <label>Month</label>
-            <input 
-              type="month" 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(e.target.value)} 
+            <MonthPicker
+              selected={new Date(selectedMonth + '-01')}
+              onChange={(date) => setSelectedMonth(format(date, 'yyyy-MM'))}
+              placeholder="Select month"
             />
           </div>
         </div>

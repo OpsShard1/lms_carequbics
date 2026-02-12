@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { useEditMode } from '../../hooks/useEditMode';
+import DatePicker from '../../components/DatePicker';
+import MonthPicker from '../../components/MonthPicker';
 import api from '../../api/axios';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import '../../styles/attendance.css';
@@ -201,10 +203,10 @@ const SchoolAttendance = () => {
         <div className="date-time-picker">
           <div className="form-group">
             <label>Month</label>
-            <input 
-              type="month" 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(e.target.value)} 
+            <MonthPicker
+              selected={new Date(selectedMonth + '-01')}
+              onChange={(date) => setSelectedMonth(format(date, 'yyyy-MM'))}
+              placeholder="Select month"
             />
           </div>
           <div className="form-group">
@@ -258,11 +260,12 @@ const SchoolAttendance = () => {
               </div>
               <div className="form-group">
                 <label>Date of Birth *</label>
-                <input 
-                  type="date"
-                  value={extraStudent.date_of_birth}
-                  onChange={(e) => setExtraStudent({...extraStudent, date_of_birth: e.target.value})}
+                <DatePicker
+                  selected={extraStudent.date_of_birth ? new Date(extraStudent.date_of_birth) : null}
+                  onChange={(date) => setExtraStudent({...extraStudent, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
+                  placeholder="Select date of birth"
                   required
+                  maxDate={new Date()}
                 />
               </div>
               <div className="form-row">

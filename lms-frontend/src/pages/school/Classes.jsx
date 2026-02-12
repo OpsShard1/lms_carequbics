@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import DatePicker from '../../components/DatePicker';
 import api from '../../api/axios';
 import '../../styles/classes.css';
 
@@ -217,34 +218,17 @@ const SchoolClasses = () => {
     <div className="classes-page">
       <div className="page-header">
         <h2>Classes Management</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          {availableSchools.length > 1 && (
-            <select 
-              value={selectedSchool?.id || ''} 
-              onChange={(e) => {
-                const school = availableSchools.find(s => s.id === parseInt(e.target.value));
-                selectSchool(school);
-              }}
-              className="school-selector"
-            >
-              <option value="">Select School</option>
-              {availableSchools.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          )}
-          {canEditClasses && (
-            <button onClick={startNewClass} className="btn-primary" disabled={!selectedSchool}>
-              Create Class
-            </button>
-          )}
-        </div>
+        {canEditClasses && (
+          <button onClick={startNewClass} className="btn-primary" disabled={!selectedSchool}>
+            Create Class
+          </button>
+        )}
       </div>
 
       {!selectedSchool ? (
         <div className="welcome-message">
           <h3>Select a School</h3>
-          <p>Please select a school to view and manage classes.</p>
+          <p>Please select a school from the navbar to view and manage classes.</p>
         </div>
       ) : classes.length === 0 ? (
         <div className="no-data">
@@ -417,7 +401,12 @@ const SchoolClasses = () => {
                 <div className="add-student-row">
                   <input placeholder="First Name *" value={newStudent.first_name} onChange={(e) => setNewStudent({...newStudent, first_name: e.target.value})} />
                   <input placeholder="Last Name" value={newStudent.last_name} onChange={(e) => setNewStudent({...newStudent, last_name: e.target.value})} />
-                  <input type="date" placeholder="DOB *" value={newStudent.date_of_birth} onChange={(e) => setNewStudent({...newStudent, date_of_birth: e.target.value})} />
+                  <DatePicker
+                    selected={newStudent.date_of_birth ? new Date(newStudent.date_of_birth) : null}
+                    onChange={(date) => setNewStudent({...newStudent, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
+                    placeholder="DOB *"
+                    maxDate={new Date()}
+                  />
                   <select value={newStudent.gender} onChange={(e) => setNewStudent({...newStudent, gender: e.target.value})}>
                     <option value="">Gender</option>
                     <option value="male">Male</option>

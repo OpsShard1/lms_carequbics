@@ -23,8 +23,6 @@ import FeesDetail from './pages/center/FeesDetail';
 import AdminUsers from './pages/admin/Users';
 import AdminSchools from './pages/admin/Schools';
 import AdminCenters from './pages/admin/Centers';
-import StaffAssignments from './pages/admin/StaffAssignments';
-import SchoolAssignments from './pages/admin/SchoolAssignments';
 import Settings from './pages/admin/Settings';
 import './App.css';
 
@@ -77,8 +75,6 @@ function App() {
             <Route path="admin/users" element={<AdminUsers />} />
             <Route path="admin/schools" element={<AdminSchools />} />
             <Route path="admin/centers" element={<AdminCenters />} />
-            <Route path="admin/staff-assignments" element={<StaffAssignments />} />
-            <Route path="admin/school-assignments" element={<SchoolAssignments />} />
             <Route path="admin/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -8,12 +8,13 @@ import api from '../api/axios';
 import '../styles/layout.css';
 
 const Layout = () => {
-  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, availableSchools, availableCenters, ownerEditMode, toggleOwnerEditMode } = useAuth();
+  const { user, logout, currentSection, switchSection, canAccessSection, selectedSchool, selectedCenter, selectSchool, selectCenter, availableSchools, availableCenters, ownerEditMode, toggleOwnerEditMode } = useAuth();
   const { notifications, removeNotification, showWarning } = useNotificationContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarSettings, setSidebarSettings] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showEntityDropdown, setShowEntityDropdown] = useState(false);
 
   // Check if user needs assignments based on their role
   const needsAssignment = () => {
@@ -157,8 +158,6 @@ const Layout = () => {
     { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_users' },
     { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_schools' },
     { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_centers' },
-    { path: '/admin/staff-assignments', label: 'Staff Assignments', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_staff_assignments' },
-    { path: '/admin/school-assignments', label: 'School Assignments', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_school_assignments' },
     { path: '/admin/settings', label: 'Settings', roles: ['super_admin'], settingKey: null }, // Only super_admin can see settings
   ];
 
@@ -228,9 +227,69 @@ const Layout = () => {
           )}
         </div>
         <div className="header-right">
-          <span className="current-entity">
-            {effectiveSection === 'school' ? selectedSchool?.name : selectedCenter?.name}
-          </span>
+          <div className="entity-selector">
+            <button 
+              className="current-entity"
+              onClick={() => setShowEntityDropdown(!showEntityDropdown)}
+            >
+              <span className="entity-name">
+                {effectiveSection === 'school' ? selectedSchool?.name : selectedCenter?.name}
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            
+            {showEntityDropdown && (
+              <>
+                <div className="dropdown-overlay" onClick={() => setShowEntityDropdown(false)}></div>
+                <div className="entity-dropdown">
+                  <div className="dropdown-header">
+                    {effectiveSection === 'school' ? 'Select School' : 'Select Center'}
+                  </div>
+                  <div className="dropdown-list">
+                    {effectiveSection === 'school' ? (
+                      availableSchools.map(school => (
+                        <button
+                          key={school.id}
+                          className={`dropdown-item ${selectedSchool?.id === school.id ? 'active' : ''}`}
+                          onClick={() => {
+                            selectSchool(school);
+                            setShowEntityDropdown(false);
+                          }}
+                        >
+                          {school.name}
+                          {selectedSchool?.id === school.id && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      availableCenters.map(center => (
+                        <button
+                          key={center.id}
+                          className={`dropdown-item ${selectedCenter?.id === center.id ? 'active' : ''}`}
+                          onClick={() => {
+                            selectCenter(center);
+                            setShowEntityDropdown(false);
+                          }}
+                        >
+                          {center.name}
+                          {selectedCenter?.id === center.id && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           {user?.role_name === 'owner' && (
             <div className="edit-mode-toggle">
               <label className="toggle-switch">
@@ -247,7 +306,6 @@ const Layout = () => {
             </div>
           )}
           <span className="user-info">{user?.first_name} ({user?.role_name})</span>
-          <button onClick={handleLogout} className="logout-btn">Logout</button>
         </div>
       </header>
 
@@ -315,6 +373,17 @@ const Layout = () => {
               </>
             )}
           </ul>
+          
+          <div className="sidebar-footer">
+            <button onClick={handleLogout} className="logout-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Logout
+            </button>
+          </div>
         </nav>
 
         <main className="content">

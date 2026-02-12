@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { useEditMode } from '../../hooks/useEditMode';
 import { useNavigate } from 'react-router-dom';
+import DatePicker from '../../components/DatePicker';
 import api from '../../api/axios';
 import '../../styles/student-registration.css';
 
@@ -237,11 +238,12 @@ const CenterStudents = () => {
               </div>
               <div className="form-field">
                 <label>Date of Birth <span className="required">*</span></label>
-                <input 
-                  type="date" 
-                  value={form.date_of_birth} 
-                  onChange={(e) => setForm({...form, date_of_birth: e.target.value})} 
-                  required 
+                <DatePicker
+                  selected={form.date_of_birth ? new Date(form.date_of_birth) : null}
+                  onChange={(date) => setForm({...form, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
+                  placeholder="Select date of birth"
+                  required
+                  maxDate={new Date()}
                 />
               </div>
               <div className="form-field">

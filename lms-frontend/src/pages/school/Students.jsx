@@ -67,29 +67,12 @@ const SchoolStudents = () => {
           <h2>School Students</h2>
           <p className="subtitle">Students are managed through Classes. Go to Classes to add/edit students.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          {availableSchools.length > 1 && (
-            <select 
-              value={selectedSchool?.id || ''} 
-              onChange={(e) => {
-                const school = availableSchools.find(s => s.id === parseInt(e.target.value));
-                selectSchool(school);
-              }}
-              className="school-selector"
-            >
-              <option value="">Select School</option>
-              {availableSchools.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          )}
-        </div>
       </div>
 
       {!selectedSchool ? (
         <div className="welcome-message">
           <h3>Select a School</h3>
-          <p>Please select a school to view students.</p>
+          <p>Please select a school from the navbar to view students.</p>
         </div>
       ) : (
         <>

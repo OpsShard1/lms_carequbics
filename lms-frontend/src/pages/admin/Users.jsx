@@ -14,6 +14,7 @@ const AdminUsers = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', role_id: '', section_type: 'school', is_active: true });
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Check if user can delete/deactivate
   const canManageUsers = ['developer', 'owner', 'super_admin'].includes(user?.role_name) && canEdit;
@@ -50,6 +51,15 @@ const AdminUsers = () => {
     if (user?.role_name === 'trainer_head') {
       // trainer_head can only see school_teacher and trainer users
       filteredUsers = filteredUsers.filter(u => ['school_teacher', 'trainer'].includes(u.role_name));
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filteredUsers = filteredUsers.filter(u => 
+        u.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
     
     // Show all users including deactivated ones (deleted users are removed from DB)
@@ -188,6 +198,26 @@ const AdminUsers = () => {
         )}
       </div>
 
+      {/* Search Bar */}
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="Search users by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+        {searchTerm && (
+          <button 
+            onClick={() => setSearchTerm('')} 
+            className="clear-search"
+            aria-label="Clear search"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       <Modal 
         isOpen={showModal} 
         onClose={() => {
@@ -290,13 +320,20 @@ const AdminUsers = () => {
             </tr>
           </thead>
           <tbody>
-            {visibleUsers.map(u => (
-              <tr key={u.id}>
-                <td>{u.first_name} {u.last_name}</td>
-                <td>{u.email}</td>
-                <td>{u.role_name}</td>
-                <td>{u.section_type}</td>
-                <td>
+            {visibleUsers.length === 0 ? (
+              <tr>
+                <td colSpan={canEdit ? 6 : 5} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                  {searchTerm ? `No users found matching "${searchTerm}"` : 'No users available'}
+                </td>
+              </tr>
+            ) : (
+              visibleUsers.map(u => (
+                <tr key={u.id}>
+                  <td>{u.first_name} {u.last_name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.role_name}</td>
+                  <td>{u.section_type}</td>
+                  <td>
                   {canManageUsers ? (
                     <span 
                       className={`status-badge ${u.is_active ? 'active' : 'inactive'} clickable`}
@@ -332,7 +369,8 @@ const AdminUsers = () => {
                   </td>
                 )}
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

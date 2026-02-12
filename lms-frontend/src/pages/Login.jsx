@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InteractiveBackground from '../components/InteractiveBackground';
+import DatePicker from '../components/DatePicker';
 import '../styles/login.css';
 
 const Login = () => {
@@ -49,8 +50,12 @@ const Login = () => {
       setError('Please enter child name and date of birth');
       return;
     }
+    // Format date to YYYY-MM-DD for URL
+    const formattedDate = dateOfBirth instanceof Date 
+      ? dateOfBirth.toISOString().split('T')[0]
+      : dateOfBirth;
     // Navigate to unified parent portal
-    navigate(`/parent/portal?name=${encodeURIComponent(childName.trim())}&dob=${dateOfBirth}`);
+    navigate(`/parent/portal?name=${encodeURIComponent(childName.trim())}&dob=${formattedDate}`);
   };
 
   return (
@@ -120,11 +125,12 @@ const Login = () => {
             </div>
             <div className="form-group">
               <label>Date of Birth</label>
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
+              <DatePicker
+                selected={dateOfBirth ? (dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth)) : null}
+                onChange={(date) => setDateOfBirth(date)}
+                placeholder="Select date of birth"
                 required
+                maxDate={new Date()}
               />
             </div>
             <button type="submit" className="btn-primary btn-full">

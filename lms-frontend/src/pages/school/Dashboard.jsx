@@ -43,21 +43,6 @@ const SchoolDashboard = () => {
     <div className="dashboard">
       <div className="page-header">
         <h2>School Dashboard</h2>
-        {availableSchools.length > 1 && (
-          <select 
-            value={selectedSchool?.id || ''} 
-            onChange={(e) => {
-              const school = availableSchools.find(s => s.id === parseInt(e.target.value));
-              selectSchool(school);
-            }}
-            className="school-selector"
-          >
-            <option value="">Select School</option>
-            {availableSchools.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        )}
       </div>
 
       {availableSchools.length === 0 ? (

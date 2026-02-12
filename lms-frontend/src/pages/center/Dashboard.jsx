@@ -32,20 +32,6 @@ const CenterDashboard = () => {
     <div className="dashboard">
       <div className="page-header">
         <h2>Center Dashboard</h2>
-        {availableCenters.length > 1 && (
-          <select 
-            value={selectedCenter?.id || ''} 
-            onChange={(e) => {
-              const center = availableCenters.find(c => c.id === parseInt(e.target.value));
-              selectCenter(center);
-            }}
-            className="center-selector"
-          >
-            {availableCenters.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        )}
       </div>
 
       {availableCenters.length === 0 ? (
