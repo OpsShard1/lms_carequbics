@@ -28,7 +28,9 @@ const SchoolStudents = () => {
     if (!selectedSchool?.id) return;
     try {
       const res = await api.get(`/students/school/${selectedSchool.id}`);
-      setStudents(res.data);
+      // Filter out inactive students (backend should already do this, but double-check)
+      const activeStudents = res.data.filter(s => s.is_active !== false && s.is_active !== 0);
+      setStudents(activeStudents);
     } catch (err) {
       console.error('Failed to load students:', err);
     }
@@ -90,7 +92,7 @@ const SchoolStudents = () => {
 
           <div className="stats-grid">
             <div className="stat-card">
-              <h3>{students.length}</h3>
+              <h3>{filteredStudents.length}</h3>
               <p>Total Students</p>
             </div>
             <div className="stat-card">
@@ -98,7 +100,7 @@ const SchoolStudents = () => {
               <p>Classes</p>
             </div>
             <div className="stat-card">
-              <h3>{students.filter(s => s.class_id).length}</h3>
+              <h3>{filteredStudents.filter(s => s.class_id).length}</h3>
               <p>Assigned to Class</p>
             </div>
           </div>

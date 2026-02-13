@@ -28,9 +28,11 @@ const SchoolDashboard = () => {
         api.get(`/classes/school/${selectedSchool.id}`),
         api.get(`/students/school/${selectedSchool.id}`)
       ]);
+      // Filter out inactive students (backend should already do this, but double-check)
+      const activeStudents = studentsRes.data.filter(s => s.is_active !== false && s.is_active !== 0);
       setStats({
         classes: classesRes.data.length,
-        students: studentsRes.data.length
+        students: activeStudents.length
       });
     } catch (err) {
       console.error('Failed to load stats:', err);

@@ -244,8 +244,8 @@ const SchoolClasses = () => {
             class_id: editingClass.id
           });
         } else if (student.toRemove) {
-          // Remove student from class (set class_id to null)
-          await api.put(`/students/${student.id}`, { class_id: null });
+          // Delete student (set is_active to false)
+          await api.delete(`/students/${student.id}`);
         }
       }
 
@@ -450,8 +450,17 @@ const SchoolClasses = () => {
                   <input placeholder="First Name *" value={newStudent.first_name} onChange={(e) => setNewStudent({...newStudent, first_name: e.target.value})} />
                   <input placeholder="Last Name" value={newStudent.last_name} onChange={(e) => setNewStudent({...newStudent, last_name: e.target.value})} />
                   <DatePicker
-                    selected={newStudent.date_of_birth ? new Date(newStudent.date_of_birth) : null}
-                    onChange={(date) => setNewStudent({...newStudent, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
+                    selected={newStudent.date_of_birth ? new Date(newStudent.date_of_birth + 'T12:00:00') : null}
+                    onChange={(date) => {
+                      if (date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        setNewStudent({...newStudent, date_of_birth: `${year}-${month}-${day}`});
+                      } else {
+                        setNewStudent({...newStudent, date_of_birth: ''});
+                      }
+                    }}
                     placeholder="DOB *"
                     maxDate={new Date()}
                   />
