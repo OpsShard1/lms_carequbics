@@ -67,13 +67,147 @@
   font-weight: 500;
 }
 
-/* Classes Panel for Drag and Drop */
-.classes-panel {
+/* Classes Panel for Drag and Drop - Timetable specific */
+.timetable-page .classes-panel {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 16px;
+  padding: 12px 16px;
   border-radius: 8px;
-  margin-bottom: 16px;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  position: fixed;
+  bottom: 0;
+  z-index: 100;
+  max-height: 100px;
+  overflow: hidden;
+}
+
+.timetable-page .classes-panel h4 {
+  margin: 0 0 10px 0;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.timetable-page .classes-list-drag {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timetable-page .classes-list-drag::-webkit-scrollbar {
+  height: 5px;
+}
+
+.timetable-page .classes-list-drag::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.timetable-page .classes-list-drag::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.timetable-page .classes-list-drag::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.timetable-page .class-item-draggable {
+  flex-shrink: 0;
+  min-width: auto;
+  width: auto;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.timetable-page .timetable-view {
+  margin-bottom: 120px;
+}
+
+/* Desktop adjustments */
+@media (min-width: 769px) {
+  .timetable-page .timetable-edit-container {
+    display: block;
+  }
+
+  .timetable-page .timetable-main {
+    width: 100%;
+  }
+
+  .timetable-page .classes-panel {
+    left: 260px !important;
+    right: 0 !important;
+    border-radius: 12px 12px 0 0 !important;
+    max-height: 100px !important;
+    padding: 12px 20px 18px 20px !important;
+  }
+
+  .timetable-page .classes-panel h4 {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .timetable-page .classes-list-drag {
+    padding-bottom: 8px !important;
+  }
+
+  .timetable-page .class-item-draggable {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .timetable-page .timetable-view {
+    margin-bottom: 120px !important;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .timetable-page .classes-panel {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 16px 16px 0 0;
+    max-height: 120px;
+    padding: 12px 16px 16px 16px;
+    margin: 0;
+  }
+
+  .timetable-page .classes-panel h4 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .timetable-page .classes-list-drag {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    width: 100%;
+    padding-bottom: 0 !important;
+  }
+
+  .timetable-page .classes-list-drag::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .timetable-page .class-item-draggable {
+    flex-shrink: 0 !important;
+    padding: 8px 14px;
+    font-size: 12px;
+    min-width: auto !important;
+    width: auto !important;
+  }
+
+  .timetable-page .timetable-view {
+    margin-bottom: 140px;
+  }
 }
 
 .classes-panel h4 {
@@ -83,24 +217,19 @@
   font-weight: 700;
 }
 
-.classes-list-drag {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .class-item-draggable {
   background: white;
   color: #667eea;
-  padding: 12px 20px;
+  padding: 10px 16px;
   border-radius: 8px;
   cursor: grab;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   transition: all 0.3s;
   user-select: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .class-item-draggable:hover {
@@ -732,10 +861,12 @@
   
   .header-actions {
     flex-direction: column;
+    gap: 12px;
   }
   
   .header-actions button {
     width: 100%;
+    justify-content: center;
   }
   
   .wizard-modal {

@@ -317,7 +317,7 @@ const CurriculumManagement = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
-    <div className="curriculum-page">
+    <div className="curriculum-page center-curriculum-page">
       <div className="page-header">
         <h2>Center Curriculum Management</h2>
         {canEditCurriculum && (

@@ -362,46 +362,49 @@
 
   /* Make tables scrollable on mobile */
   .students-page {
-    overflow-x: hidden;
+    overflow-x: visible !important;
   }
 
-  .table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: 0 -16px;
-    padding: 0 16px;
+  .students-page .table-wrapper {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
 
-  .data-table {
-    display: table;
-    min-width: 700px;
-    white-space: nowrap;
+  .students-page .data-table {
+    display: table !important;
+    min-width: 700px !important;
+    white-space: nowrap !important;
+    width: auto !important;
   }
 
-  .data-table th,
-  .data-table td {
-    font-size: 11px;
-    padding: 8px 6px;
-    white-space: nowrap;
+  .students-page .data-table th,
+  .students-page .data-table td {
+    font-size: 13px !important;
+    padding: 12px 10px !important;
+    white-space: nowrap !important;
   }
 
-  .data-table th:first-child,
-  .data-table td:first-child {
-    position: sticky;
-    left: 0;
-    background: white;
-    z-index: 1;
-    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  .students-page .data-table th:first-child,
+  .students-page .data-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    background: white !important;
+    z-index: 1 !important;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05) !important;
   }
 
-  .data-table thead th:first-child {
-    background: #f9fafb;
-    z-index: 2;
+  .students-page .data-table thead th:first-child {
+    background: #f9fafb !important;
+    z-index: 2 !important;
   }
 
   .btn-sm {
-    padding: 4px 6px;
-    font-size: 10px;
+    padding: 6px 10px;
+    font-size: 12px;
     white-space: nowrap;
   }
 

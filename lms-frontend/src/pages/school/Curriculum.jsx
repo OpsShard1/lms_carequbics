@@ -288,7 +288,7 @@ const SchoolCurriculum = () => {
   };
 
   return (
-    <div className="curriculum-page">
+    <div className="curriculum-page school-curriculum-page">
       <div className="page-header">
         <h2>School Curriculum Management</h2>
         {canEdit && (

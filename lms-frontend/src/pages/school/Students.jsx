@@ -61,7 +61,7 @@ const SchoolStudents = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
-    <div className="students-page">
+    <div className="students-page school-students-page">
       <div className="page-header">
         <div>
           <h2>School Students</h2>
@@ -109,32 +109,34 @@ const SchoolStudents = () => {
               <p className="hint">Go to Classes → Create Class to add students.</p>
             </div>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Class</th>
-                  <th>Grade</th>
-                  <th>DOB</th>
-                  <th>Gender</th>
-                  <th>Parent</th>
-                  <th>Contact</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.map(s => (
-                  <tr key={s.id}>
-                    <td><strong>{s.first_name} {s.last_name}</strong></td>
-                    <td>{s.class_name || <span style={{color: '#94a3b8'}}>Unassigned</span>}</td>
-                    <td>{s.grade || '-'}</td>
-                    <td>{s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : '-'}</td>
-                    <td>{s.gender || '-'}</td>
-                    <td>{s.parent_name || '-'}</td>
-                    <td>{s.parent_contact || '-'}</td>
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Class</th>
+                    <th>Grade</th>
+                    <th>DOB</th>
+                    <th>Gender</th>
+                    <th>Parent</th>
+                    <th>Contact</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredStudents.map(s => (
+                    <tr key={s.id}>
+                      <td><strong>{s.first_name} {s.last_name}</strong></td>
+                      <td>{s.class_name || <span style={{color: '#94a3b8'}}>Unassigned</span>}</td>
+                      <td>{s.grade || '-'}</td>
+                      <td>{s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : '-'}</td>
+                      <td>{s.gender || '-'}</td>
+                      <td>{s.parent_name || '-'}</td>
+                      <td>{s.parent_contact || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}

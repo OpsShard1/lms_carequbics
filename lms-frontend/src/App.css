@@ -163,8 +163,17 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .btn-large { padding: 1rem 2.5rem; font-size: 1.1rem; }
 
 /* Tables */
-.data-table { width: 100%; background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
-.data-table th, .data-table td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  background: white;
+  max-width: 100%;
+}
+
+.data-table { width: 100%; background: white; border-collapse: collapse; min-width: max-content; }
+.data-table th, .data-table td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
 .data-table th { background: linear-gradient(135deg, #f8fafc, #f1f5f9); color: #475569; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
 .data-table tr:hover:not(.clickable-row) { background: #f8fafc; }
 .data-table.compact th, .data-table.compact td { padding: 0.6rem 0.75rem; font-size: 0.875rem; }
@@ -229,10 +238,11 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   
   /* Make all tables scrollable */
   .table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: 0 -1rem;
-    padding: 0 1rem;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
   }
   
   .data-table {
@@ -254,11 +264,17 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     background: white;
     z-index: 1;
     box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+    padding-left: 1rem !important;
   }
   
   .data-table thead th:first-child {
     background: linear-gradient(135deg, #f8fafc, #f1f5f9);
     z-index: 2;
+  }
+  
+  .data-table th:last-child,
+  .data-table td:last-child {
+    padding-right: 1rem !important;
   }
   
   .btn-primary,

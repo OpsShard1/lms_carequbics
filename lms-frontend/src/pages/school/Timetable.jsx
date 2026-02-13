@@ -208,6 +208,80 @@ const SchoolTimetable = () => {
     setDraggedClass(null);
   };
 
+  // Touch event handlers for mobile
+  const [touchedElement, setTouchedElement] = useState(null);
+
+  const handleTouchStart = (e, classItem) => {
+    // Reset previous touched element if exists
+    if (touchedElement) {
+      touchedElement.style.background = 'white';
+      touchedElement.style.color = '#667eea';
+      touchedElement.style.transform = 'scale(1)';
+      touchedElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+    }
+    
+    setDraggedClass(classItem);
+    setTouchedElement(e.currentTarget);
+    e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    e.currentTarget.style.color = 'white';
+    e.currentTarget.style.transform = 'scale(1.05)';
+    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+  };
+
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+  };
+
+  const handleTouchEnd = (e, dayOfWeek, periodNumber) => {
+    // Reset the touched element style
+    if (touchedElement) {
+      touchedElement.style.background = 'white';
+      touchedElement.style.color = '#667eea';
+      touchedElement.style.transform = 'scale(1)';
+      touchedElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+      setTouchedElement(null);
+    }
+    
+    if (!draggedClass) return;
+
+    // Check if class already exists in this slot
+    const exists = schedule.some(s => 
+      s.class_id === draggedClass.id && 
+      s.day_of_week === dayOfWeek && 
+      s.period_number === periodNumber
+    );
+
+    if (exists) {
+      showWarning('This class is already scheduled in this slot');
+      setDraggedClass(null);
+      return;
+    }
+
+    // Add to schedule
+    setSchedule(prev => [...prev, {
+      class_id: draggedClass.id,
+      day_of_week: dayOfWeek,
+      period_number: periodNumber,
+      class_name: draggedClass.name,
+      grade: draggedClass.grade,
+      section: draggedClass.section
+    }]);
+
+    setDraggedClass(null);
+  };
+
+  const handleTouchCancel = (e) => {
+    // Reset the touched element style
+    if (touchedElement) {
+      touchedElement.style.background = 'white';
+      touchedElement.style.color = '#667eea';
+      touchedElement.style.transform = 'scale(1)';
+      touchedElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+      setTouchedElement(null);
+    }
+    setDraggedClass(null);
+  };
+
   const removeClass = (classId, dayOfWeek, periodNumber) => {
     setSchedule(prev => prev.filter(s => 
       !(s.class_id === classId && s.day_of_week === dayOfWeek && s.period_number === periodNumber)
@@ -241,23 +315,84 @@ const SchoolTimetable = () => {
           )}
         </div>
       ) : (
-        <div className="timetable-view">
-          <div className="timetable-header">
-            <h3>{timetableData.timetable.name}</h3>
-            {canEditSchedule && !editMode && (
-              <div className="header-actions">
-                <button onClick={startEdit} className="btn-primary">Edit Schedule</button>
-                {canManageTimetable && (
-                  <button onClick={deleteTimetable} className="btn-danger">Delete Timetable</button>
+        <div className="timetable-edit-container">
+          <div className="timetable-main">
+            <div className="timetable-view">
+              <div className="timetable-header">
+                <h3>{timetableData.timetable.name}</h3>
+                {canEditSchedule && !editMode && (
+                  <div className="header-actions">
+                    <button onClick={startEdit} className="btn-primary">Edit Schedule</button>
+                    {canManageTimetable && (
+                      <button onClick={deleteTimetable} className="btn-danger">Delete Timetable</button>
+                    )}
+                  </div>
+                )}
+                {editMode && (
+                  <div className="header-actions">
+                    <button onClick={saveSchedule} className="btn-primary">Save Changes</button>
+                    <button onClick={cancelEdit} className="btn-secondary">Cancel</button>
+                  </div>
                 )}
               </div>
-            )}
-            {editMode && (
-              <div className="header-actions">
-                <button onClick={saveSchedule} className="btn-primary">Save Changes</button>
-                <button onClick={cancelEdit} className="btn-secondary">Cancel</button>
+
+              <div className="timetable-grid">
+                <table className="schedule-table">
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      {timetableData.days.map(day => (
+                        <th key={day.day_of_week}>
+                          {DAYS.find(d => d.value === day.day_of_week)?.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {timetableData.periods.map(period => (
+                      <tr key={period.period_number}>
+                        <td className="period-cell">
+                          <div>Period {period.period_number}</div>
+                          <div className="period-time">{period.start_time} - {period.end_time}</div>
+                        </td>
+                        {timetableData.days.map(day => {
+                          const classesInSlot = getClassesForSlot(day.day_of_week, period.period_number);
+                          return (
+                            <td 
+                              key={day.day_of_week} 
+                              className={`${classesInSlot.length > 0 ? 'has-classes' : 'empty-slot'} ${editMode ? 'droppable' : ''}`}
+                              onDragOver={editMode ? handleDragOver : undefined}
+                              onDrop={editMode ? (e) => handleDrop(e, day.day_of_week, period.period_number) : undefined}
+                              onTouchEnd={editMode ? (e) => handleTouchEnd(e, day.day_of_week, period.period_number) : undefined}
+                            >
+                              {classesInSlot.length > 0 ? (
+                                <div className="classes-list">
+                                  {classesInSlot.map((cls, idx) => (
+                                    <div key={idx} className="class-chip">
+                                      {cls.class_name} (Grade {cls.grade})
+                                      {editMode && (
+                                        <button 
+                                          className="remove-class"
+                                          onClick={() => removeClass(cls.class_id, day.day_of_week, period.period_number)}
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="no-class">{editMode ? 'Drop here' : '—'}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
           </div>
 
           {editMode && (
@@ -270,69 +405,16 @@ const SchoolTimetable = () => {
                     className="class-item-draggable"
                     draggable
                     onDragStart={(e) => handleDragStart(e, cls)}
+                    onTouchStart={(e) => handleTouchStart(e, cls)}
+                    onTouchMove={handleTouchMove}
+                    onTouchCancel={handleTouchCancel}
                   >
-                    {cls.name} - Grade {cls.grade} {cls.section}
+                    {cls.name}
                   </div>
                 ))}
               </div>
             </div>
           )}
-
-          <div className="timetable-grid">
-            <table className="schedule-table">
-              <thead>
-                <tr>
-                  <th>Period</th>
-                  {timetableData.days.map(day => (
-                    <th key={day.day_of_week}>
-                      {DAYS.find(d => d.value === day.day_of_week)?.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {timetableData.periods.map(period => (
-                  <tr key={period.period_number}>
-                    <td className="period-cell">
-                      <div>Period {period.period_number}</div>
-                      <div className="period-time">{period.start_time} - {period.end_time}</div>
-                    </td>
-                    {timetableData.days.map(day => {
-                      const classesInSlot = getClassesForSlot(day.day_of_week, period.period_number);
-                      return (
-                        <td 
-                          key={day.day_of_week} 
-                          className={`${classesInSlot.length > 0 ? 'has-classes' : 'empty-slot'} ${editMode ? 'droppable' : ''}`}
-                          onDragOver={editMode ? handleDragOver : undefined}
-                          onDrop={editMode ? (e) => handleDrop(e, day.day_of_week, period.period_number) : undefined}
-                        >
-                          {classesInSlot.length > 0 ? (
-                            <div className="classes-list">
-                              {classesInSlot.map((cls, idx) => (
-                                <div key={idx} className="class-chip">
-                                  {cls.class_name} (Grade {cls.grade})
-                                  {editMode && (
-                                    <button 
-                                      className="remove-class"
-                                      onClick={() => removeClass(cls.class_id, day.day_of_week, period.period_number)}
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="no-class">{editMode ? 'Drop here' : '—'}</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 

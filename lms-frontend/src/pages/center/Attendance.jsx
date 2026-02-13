@@ -231,7 +231,6 @@ const CenterAttendance = () => {
                   <tr key={student.id}>
                     <td className="sticky-col student-name-cell">
                       <div className="student-name">{student.first_name} {student.last_name}</div>
-                      <div className="student-school">{student.school_name_external || ''}</div>
                     </td>
                     {daysInMonth.map(day => {
                       const dateStr = format(day, 'yyyy-MM-dd');

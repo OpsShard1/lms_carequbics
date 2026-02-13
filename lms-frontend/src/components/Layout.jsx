@@ -332,6 +332,21 @@ const Layout = () => {
               <div className="mobile-user-name">{user?.first_name}</div>
               <div className="mobile-user-role">{user?.role_name}</div>
             </div>
+            {user?.role_name === 'owner' && (
+              <div className="mobile-edit-mode-toggle">
+                <label className="toggle-switch">
+                  <input 
+                    type="checkbox" 
+                    checked={ownerEditMode} 
+                    onChange={handleEditModeToggle}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span className={`toggle-label ${ownerEditMode ? 'active' : ''}`}>
+                  {ownerEditMode ? 'Edit Mode' : 'View Only'}
+                </span>
+              </div>
+            )}
             {(showSchoolButton && showCenterButton) && (
               <div className="mobile-section-switcher">
                 {showSchoolButton && (
