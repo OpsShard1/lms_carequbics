@@ -369,7 +369,7 @@ const SchoolTimetable = () => {
                                 <div className="classes-list">
                                   {classesInSlot.map((cls, idx) => (
                                     <div key={idx} className="class-chip">
-                                      {cls.class_name} (Grade {cls.grade})
+                                      <span>{cls.class_name} ({cls.section})</span>
                                       {editMode && (
                                         <button 
                                           className="remove-class"
@@ -409,7 +409,7 @@ const SchoolTimetable = () => {
                     onTouchMove={handleTouchMove}
                     onTouchCancel={handleTouchCancel}
                   >
-                    {cls.name}
+                    {cls.name} ({cls.section})
                   </div>
                 ))}
               </div>
