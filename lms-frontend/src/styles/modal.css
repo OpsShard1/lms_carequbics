@@ -221,6 +221,8 @@
   width: 100%;
   padding: 16px 32px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 100% 100%;
+  background-position: center;
   color: white;
   border: none;
   border-radius: 12px;
@@ -260,8 +262,8 @@
 }
 
 .modal-body .btn-primary:hover::before {
-  width: 300px;
-  height: 300px;
+  width: 1000px;
+  height: 1000px;
 }
 
 .modal-body .btn-primary:hover {

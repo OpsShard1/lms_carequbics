@@ -755,6 +755,7 @@
 /* Buttons */
 .timetable-page .btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 100% 100%;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -768,6 +769,7 @@
 
 .timetable-page .btn-primary:hover {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 100% 100%;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
