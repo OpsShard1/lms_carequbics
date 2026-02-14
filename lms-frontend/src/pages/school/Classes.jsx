@@ -14,7 +14,7 @@ const SchoolClasses = () => {
   // Permission check - owner needs edit mode enabled, others can edit by default
   const canEditClasses = user?.role_name === 'owner' 
     ? ownerEditMode 
-    : ['developer', 'school_teacher'].includes(user?.role_name);
+    : ['developer', 'school_teacher', 'trainer_head'].includes(user?.role_name);
   
   // Trainers can assign curriculum
   const canAssignCurriculum = ['developer', 'owner', 'trainer_head', 'trainer'].includes(user?.role_name);
