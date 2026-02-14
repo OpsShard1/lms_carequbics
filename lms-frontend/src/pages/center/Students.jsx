@@ -4,6 +4,7 @@ import { useNotificationContext } from '../../context/NotificationContext';
 import { useEditMode } from '../../hooks/useEditMode';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from '../../components/DatePicker';
+import PhoneInput from '../../components/PhoneInput';
 import api from '../../api/axios';
 import '../../styles/student-registration.css';
 
@@ -324,21 +325,20 @@ const CenterStudents = () => {
                 />
               </div>
               <div className="form-field">
-                <label>Contact Number</label>
-                <input 
-                  type="tel"
-                  placeholder="Enter contact number" 
-                  value={form.parent_contact} 
-                  onChange={(e) => setForm({...form, parent_contact: e.target.value})} 
+                <label>Contact Number <span className="required">*</span></label>
+                <PhoneInput
+                  value={form.parent_contact}
+                  onChange={(value) => setForm({...form, parent_contact: value})}
+                  placeholder="Enter contact number"
+                  required
                 />
               </div>
               <div className="form-field">
                 <label>Alternate Contact</label>
-                <input 
-                  type="tel"
-                  placeholder="Enter alternate contact" 
-                  value={form.parent_alternate_contact} 
-                  onChange={(e) => setForm({...form, parent_alternate_contact: e.target.value})} 
+                <PhoneInput
+                  value={form.parent_alternate_contact}
+                  onChange={(value) => setForm({...form, parent_alternate_contact: value})}
+                  placeholder="Enter alternate contact"
                 />
               </div>
               <div className="form-field">

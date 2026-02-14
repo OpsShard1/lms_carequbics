@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import DatePicker from '../../components/DatePicker';
+import PhoneInput from '../../components/PhoneInput';
 import api from '../../api/axios';
 import '../../styles/classes.css';
 
@@ -155,8 +156,8 @@ const SchoolClasses = () => {
   };
 
   const addStudentToList = () => {
-    if (!newStudent.first_name || !newStudent.date_of_birth) {
-      showWarning('First name and date of birth are required');
+    if (!newStudent.first_name || !newStudent.date_of_birth || !newStudent.parent_contact) {
+      showWarning('First name, date of birth, and parent contact are required');
       return;
     }
     
@@ -470,7 +471,14 @@ const SchoolClasses = () => {
                     <option value="female">Female</option>
                   </select>
                   <input placeholder="Parent Name" value={newStudent.parent_name} onChange={(e) => setNewStudent({...newStudent, parent_name: e.target.value})} />
-                  <input placeholder="Parent Contact" value={newStudent.parent_contact} onChange={(e) => setNewStudent({...newStudent, parent_contact: e.target.value})} />
+                  <div style={{ minWidth: '250px' }}>
+                    <PhoneInput
+                      value={newStudent.parent_contact}
+                      onChange={(value) => setNewStudent({...newStudent, parent_contact: value})}
+                      placeholder="Parent Contact *"
+                      required
+                    />
+                  </div>
                   <button type="button" onClick={addStudentToList} className="btn-success btn-sm">+ Add</button>
                 </div>
 
