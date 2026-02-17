@@ -161,6 +161,27 @@ const SchoolClasses = () => {
       return;
     }
     
+    // Validate phone number format (must have country code + digits)
+    const phoneMatch = newStudent.parent_contact.match(/^\+\d{1,4}\s(\d+)$/);
+    if (!phoneMatch) {
+      showWarning('Please enter a valid phone number with country code');
+      return;
+    }
+    
+    const phoneDigits = phoneMatch[1];
+    const phoneConfig = {
+      '+91': 10, '+1': 10, '+44': 10, '+61': 9, '+971': 9,
+      '+65': 8, '+60': 9, '+86': 11, '+81': 10, '+82': 10
+    };
+    
+    const countryCode = newStudent.parent_contact.split(' ')[0];
+    const requiredLength = phoneConfig[countryCode] || 10;
+    
+    if (phoneDigits.length !== requiredLength) {
+      showWarning(`Phone number must be exactly ${requiredLength} digits for ${countryCode}`);
+      return;
+    }
+    
     setStudents([...students, { ...newStudent, id: `new-${Date.now()}`, isNew: true }]);
     setNewStudent({ first_name: '', last_name: '', date_of_birth: '', gender: '', parent_name: '', parent_contact: '' });
   };
@@ -261,11 +282,21 @@ const SchoolClasses = () => {
   };
 
   const deleteClass = async (classId) => {
-    if (!confirm('Are you sure? Students will be unassigned from this class.')) return;
+    if (!confirm('Are you sure? All students in this class will be deleted.')) return;
     try {
+      // First, get all students in this class
+      const studentsRes = await api.get(`/students/class/${classId}`);
+      const students = studentsRes.data;
+      
+      // Delete all students in the class
+      for (const student of students) {
+        await api.delete(`/students/${student.id}`);
+      }
+      
+      // Then delete the class
       await api.delete(`/classes/${classId}`);
       loadClasses();
-      showSuccess('Class deleted successfully!');
+      showSuccess('Class and all students deleted successfully!');
     } catch (err) {
       showError('Failed to delete class');
     }
@@ -476,7 +507,6 @@ const SchoolClasses = () => {
                       value={newStudent.parent_contact}
                       onChange={(value) => setNewStudent({...newStudent, parent_contact: value})}
                       placeholder="Parent Contact *"
-                      required
                     />
                   </div>
                   <button type="button" onClick={addStudentToList} className="btn-success btn-sm">+ Add</button>

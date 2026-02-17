@@ -89,9 +89,11 @@ const PhoneInput = ({ value, onChange, required, placeholder }) => {
           value={phoneNumber}
           onChange={handlePhoneChange}
           placeholder={placeholder || `Enter ${currentConfig?.length} digit number`}
-          required={required}
-          pattern={`\\d{${currentConfig?.length}}`}
-          title={`Please enter exactly ${currentConfig?.length} digits for ${currentConfig?.name}`}
+          {...(required && {
+            required: true,
+            pattern: `\\d{${currentConfig?.length}}`,
+            title: `Please enter exactly ${currentConfig?.length} digits for ${currentConfig?.name}`
+          })}
           style={{ 
             width: '100%',
             padding: '10px 12px',
