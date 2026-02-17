@@ -168,6 +168,8 @@ const Layout = () => {
     { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_users' },
     { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_schools' },
     { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_centers' },
+    { path: '/admin/help', label: 'Help', roles: ['developer', 'owner', 'super_admin', 'admin', 'trainer_head', 'trainer', 'school_teacher', 'principal', 'registrar'], settingKey: null },
+    { path: '/admin/issues', label: 'Issues', roles: ['developer', 'owner', 'super_admin', 'admin', 'trainer_head'], settingKey: null },
     { path: '/admin/settings', label: 'Settings', roles: ['super_admin'], settingKey: null }, // Only super_admin can see settings
   ];
 

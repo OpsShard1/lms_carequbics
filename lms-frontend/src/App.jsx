@@ -24,6 +24,8 @@ import AdminUsers from './pages/admin/Users';
 import AdminSchools from './pages/admin/Schools';
 import AdminCenters from './pages/admin/Centers';
 import Settings from './pages/admin/Settings';
+import Help from './pages/admin/Help';
+import Issues from './pages/admin/Issues';
 import './App.css';
 
 const HomeRedirect = () => {
@@ -76,6 +78,8 @@ function App() {
             <Route path="admin/schools" element={<AdminSchools />} />
             <Route path="admin/centers" element={<AdminCenters />} />
             <Route path="admin/settings" element={<Settings />} />
+            <Route path="admin/help" element={<Help />} />
+            <Route path="admin/issues" element={<Issues />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

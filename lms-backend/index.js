@@ -69,6 +69,7 @@ app.use('/api/curriculum', require('./routes/curriculum'));
 app.use('/api/school-curriculum', require('./routes/school-curriculum'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/fees', require('./routes/fees'));
+app.use('/api/help', require('./routes/help'));
 
 // Health check
 app.get('/', (req, res) => {
