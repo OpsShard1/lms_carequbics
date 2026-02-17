@@ -87,7 +87,10 @@ const CenterStudents = () => {
       loadStudents();
       showSuccess(editingStudent ? 'Student updated successfully!' : 'Student registered successfully!');
     } catch (err) {
-      showError('Failed to save student');
+      console.error('Save student error:', err);
+      const errorMsg = err.response?.data?.error || 'Failed to save student';
+      const errorDetails = err.response?.data?.details;
+      showError(errorDetails ? `${errorMsg}: ${errorDetails}` : errorMsg);
     }
   };
 

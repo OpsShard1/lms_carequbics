@@ -5,13 +5,35 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
+router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'super_admin', 'admin'), async (req, res) => {
   try {
+    const userRole = req.user.role_name;
+    
+    // Build query based on user role
+    let whereClause = "WHERE r.name != 'super_admin' AND r.name != 'parent'";
+    
+    // Only super_admin can see admin users
+    if (userRole === 'super_admin') {
+      whereClause = "WHERE r.name != 'super_admin' AND r.name != 'parent'";
+    } else if (userRole === 'developer') {
+      // developer sees all except super_admin and admin (developer is technical role, not management)
+      whereClause = "WHERE r.name NOT IN ('super_admin', 'admin', 'parent')";
+    } else if (userRole === 'admin') {
+      // admin cannot see other admin or super_admin users
+      whereClause = "WHERE r.name NOT IN ('super_admin', 'admin', 'parent')";
+    } else if (userRole === 'owner') {
+      // owner cannot see admin, super_admin users
+      whereClause = "WHERE r.name NOT IN ('super_admin', 'admin', 'parent')";
+    } else if (userRole === 'trainer_head') {
+      // trainer_head cannot see admin, super_admin, owner users
+      whereClause = "WHERE r.name NOT IN ('super_admin', 'admin', 'owner', 'parent')";
+    }
+    
     const [users] = await pool.query(`
       SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.section_type, 
              u.is_active, u.created_at, r.name as role_name, r.id as role_id
       FROM users u JOIN roles r ON u.role_id = r.id 
-      WHERE r.name != 'super_admin'
+      ${whereClause}
       ORDER BY u.created_at DESC
     `);
     res.json(users);
@@ -23,7 +45,29 @@ router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), a
 
 router.get('/roles', authenticate, async (req, res) => {
   try {
-    const [roles] = await pool.query("SELECT * FROM roles WHERE name != 'parent' AND name != 'super_admin' ORDER BY id");
+    const userRole = req.user.role_name;
+    
+    // Build query based on user role
+    let whereClause = "WHERE name != 'parent' AND name != 'super_admin'";
+    
+    // Only super_admin can see admin role
+    if (userRole === 'super_admin') {
+      whereClause = "WHERE name != 'parent' AND name != 'super_admin'";
+    } else if (userRole === 'developer') {
+      // developer cannot see admin role (developer is technical role, not management)
+      whereClause = "WHERE name != 'parent' AND name != 'super_admin' AND name != 'admin'";
+    } else if (userRole === 'admin') {
+      // admin cannot see admin role
+      whereClause = "WHERE name != 'parent' AND name != 'super_admin' AND name != 'admin'";
+    } else if (userRole === 'owner') {
+      // owner cannot see admin role
+      whereClause = "WHERE name != 'parent' AND name != 'super_admin' AND name != 'admin'";
+    } else if (userRole === 'trainer_head') {
+      // trainer_head cannot see admin or owner roles
+      whereClause = "WHERE name NOT IN ('parent', 'super_admin', 'admin', 'owner')";
+    }
+    
+    const [roles] = await pool.query(`SELECT * FROM roles ${whereClause} ORDER BY id`);
     res.json(roles);
   } catch (error) {
     console.error('Get roles error:', error);
@@ -55,24 +99,34 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
+router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'super_admin', 'admin'), async (req, res) => {
   try {
     const { email, password, first_name, last_name, phone, role_id, section_type, assignments } = req.body;
     if (!email || !password || !first_name || !role_id) {
       return res.status(400).json({ error: 'Email, password, first name, and role are required' });
     }
     
-    // Check role restrictions for trainer_head
-    if (req.user.role_name === 'trainer_head') {
-      const [roleCheck] = await pool.query('SELECT name FROM roles WHERE id = ?', [role_id]);
-      if (roleCheck.length === 0) {
-        return res.status(400).json({ error: 'Invalid role' });
-      }
-      const roleName = roleCheck[0].name;
-      // trainer_head can only create school_teacher and trainer users
-      if (!['school_teacher', 'trainer'].includes(roleName)) {
-        return res.status(403).json({ error: 'You can only create school_teacher and trainer accounts' });
-      }
+    // Check role restrictions based on user's role
+    const [roleCheck] = await pool.query('SELECT name FROM roles WHERE id = ?', [role_id]);
+    if (roleCheck.length === 0) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    const targetRoleName = roleCheck[0].name;
+    const userRole = req.user.role_name;
+    
+    // Define role hierarchy permissions
+    const rolePermissions = {
+      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar']
+    };
+    
+    const allowedRoles = rolePermissions[userRole] || [];
+    
+    if (!allowedRoles.includes(targetRoleName)) {
+      return res.status(403).json({ error: `You do not have permission to create ${targetRoleName} accounts` });
     }
     
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
@@ -104,29 +158,44 @@ router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), 
   }
 });
 
-router.put('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 'trainer_head'), async (req, res) => {
+router.put('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 'trainer_head', 'admin'), async (req, res) => {
   try {
     const { email, first_name, last_name, phone, role_id, section_type, is_active, password, assignments } = req.body;
     
-    // Check role restrictions for trainer_head
-    if (req.user.role_name === 'trainer_head') {
-      // Get the current user's role
-      const [currentUser] = await pool.query('SELECT u.role_id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [req.params.id]);
-      if (currentUser.length === 0) {
-        return res.status(404).json({ error: 'User not found' });
+    // Get the current user's role
+    const [currentUser] = await pool.query('SELECT u.role_id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [req.params.id]);
+    if (currentUser.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userRole = req.user.role_name;
+    const currentTargetRole = currentUser[0].role_name;
+    
+    // Define role hierarchy permissions
+    const rolePermissions = {
+      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar']
+    };
+    
+    const allowedRoles = rolePermissions[userRole] || [];
+    
+    // Check if user can edit this account
+    if (!allowedRoles.includes(currentTargetRole)) {
+      return res.status(403).json({ error: `You do not have permission to edit ${currentTargetRole} accounts` });
+    }
+    
+    // If changing role, check the new role
+    if (role_id && role_id !== currentUser[0].role_id) {
+      const [newRoleCheck] = await pool.query('SELECT name FROM roles WHERE id = ?', [role_id]);
+      if (newRoleCheck.length === 0) {
+        return res.status(400).json({ error: 'Invalid role' });
       }
-      
-      // trainer_head can only edit school_teacher and trainer users
-      if (!['school_teacher', 'trainer'].includes(currentUser[0].role_name)) {
-        return res.status(403).json({ error: 'You can only edit school_teacher and trainer accounts' });
-      }
-      
-      // If changing role, check the new role
-      if (role_id && role_id !== currentUser[0].role_id) {
-        const [newRoleCheck] = await pool.query('SELECT name FROM roles WHERE id = ?', [role_id]);
-        if (newRoleCheck.length === 0 || !['school_teacher', 'trainer'].includes(newRoleCheck[0].name)) {
-          return res.status(403).json({ error: 'You can only assign school_teacher and trainer roles' });
-        }
+      const newRoleName = newRoleCheck[0].name;
+      if (!allowedRoles.includes(newRoleName)) {
+        return res.status(403).json({ error: `You do not have permission to assign ${newRoleName} role` });
       }
     }
     
@@ -198,26 +267,38 @@ router.put('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 
   }
 });
 
-router.delete('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 'trainer_head'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 'trainer_head', 'admin'), async (req, res) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
     
-    // Check role restrictions for trainer_head
-    if (req.user.role_name === 'trainer_head') {
-      const [userToDelete] = await connection.query('SELECT u.role_id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [req.params.id]);
-      if (userToDelete.length === 0) {
-        await connection.rollback();
-        connection.release();
-        return res.status(404).json({ error: 'User not found' });
-      }
-      
-      // trainer_head can only delete school_teacher and trainer users
-      if (!['school_teacher', 'trainer'].includes(userToDelete[0].role_name)) {
-        await connection.rollback();
-        connection.release();
-        return res.status(403).json({ error: 'You can only delete school_teacher and trainer accounts' });
-      }
+    // Get user to delete
+    const [userToDelete] = await connection.query('SELECT u.role_id, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [req.params.id]);
+    if (userToDelete.length === 0) {
+      await connection.rollback();
+      connection.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userRole = req.user.role_name;
+    const targetRoleName = userToDelete[0].role_name;
+    
+    // Define role hierarchy permissions
+    const rolePermissions = {
+      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
+      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar']
+    };
+    
+    const allowedRoles = rolePermissions[userRole] || [];
+    
+    // Check if user can delete this account
+    if (!allowedRoles.includes(targetRoleName)) {
+      await connection.rollback();
+      connection.release();
+      return res.status(403).json({ error: `You do not have permission to delete ${targetRoleName} accounts` });
     }
     
     // Get user data before deletion

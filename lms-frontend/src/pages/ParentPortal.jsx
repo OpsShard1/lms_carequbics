@@ -13,15 +13,15 @@ const ParentPortal = () => {
   const [error, setError] = useState('');
 
   const studentName = searchParams.get('name');
-  const dateOfBirth = searchParams.get('dob');
+  const phoneNumber = searchParams.get('phone');
 
   useEffect(() => {
-    if (studentName && dateOfBirth) {
+    if (studentName && phoneNumber) {
       detectStudentType();
     } else {
       navigate('/login');
     }
-  }, [studentName, dateOfBirth]);
+  }, [studentName, phoneNumber]);
 
   const detectStudentType = async () => {
     setLoading(true);
@@ -30,11 +30,11 @@ const ParentPortal = () => {
       // Try to detect student type
       const res = await api.post('/progress/detect-student-type', {
         student_name: studentName,
-        date_of_birth: dateOfBirth
+        phone_number: phoneNumber
       });
       setStudentType(res.data.student_type);
     } catch (err) {
-      setError(err.response?.data?.error || 'Student not found. Please check the name and date of birth.');
+      setError(err.response?.data?.error || 'Student not found. Please check the name and phone number.');
     } finally {
       setLoading(false);
     }

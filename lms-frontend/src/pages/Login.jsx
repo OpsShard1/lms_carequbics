@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InteractiveBackground from '../components/InteractiveBackground';
-import DatePicker from '../components/DatePicker';
+import PhoneInput from '../components/PhoneInput';
 import '../styles/login.css';
 
 const Login = () => {
@@ -10,7 +10,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [childName, setChildName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -46,22 +46,12 @@ const Login = () => {
 
   const handleParentLogin = (e) => {
     e.preventDefault();
-    if (!childName.trim() || !dateOfBirth) {
-      setError('Please enter child name and date of birth');
+    if (!childName.trim() || !phoneNumber) {
+      setError('Please enter child name and phone number');
       return;
     }
-    // Format date to YYYY-MM-DD for URL (timezone-safe)
-    let formattedDate;
-    if (dateOfBirth instanceof Date) {
-      const year = dateOfBirth.getFullYear();
-      const month = String(dateOfBirth.getMonth() + 1).padStart(2, '0');
-      const day = String(dateOfBirth.getDate()).padStart(2, '0');
-      formattedDate = `${year}-${month}-${day}`;
-    } else {
-      formattedDate = dateOfBirth;
-    }
     // Navigate to unified parent portal
-    navigate(`/parent/portal?name=${encodeURIComponent(childName.trim())}&dob=${formattedDate}`);
+    navigate(`/parent/portal?name=${encodeURIComponent(childName.trim())}&phone=${encodeURIComponent(phoneNumber)}`);
   };
 
   return (
@@ -130,13 +120,12 @@ const Login = () => {
               />
             </div>
             <div className="form-group">
-              <label>Date of Birth</label>
-              <DatePicker
-                selected={dateOfBirth ? (dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth + 'T12:00:00')) : null}
-                onChange={(date) => setDateOfBirth(date)}
-                placeholder="Select date of birth"
+              <label>Phone Number</label>
+              <PhoneInput
+                value={phoneNumber}
+                onChange={setPhoneNumber}
+                placeholder="Enter phone number"
                 required
-                maxDate={new Date()}
               />
             </div>
             <button type="submit" className="btn-primary btn-full">

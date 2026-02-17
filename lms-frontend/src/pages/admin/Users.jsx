@@ -15,6 +15,7 @@ const AdminUsers = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', role_id: '', section_type: 'school', is_active: true });
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState(null); // null means showing role categories
 
   // Check if user can delete/deactivate
   const canManageUsers = ['developer', 'owner', 'super_admin'].includes(user?.role_name) && canEdit;
@@ -36,22 +37,71 @@ const AdminUsers = () => {
 
   // Filter roles based on user permissions
   const getAvailableRoles = () => {
-    if (user?.role_name === 'trainer_head') {
-      // trainer_head can only create school_teacher and trainer
-      return roles.filter(r => ['school_teacher', 'trainer'].includes(r.name));
+    const userRole = user?.role_name;
+    
+    if (userRole === 'super_admin') {
+      // Only super_admin can create admin accounts
+      return roles.filter(r => r.name !== 'super_admin');
     }
-    return roles;
+    
+    if (userRole === 'developer') {
+      // developer is technical role, not management - cannot create admin
+      return roles.filter(r => !['super_admin', 'admin'].includes(r.name));
+    }
+    
+    if (userRole === 'admin') {
+      // admin can create: owner, trainer_head, school_teacher, trainer, principal, registrar
+      return roles.filter(r => ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'].includes(r.name));
+    }
+    
+    if (userRole === 'owner') {
+      // owner can create: trainer_head, school_teacher, trainer, principal, registrar
+      return roles.filter(r => ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'].includes(r.name));
+    }
+    
+    if (userRole === 'trainer_head') {
+      // trainer_head can create: school_teacher, trainer, principal, registrar
+      return roles.filter(r => ['school_teacher', 'trainer', 'principal', 'registrar'].includes(r.name));
+    }
+    
+    // Other roles cannot create any accounts
+    return [];
   };
 
-  // Filter users based on permissions
-  const getVisibleUsers = () => {
-    let filteredUsers = users;
+  // Get available role categories to display
+  const getRoleCategories = () => {
+    const userRole = user?.role_name;
     
-    // Filter by role permissions
-    if (user?.role_name === 'trainer_head') {
-      // trainer_head can only see school_teacher and trainer users
-      filteredUsers = filteredUsers.filter(u => ['school_teacher', 'trainer'].includes(u.role_name));
+    if (userRole === 'super_admin') {
+      // Only super_admin can see admin accounts
+      return ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
     }
+    
+    if (userRole === 'developer') {
+      // developer is technical role, not management - cannot see admin
+      return ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+    }
+    
+    if (userRole === 'admin') {
+      return ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+    }
+    
+    if (userRole === 'owner') {
+      return ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+    }
+    
+    if (userRole === 'trainer_head') {
+      return ['school_teacher', 'trainer', 'principal', 'registrar'];
+    }
+    
+    return [];
+  };
+
+  // Filter users based on selected role and search term
+  const getFilteredUsers = () => {
+    if (!selectedRole) return [];
+    
+    let filteredUsers = users.filter(u => u.role_name === selectedRole);
     
     // Filter by search term
     if (searchTerm) {
@@ -62,8 +112,17 @@ const AdminUsers = () => {
       );
     }
     
-    // Show all users including deactivated ones (deleted users are removed from DB)
     return filteredUsers;
+  };
+
+  // Get count of users for each role
+  const getRoleCount = (roleName) => {
+    return users.filter(u => u.role_name === roleName).length;
+  };
+
+  // Format role name for display
+  const formatRoleName = (roleName) => {
+    return roleName.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   // Get default section type based on role name
@@ -114,6 +173,12 @@ const AdminUsers = () => {
           section_type: form.section_type,
           is_active: form.is_active
         };
+        
+        // Only include password if it's been changed
+        if (form.password && form.password.trim() !== '') {
+          updateData.password = form.password;
+        }
+        
         await api.put(`/users/${editingUser.id}`, updateData);
         showSuccess('User updated successfully!');
       } else {
@@ -183,40 +248,155 @@ const AdminUsers = () => {
   };
 
   const availableRoles = getAvailableRoles();
-  const visibleUsers = getVisibleUsers();
+  const roleCategories = getRoleCategories();
+  const filteredUsers = getFilteredUsers();
   const selectedRoleName = getSelectedRoleName();
   const showSectionTypeSelector = selectedRoleName && isSectionTypeEditable(selectedRoleName);
 
   return (
     <div className="users-page">
-      <div className="page-header">
-        <h2>User Management</h2>
-        {canEdit && (
-          <button onClick={() => setShowModal(true)} className="btn-primary">
-            Add User
-          </button>
-        )}
-      </div>
+      {!selectedRole ? (
+        // Show role categories
+        <>
+          <div className="page-header">
+            <h2>User Management</h2>
+          </div>
+          
+          <div className="role-categories">
+            {roleCategories.map(roleName => {
+              const count = getRoleCount(roleName);
+              return (
+                <div 
+                  key={roleName} 
+                  className="role-category-card"
+                  onClick={() => setSelectedRole(roleName)}
+                >
+                  <h3>{formatRoleName(roleName)}</h3>
+                  <div className="role-count" data-label={count === 1 ? 'User' : 'Users'}>{count}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        // Show users list for selected role
+        <>
+          <div className="page-header">
+            <button 
+              onClick={() => {
+                setSelectedRole(null);
+                setSearchTerm('');
+              }} 
+              className="btn-secondary"
+              style={{ marginRight: '1rem' }}
+            >
+              ← Back
+            </button>
+            <h2>{formatRoleName(selectedRole)} Users</h2>
+            {canEdit && (
+              <button 
+                onClick={() => {
+                  // Pre-select the role when adding user
+                  const roleObj = roles.find(r => r.name === selectedRole);
+                  if (roleObj) {
+                    handleRoleChange(roleObj.id);
+                  }
+                  setShowModal(true);
+                }} 
+                className="btn-primary"
+              >
+                Add {formatRoleName(selectedRole)}
+              </button>
+            )}
+          </div>
 
-      {/* Search Bar */}
-      <div className="search-bar">
-        <input
-          type="text"
-          placeholder="Search users by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-        {searchTerm && (
-          <button 
-            onClick={() => setSearchTerm('')} 
-            className="clear-search"
-            aria-label="Clear search"
-          >
-            ✕
-          </button>
-        )}
-      </div>
+          {/* Search Bar */}
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')} 
+                className="clear-search"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Section</th>
+                  <th>Status</th>
+                  {canEdit && <th>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={canEdit ? 5 : 4} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                      {searchTerm ? `No users found matching "${searchTerm}"` : `No ${formatRoleName(selectedRole).toLowerCase()} users available`}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map(u => (
+                    <tr key={u.id}>
+                      <td>{u.first_name} {u.last_name}</td>
+                      <td>{u.email}</td>
+                      <td>{u.section_type}</td>
+                      <td>
+                        {canManageUsers ? (
+                          <span 
+                            className={`status-badge ${u.is_active ? 'active' : 'inactive'} clickable`}
+                            onClick={() => handleToggleActive(u.id, u.is_active, `${u.first_name} ${u.last_name}`)}
+                            title={u.is_active ? 'Click to deactivate' : 'Click to activate'}
+                          >
+                            {u.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        ) : (
+                          <span className={`status-badge ${u.is_active ? 'active' : 'inactive'}`}>
+                            {u.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        )}
+                      </td>
+                      {canEdit && (
+                        <td>
+                          <div className="action-buttons">
+                            <button 
+                              onClick={() => handleEdit(u)} 
+                              className="btn-text btn-edit"
+                            >
+                              Edit
+                            </button>
+                            {canManageUsers && (
+                              <button 
+                                onClick={() => handleDelete(u.id, `${u.first_name} ${u.last_name}`)} 
+                                className="btn-text btn-delete"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <Modal 
         isOpen={showModal} 
@@ -306,74 +486,6 @@ const AdminUsers = () => {
           <button type="submit" className="btn-primary">{editingUser ? 'Update User' : 'Create User'}</button>
         </form>
       </Modal>
-
-      <div className="table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Section</th>
-              <th>Status</th>
-              {canEdit && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleUsers.length === 0 ? (
-              <tr>
-                <td colSpan={canEdit ? 6 : 5} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-                  {searchTerm ? `No users found matching "${searchTerm}"` : 'No users available'}
-                </td>
-              </tr>
-            ) : (
-              visibleUsers.map(u => (
-                <tr key={u.id}>
-                  <td>{u.first_name} {u.last_name}</td>
-                  <td>{u.email}</td>
-                  <td>{u.role_name}</td>
-                  <td>{u.section_type}</td>
-                  <td>
-                  {canManageUsers ? (
-                    <span 
-                      className={`status-badge ${u.is_active ? 'active' : 'inactive'} clickable`}
-                      onClick={() => handleToggleActive(u.id, u.is_active, `${u.first_name} ${u.last_name}`)}
-                      title={u.is_active ? 'Click to deactivate' : 'Click to activate'}
-                    >
-                      {u.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  ) : (
-                    <span className={`status-badge ${u.is_active ? 'active' : 'inactive'}`}>
-                      {u.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  )}
-                </td>
-                {canEdit && (
-                  <td>
-                    <div className="action-buttons">
-                      <button 
-                        onClick={() => handleEdit(u)} 
-                        className="btn-text btn-edit"
-                      >
-                        Edit
-                      </button>
-                      {canManageUsers && (
-                        <button 
-                          onClick={() => handleDelete(u.id, `${u.first_name} ${u.last_name}`)} 
-                          className="btn-text btn-delete"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                )}
-              </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 };

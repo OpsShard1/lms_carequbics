@@ -23,15 +23,15 @@ const SchoolParentProgress = () => {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
   const studentName = searchParams.get('name');
-  const dateOfBirth = searchParams.get('dob');
+  const phoneNumber = searchParams.get('phone');
 
   useEffect(() => {
-    if (studentName && dateOfBirth) {
+    if (studentName && phoneNumber) {
       loadStudentProgress();
     } else {
       navigate('/login');
     }
-  }, [studentName, dateOfBirth, selectedMonth, selectedYear]);
+  }, [studentName, phoneNumber, selectedMonth, selectedYear]);
 
   const loadStudentProgress = async () => {
     setLoading(true);
@@ -39,7 +39,7 @@ const SchoolParentProgress = () => {
     try {
       const res = await api.post('/progress/school-parent/view', {
         student_name: studentName,
-        date_of_birth: dateOfBirth,
+        phone_number: phoneNumber,
         month: selectedMonth,
         year: selectedYear
       });
@@ -47,7 +47,7 @@ const SchoolParentProgress = () => {
       setClassProgress(res.data.classProgress);
       setAttendance(res.data.attendance);
     } catch (err) {
-      setError(err.response?.data?.error || 'Student not found. Please check the name and date of birth.');
+      setError(err.response?.data?.error || 'Student not found. Please check the name and phone number.');
     } finally {
       setLoading(false);
     }

@@ -480,19 +480,19 @@ router.get('/student/:studentId/installment-status', authenticate, async (req, r
 // Get installment status for parent portal (public - no auth required)
 router.post('/student/installment-status/parent', async (req, res) => {
   try {
-    const { student_name, date_of_birth } = req.body;
+    const { student_name, phone_number } = req.body;
     
-    if (!student_name || !date_of_birth) {
-      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    if (!student_name || !phone_number) {
+      return res.status(400).json({ error: 'Student name and phone number are required' });
     }
     
-    // Find student by name and DOB - handle cases where last_name might be empty
+    // Find student by name and phone number - handle cases where last_name might be empty
     const [students] = await pool.query(
       `SELECT s.*, c.duration_months, c.classes_per_installment, c.classes_per_installment_weekend, c.name as curriculum_name
        FROM students s
        LEFT JOIN curriculums c ON s.curriculum_id = c.id
-       WHERE TRIM(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) = ? AND s.date_of_birth = ?`,
-      [student_name, date_of_birth]
+       WHERE TRIM(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) = ? AND s.parent_contact = ?`,
+      [student_name, phone_number]
     );
     
     if (students.length === 0) {

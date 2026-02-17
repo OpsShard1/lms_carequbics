@@ -59,9 +59,9 @@ router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_hea
 
 router.post('/parent/view', async (req, res) => {
   try {
-    const { student_name, date_of_birth, month, year } = req.body;
-    if (!student_name || !date_of_birth) {
-      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    const { student_name, phone_number, month, year } = req.body;
+    if (!student_name || !phone_number) {
+      return res.status(400).json({ error: 'Student name and phone number are required' });
     }
     const now = new Date();
     const selectedYear = year || now.getFullYear();
@@ -69,15 +69,15 @@ router.post('/parent/view', async (req, res) => {
     const nameParts = student_name.trim().toLowerCase().split(/\s+/);
     let students;
     if (nameParts.length >= 2) {
-      [students] = await pool.query(`SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id, s.school_name_external, s.student_class, c.name as center_name FROM students s LEFT JOIN centers c ON s.center_id = c.id WHERE LOWER(s.first_name) = ? AND LOWER(COALESCE(s.last_name, '')) = ? AND DATE(s.date_of_birth) = DATE(?) AND s.student_type = 'center' AND s.is_active = true`, [nameParts[0], nameParts.slice(1).join(' '), date_of_birth]);
+      [students] = await pool.query(`SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id, s.school_name_external, s.student_class, c.name as center_name FROM students s LEFT JOIN centers c ON s.center_id = c.id WHERE LOWER(s.first_name) = ? AND LOWER(COALESCE(s.last_name, '')) = ? AND s.parent_contact = ? AND s.student_type = 'center' AND s.is_active = true`, [nameParts[0], nameParts.slice(1).join(' '), phone_number]);
     } else {
-      [students] = await pool.query(`SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id, s.school_name_external, s.student_class, c.name as center_name FROM students s LEFT JOIN centers c ON s.center_id = c.id WHERE LOWER(s.first_name) = ? AND DATE(s.date_of_birth) = DATE(?) AND s.student_type = 'center' AND s.is_active = true`, [nameParts[0], date_of_birth]);
+      [students] = await pool.query(`SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id, s.school_name_external, s.student_class, c.name as center_name FROM students s LEFT JOIN centers c ON s.center_id = c.id WHERE LOWER(s.first_name) = ? AND s.parent_contact = ? AND s.student_type = 'center' AND s.is_active = true`, [nameParts[0], phone_number]);
     }
     if (students.length === 0) {
-      [students] = await pool.query(`SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id, s.school_name_external, s.student_class, c.name as center_name FROM students s LEFT JOIN centers c ON s.center_id = c.id WHERE (LOWER(s.first_name) LIKE ? OR LOWER(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) LIKE ?) AND DATE(s.date_of_birth) = DATE(?) AND s.student_type = 'center' AND s.is_active = true`, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, date_of_birth]);
+      [students] = await pool.query(`SELECT s.id, s.first_name, s.last_name, s.center_id, s.curriculum_id, s.school_name_external, s.student_class, c.name as center_name FROM students s LEFT JOIN centers c ON s.center_id = c.id WHERE (LOWER(s.first_name) LIKE ? OR LOWER(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) LIKE ?) AND s.parent_contact = ? AND s.student_type = 'center' AND s.is_active = true`, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, phone_number]);
     }
     if (students.length === 0) {
-      return res.status(404).json({ error: 'Student not found. Please check the name and date of birth.' });
+      return res.status(404).json({ error: 'Student not found. Please check the name and phone number.' });
     }
     const student = students[0];
     let curriculum = null;
@@ -131,10 +131,10 @@ module.exports = router;
 // School parent view - public endpoint for parents to view their child's progress
 router.post('/school-parent/view', async (req, res) => {
   try {
-    const { student_name, date_of_birth, month, year } = req.body;
+    const { student_name, phone_number, month, year } = req.body;
     
-    if (!student_name || !date_of_birth) {
-      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    if (!student_name || !phone_number) {
+      return res.status(400).json({ error: 'Student name and phone number are required' });
     }
 
     const now = new Date();
@@ -155,10 +155,10 @@ router.post('/school-parent/view', async (req, res) => {
         LEFT JOIN classes c ON s.class_id = c.id
         WHERE LOWER(s.first_name) = ? 
           AND LOWER(COALESCE(s.last_name, '')) = ? 
-          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.parent_contact = ?
           AND s.student_type = 'school'
           AND s.is_active = true
-      `, [nameParts[0], nameParts.slice(1).join(' '), date_of_birth]);
+      `, [nameParts[0], nameParts.slice(1).join(' '), phone_number]);
     } else {
       [students] = await pool.query(`
         SELECT s.id, s.first_name, s.last_name, s.school_id, s.class_id,
@@ -167,10 +167,10 @@ router.post('/school-parent/view', async (req, res) => {
         LEFT JOIN schools sc ON s.school_id = sc.id
         LEFT JOIN classes c ON s.class_id = c.id
         WHERE LOWER(s.first_name) = ? 
-          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.parent_contact = ?
           AND s.student_type = 'school'
           AND s.is_active = true
-      `, [nameParts[0], date_of_birth]);
+      `, [nameParts[0], phone_number]);
     }
 
     // Try fuzzy match if exact match fails
@@ -182,14 +182,14 @@ router.post('/school-parent/view', async (req, res) => {
         LEFT JOIN schools sc ON s.school_id = sc.id
         LEFT JOIN classes c ON s.class_id = c.id
         WHERE (LOWER(s.first_name) LIKE ? OR LOWER(CONCAT(s.first_name, ' ', COALESCE(s.last_name, ''))) LIKE ?)
-          AND DATE(s.date_of_birth) = DATE(?)
+          AND s.parent_contact = ?
           AND s.student_type = 'school'
           AND s.is_active = true
-      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, date_of_birth]);
+      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, phone_number]);
     }
 
     if (students.length === 0) {
-      return res.status(404).json({ error: 'Student not found. Please check the name and date of birth.' });
+      return res.status(404).json({ error: 'Student not found. Please check the name and phone number.' });
     }
 
     const student = students[0];
@@ -301,10 +301,10 @@ router.post('/school-parent/view', async (req, res) => {
 // Detect student type (center or school) for parent portal
 router.post('/detect-student-type', async (req, res) => {
   try {
-    const { student_name, date_of_birth } = req.body;
+    const { student_name, phone_number } = req.body;
     
-    if (!student_name || !date_of_birth) {
-      return res.status(400).json({ error: 'Student name and date of birth are required' });
+    if (!student_name || !phone_number) {
+      return res.status(400).json({ error: 'Student name and phone number are required' });
     }
 
     // Parse student name
@@ -318,17 +318,17 @@ router.post('/detect-student-type', async (req, res) => {
         FROM students
         WHERE LOWER(first_name) = ? 
           AND LOWER(COALESCE(last_name, '')) = ? 
-          AND DATE(date_of_birth) = DATE(?)
+          AND parent_contact = ?
           AND is_active = true
-      `, [nameParts[0], nameParts.slice(1).join(' '), date_of_birth]);
+      `, [nameParts[0], nameParts.slice(1).join(' '), phone_number]);
     } else {
       [students] = await pool.query(`
         SELECT id, first_name, last_name, student_type
         FROM students
         WHERE LOWER(first_name) = ? 
-          AND DATE(date_of_birth) = DATE(?)
+          AND parent_contact = ?
           AND is_active = true
-      `, [nameParts[0], date_of_birth]);
+      `, [nameParts[0], phone_number]);
     }
 
     // Try fuzzy match if exact match fails
@@ -337,13 +337,13 @@ router.post('/detect-student-type', async (req, res) => {
         SELECT id, first_name, last_name, student_type
         FROM students
         WHERE (LOWER(first_name) LIKE ? OR LOWER(CONCAT(first_name, ' ', COALESCE(last_name, ''))) LIKE ?)
-          AND DATE(date_of_birth) = DATE(?)
+          AND parent_contact = ?
           AND is_active = true
-      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, date_of_birth]);
+      `, [`%${nameParts[0]}%`, `%${student_name.toLowerCase()}%`, phone_number]);
     }
 
     if (students.length === 0) {
-      return res.status(404).json({ error: 'Student not found. Please check the name and date of birth.' });
+      return res.status(404).json({ error: 'Student not found. Please check the name and phone number.' });
     }
 
     const student = students[0];

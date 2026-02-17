@@ -307,8 +307,8 @@ export const AuthProvider = ({ children }) => {
   // Check if user can edit (for owner role, depends on edit mode)
   const canEdit = () => {
     if (!user) return false;
-    if (user.role_name === 'owner') return ownerEditMode;
-    return true; // All other roles (including super_admin) can edit by default
+    // Owner can always edit (removed edit mode requirement)
+    return true;
   };
 
   // Check if user can access a section based on their available schools/centers

@@ -36,15 +36,15 @@ const ParentProgress = () => {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
   const studentName = searchParams.get('name');
-  const dateOfBirth = searchParams.get('dob');
+  const phoneNumber = searchParams.get('phone');
 
   useEffect(() => {
-    if (studentName && dateOfBirth) {
+    if (studentName && phoneNumber) {
       loadStudentProgress();
     } else {
       navigate('/login');
     }
-  }, [studentName, dateOfBirth, selectedMonth, selectedYear]);
+  }, [studentName, phoneNumber, selectedMonth, selectedYear]);
 
   const loadStudentProgress = async () => {
     setLoading(true);
@@ -52,7 +52,7 @@ const ParentProgress = () => {
     try {
       const res = await api.post('/progress/parent/view', {
         student_name: studentName,
-        date_of_birth: dateOfBirth,
+        phone_number: phoneNumber,
         month: selectedMonth,
         year: selectedYear
       });
@@ -65,7 +65,7 @@ const ParentProgress = () => {
       try {
         const feesRes = await api.post('/fees/student/installment-status/parent', {
           student_name: studentName,
-          date_of_birth: dateOfBirth
+          phone_number: phoneNumber
         });
         setFeesStatus(feesRes.data);
       } catch (feesErr) {
