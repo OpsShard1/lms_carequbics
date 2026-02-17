@@ -50,10 +50,16 @@ const Login = () => {
       setError('Please enter child name and date of birth');
       return;
     }
-    // Format date to YYYY-MM-DD for URL
-    const formattedDate = dateOfBirth instanceof Date 
-      ? dateOfBirth.toISOString().split('T')[0]
-      : dateOfBirth;
+    // Format date to YYYY-MM-DD for URL (timezone-safe)
+    let formattedDate;
+    if (dateOfBirth instanceof Date) {
+      const year = dateOfBirth.getFullYear();
+      const month = String(dateOfBirth.getMonth() + 1).padStart(2, '0');
+      const day = String(dateOfBirth.getDate()).padStart(2, '0');
+      formattedDate = `${year}-${month}-${day}`;
+    } else {
+      formattedDate = dateOfBirth;
+    }
     // Navigate to unified parent portal
     navigate(`/parent/portal?name=${encodeURIComponent(childName.trim())}&dob=${formattedDate}`);
   };
@@ -126,7 +132,7 @@ const Login = () => {
             <div className="form-group">
               <label>Date of Birth</label>
               <DatePicker
-                selected={dateOfBirth ? (dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth)) : null}
+                selected={dateOfBirth ? (dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth + 'T12:00:00')) : null}
                 onChange={(date) => setDateOfBirth(date)}
                 placeholder="Select date of birth"
                 required
