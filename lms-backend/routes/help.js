@@ -34,6 +34,24 @@ router.get('/issues', authenticate, authorize('developer', 'super_admin', 'admin
   }
 });
 
+// Get user's own reported issues
+router.get('/my-issues', authenticate, async (req, res) => {
+  try {
+    const [issues] = await pool.query(`
+      SELECT i.*, 
+             r.first_name as resolver_first_name, r.last_name as resolver_last_name
+      FROM help_issues i
+      LEFT JOIN users r ON i.resolved_by = r.id
+      WHERE i.reported_by = ?
+      ORDER BY i.is_resolved ASC, i.created_at DESC
+    `, [req.user.id]);
+    res.json(issues);
+  } catch (error) {
+    console.error('Get my issues error:', error);
+    res.status(500).json({ error: 'Failed to fetch your issues' });
+  }
+});
+
 // Report an issue
 router.post('/issues', authenticate, async (req, res) => {
   try {
@@ -61,11 +79,13 @@ router.post('/issues', authenticate, async (req, res) => {
 // Mark issue as resolved
 router.put('/issues/:id/resolve', authenticate, authorize('developer', 'super_admin', 'admin', 'owner', 'trainer_head'), async (req, res) => {
   try {
+    const { resolution_message } = req.body;
+    
     await pool.query(`
       UPDATE help_issues 
-      SET is_resolved = true, resolved_at = NOW(), resolved_by = ?
+      SET is_resolved = true, resolved_at = NOW(), resolved_by = ?, resolution_message = ?
       WHERE id = ?
-    `, [req.user.id, req.params.id]);
+    `, [req.user.id, resolution_message || null, req.params.id]);
     
     res.json({ message: 'Issue marked as resolved' });
   } catch (error) {

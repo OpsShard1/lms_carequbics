@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import Modal from '../../components/Modal';
+import MyIssues from './MyIssues';
 import api from '../../api/axios';
 import '../../styles/help.css';
 
@@ -9,6 +10,7 @@ const Help = () => {
   const { user } = useAuth();
   const { showSuccess, showError } = useNotificationContext();
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showMyIssues, setShowMyIssues] = useState(false);
   const [reportForm, setReportForm] = useState({
     section: '',
     subsections: [],
@@ -53,12 +55,21 @@ const Help = () => {
 
   return (
     <div className="help-page">
-      <div className="help-header">
-        <h1>Help & Documentation</h1>
-        <button onClick={() => setShowReportModal(true)} className="btn-primary">
-          Report an Issue
-        </button>
-      </div>
+      {showMyIssues ? (
+        <MyIssues onBack={() => setShowMyIssues(false)} />
+      ) : (
+        <>
+          <div className="help-header">
+            <h1>Help & Documentation</h1>
+            <div className="help-actions">
+              <button onClick={() => setShowMyIssues(true)} className="btn-secondary">
+                View My Reports
+              </button>
+              <button onClick={() => setShowReportModal(true)} className="btn-primary">
+                Report an Issue
+              </button>
+            </div>
+          </div>
 
       <div className="help-intro">
         <h2>Welcome to the Learning Management System</h2>
@@ -226,10 +237,12 @@ const Help = () => {
         )}
       </div>
 
-      <div className="help-footer">
-        <h3>Need More Help?</h3>
-        <p>If you can't find what you're looking for or encounter any issues, please use the "Report an Issue" button above to let us know.</p>
-      </div>
+        <div className="help-footer">
+          <h3>Need More Help?</h3>
+          <p>If you can't find what you're looking for or encounter any issues, please use the "Report an Issue" button above to let us know.</p>
+        </div>
+        </>
+      )}
 
       <Modal
         isOpen={showReportModal}

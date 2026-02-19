@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
+import Modal from '../../components/Modal';
 import api from '../../api/axios';
 import '../../styles/help.css';
 
@@ -11,6 +12,9 @@ const Issues = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [showResolved, setShowResolved] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [resolutionMessage, setResolutionMessage] = useState('');
 
   const canDelete = ['developer', 'super_admin', 'admin', 'owner'].includes(user?.role_name);
 
@@ -32,12 +36,22 @@ const Issues = () => {
 
   const handleResolve = async (issueId) => {
     try {
-      await api.put(`/help/issues/${issueId}/resolve`);
+      await api.put(`/help/issues/${issueId}/resolve`, {
+        resolution_message: resolutionMessage
+      });
       showSuccess('Issue marked as resolved');
+      setShowResolveModal(false);
+      setSelectedIssue(null);
+      setResolutionMessage('');
       loadIssues();
     } catch (err) {
       showError('Failed to resolve issue');
     }
+  };
+
+  const openResolveModal = (issue) => {
+    setSelectedIssue(issue);
+    setShowResolveModal(true);
   };
 
   const handleDelete = async (issueId) => {
@@ -169,7 +183,7 @@ const Issues = () => {
                   <div className="issue-actions">
                     {!issue.is_resolved && (
                       <button 
-                        onClick={() => handleResolve(issue.id)}
+                        onClick={() => openResolveModal(issue)}
                         className="btn-sm btn-success"
                       >
                         Mark Resolved
@@ -206,6 +220,11 @@ const Issues = () => {
                     <div className="resolver-info">
                       <strong>Resolved by:</strong> {issue.resolver_first_name} {issue.resolver_last_name}
                       {issue.resolved_at ? ` on ${formatDate(issue.resolved_at)}` : ''}
+                      {issue.resolution_message && (
+                        <div className="resolution-message">
+                          <strong>Resolution:</strong> {issue.resolution_message}
+                        </div>
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -214,6 +233,52 @@ const Issues = () => {
           })}
         </div>
       )}
+
+      <Modal
+        isOpen={showResolveModal}
+        onClose={() => {
+          setShowResolveModal(false);
+          setSelectedIssue(null);
+          setResolutionMessage('');
+        }}
+        title="Resolve Issue"
+      >
+        <div className="resolve-form">
+          <div className="issue-summary">
+            <h4>{selectedIssue?.title}</h4>
+            <p>{selectedIssue?.description}</p>
+          </div>
+          
+          <div className="form-group">
+            <label>Resolution Message (optional)</label>
+            <textarea
+              placeholder="Explain how the issue was resolved or provide information about the app behavior..."
+              value={resolutionMessage}
+              onChange={(e) => setResolutionMessage(e.target.value)}
+              rows="4"
+            />
+          </div>
+
+          <div className="modal-actions">
+            <button 
+              onClick={() => {
+                setShowResolveModal(false);
+                setSelectedIssue(null);
+                setResolutionMessage('');
+              }}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => handleResolve(selectedIssue?.id)}
+              className="btn-primary"
+            >
+              Mark as Resolved
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
