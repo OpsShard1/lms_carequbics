@@ -23,46 +23,85 @@ export const AuthProvider = ({ children }) => {
   const [ownerEditMode, setOwnerEditMode] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
       
-      // Restore selections
-      const savedSchool = localStorage.getItem('selectedSchool');
-      const savedCenter = localStorage.getItem('selectedCenter');
-      const savedSection = localStorage.getItem('currentSection');
-      const savedEditMode = localStorage.getItem('ownerEditMode');
-      
-      if (savedSchool) setSelectedSchool(JSON.parse(savedSchool));
-      if (savedCenter) setSelectedCenter(JSON.parse(savedCenter));
-      if (savedSection) setCurrentSection(savedSection);
-      if (savedEditMode && parsedUser.role_name === 'owner') {
-        setOwnerEditMode(savedEditMode === 'true');
-      }
-      
-      // Load available schools/centers based on role
-      loadAvailableEntities(parsedUser).finally(() => {
+      if (token && savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          
+          // Restore selections
+          const savedSchool = localStorage.getItem('selectedSchool');
+          const savedCenter = localStorage.getItem('selectedCenter');
+          const savedSection = localStorage.getItem('currentSection');
+          const savedEditMode = localStorage.getItem('ownerEditMode');
+          
+          if (savedSchool) setSelectedSchool(JSON.parse(savedSchool));
+          if (savedCenter) setSelectedCenter(JSON.parse(savedCenter));
+          if (savedSection) setCurrentSection(savedSection);
+          if (savedEditMode && parsedUser.role_name === 'owner') {
+            setOwnerEditMode(savedEditMode === 'true');
+          }
+          
+          // Validate token in background (non-blocking)
+          api.get('/auth/validate')
+            .catch((error) => {
+              // Token is invalid, log out
+              if (error.response?.status === 401) {
+                console.log('Token expired, logging out');
+                logout();
+                window.location.href = '/login';
+              }
+            });
+          
+          // Load available schools/centers based on role
+          await loadAvailableEntities(parsedUser);
+          setLoading(false);
+        } catch (error) {
+          // If there's an error parsing or loading, clear everything
+          console.error('Error initializing auth:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('selectedSchool');
+          localStorage.removeItem('selectedCenter');
+          localStorage.removeItem('currentSection');
+          localStorage.removeItem('ownerEditMode');
+          setUser(null);
+          setLoading(false);
+        }
+      } else {
         setLoading(false);
-      });
-    } else {
-      setLoading(false);
-      setLoadingEntities(false);
-    }
+        setLoadingEntities(false);
+      }
+    };
+    
+    initAuth();
   }, []);
 
   const loadAvailableEntities = async (userData) => {
     setLoadingEntities(true);
     try {
+      // Set a timeout for the entire loading process
+      const loadingTimeout = setTimeout(() => {
+        console.warn('Loading entities is taking too long, using cached data if available');
+        setLoadingEntities(false);
+      }, 10000); // 10 second timeout
+
       // Trainers and Registrars get their assigned schools/centers from trainer_assignments table
       if (userData.role_name === 'trainer' || userData.role_name === 'registrar') {
         try {
-          const [schoolsRes, centersRes] = await Promise.all([
-            api.get('/staff-assignments/my-schools').catch(() => ({ data: [] })),
-            api.get('/staff-assignments/my-centers').catch(() => ({ data: [] }))
-          ]);
+          const [schoolsRes, centersRes] = await Promise.race([
+            Promise.all([
+              api.get('/staff-assignments/my-schools').catch(() => ({ data: [] })),
+              api.get('/staff-assignments/my-centers').catch(() => ({ data: [] }))
+            ]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => [{ data: [] }, { data: [] }]);
+          
+          clearTimeout(loadingTimeout);
+          
           const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
           const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
           
@@ -102,6 +141,7 @@ export const AuthProvider = ({ children }) => {
             }
           }
         } catch (error) {
+          clearTimeout(loadingTimeout);
           console.error('Error loading trainer/registrar assignments:', error);
           setAvailableSchools([]);
           setAvailableCenters([]);
@@ -109,7 +149,13 @@ export const AuthProvider = ({ children }) => {
       } else if (userData.role_name === 'school_teacher') {
         // School teachers get their assigned schools from user_assignments/teacher-assignments
         try {
-          const schoolsRes = await api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] }));
+          const schoolsRes = await Promise.race([
+            api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] })),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => ({ data: [] }));
+          
+          clearTimeout(loadingTimeout);
+          
           const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
           setAvailableSchools(schools);
           setAvailableCenters([]); // Teachers don't have center access
@@ -123,6 +169,7 @@ export const AuthProvider = ({ children }) => {
           setCurrentSection('school');
           localStorage.setItem('currentSection', 'school');
         } catch (error) {
+          clearTimeout(loadingTimeout);
           console.error('Error loading teacher schools:', error);
           setAvailableSchools([]);
           setAvailableCenters([]);
@@ -130,7 +177,13 @@ export const AuthProvider = ({ children }) => {
       } else if (userData.role_name && userData.role_name.includes('principal')) {
         // Principals get their assigned schools from user_assignments
         try {
-          const schoolsRes = await api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] }));
+          const schoolsRes = await Promise.race([
+            api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] })),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => ({ data: [] }));
+          
+          clearTimeout(loadingTimeout);
+          
           const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
           setAvailableSchools(schools);
           setAvailableCenters([]); // Principals don't have center access
@@ -144,6 +197,7 @@ export const AuthProvider = ({ children }) => {
           setCurrentSection('school');
           localStorage.setItem('currentSection', 'school');
         } catch (error) {
+          clearTimeout(loadingTimeout);
           console.error('Error loading principal schools:', error);
           setAvailableSchools([]);
           setAvailableCenters([]);
@@ -151,10 +205,16 @@ export const AuthProvider = ({ children }) => {
       } else if (['developer', 'owner', 'super_admin'].includes(userData.role_name)) {
         // Developer, owner, and super_admin get ALL schools and centers
         try {
-          const [schoolsRes, centersRes] = await Promise.all([
-            api.get('/schools').catch(() => ({ data: [] })),
-            api.get('/centers').catch(() => ({ data: [] }))
-          ]);
+          const [schoolsRes, centersRes] = await Promise.race([
+            Promise.all([
+              api.get('/schools').catch(() => ({ data: [] })),
+              api.get('/centers').catch(() => ({ data: [] }))
+            ]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => [{ data: [] }, { data: [] }]);
+          
+          clearTimeout(loadingTimeout);
+          
           const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
           const centers = Array.isArray(centersRes.data) ? centersRes.data : [];
           setAvailableSchools(schools);
@@ -168,6 +228,7 @@ export const AuthProvider = ({ children }) => {
             selectCenter(centers[0]);
           }
         } catch (error) {
+          clearTimeout(loadingTimeout);
           console.error('Error loading admin schools/centers:', error);
           setAvailableSchools([]);
           setAvailableCenters([]);
@@ -178,14 +239,30 @@ export const AuthProvider = ({ children }) => {
           let schools = [];
           let centers = [];
           
+          const promises = [];
+          
           if (userData.section_type === 'school' || userData.section_type === 'both') {
-            const schoolsRes = await api.get('/schools').catch(() => ({ data: [] }));
-            schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+            promises.push(api.get('/schools').catch(() => ({ data: [] })));
           }
           
           if (userData.section_type === 'center' || userData.section_type === 'both') {
-            const centersRes = await api.get('/centers').catch(() => ({ data: [] }));
-            centers = Array.isArray(centersRes.data) ? centersRes.data : [];
+            promises.push(api.get('/centers').catch(() => ({ data: [] })));
+          }
+          
+          const results = await Promise.race([
+            Promise.all(promises),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => []);
+          
+          clearTimeout(loadingTimeout);
+          
+          if (userData.section_type === 'school' || userData.section_type === 'both') {
+            schools = Array.isArray(results[0]?.data) ? results[0].data : [];
+          }
+          
+          if (userData.section_type === 'center' || userData.section_type === 'both') {
+            const centerIndex = (userData.section_type === 'both') ? 1 : 0;
+            centers = Array.isArray(results[centerIndex]?.data) ? results[centerIndex].data : [];
           }
           
           setAvailableSchools(schools);
@@ -216,11 +293,13 @@ export const AuthProvider = ({ children }) => {
             }
           }
         } catch (error) {
+          clearTimeout(loadingTimeout);
           console.error('Error loading trainer_head schools/centers:', error);
           setAvailableSchools([]);
           setAvailableCenters([]);
         }
       } else {
+        clearTimeout(loadingTimeout);
         // Other roles get from their user_assignments
         try {
           const schoolAssignments = userData.assignments?.filter(a => a.school_id) || [];

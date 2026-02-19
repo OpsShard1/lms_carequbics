@@ -89,6 +89,16 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
+// Validate token
+router.get('/validate', authenticate, async (req, res) => {
+  try {
+    // If authenticate middleware passes, token is valid
+    res.json({ valid: true, userId: req.user.id });
+  } catch (error) {
+    res.status(401).json({ valid: false, error: 'Invalid token' });
+  }
+});
+
 // Change password
 router.post('/change-password', authenticate, async (req, res) => {
   try {
