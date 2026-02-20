@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import DatePicker from '../../components/DatePicker';
@@ -7,6 +8,7 @@ import api from '../../api/axios';
 import '../../styles/classes.css';
 
 const SchoolClasses = () => {
+  const navigate = useNavigate();
   const { selectedSchool, selectSchool, availableSchools, user, canEdit, ownerEditMode } = useAuth();
   const { showSuccess, showError, showWarning } = useNotificationContext();
   const [classes, setClasses] = useState([]);
@@ -386,7 +388,12 @@ const SchoolClasses = () => {
                     <div className="class-actions">
                       {canEditClasses && (
                         <>
-                          <button onClick={() => startEditClass(c)} className="btn-secondary btn-sm">Manage Students</button>
+                          <button 
+                            onClick={() => navigate(`/school/classes/${c.id}/students`)} 
+                            className="btn-secondary btn-sm"
+                          >
+                            Manage Students
+                          </button>
                           <button onClick={() => deleteClass(c.id)} className="btn-danger btn-sm">Delete</button>
                         </>
                       )}

@@ -8,7 +8,12 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'lms_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  connectTimeout: 10000, // 10 seconds to establish connection
+  maxIdle: 10, // Maximum idle connections
+  idleTimeout: 60000, // Close idle connections after 60 seconds
 });
 
 // Test connection

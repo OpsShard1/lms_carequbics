@@ -1,0 +1,13 @@
+first_name,last_name,date_of_birth,gender,parent_name,parent_contact
+Aarav,Sharma,2010-03-15,Male,Rajesh Sharma,9876543210
+Diya,,2010-07-22,Female,Priya Patel,9876543211
+Arjun,Kumar,2010-01-10,Male,Suresh Kumar,9876543212
+Ananya,Singh,invalid-date,Female,Meera Singh,9876543213
+Rohan,Verma,2010-11-18,Male,Amit Verma,9876543214
+Ishita,Gupta,2010-04-30,Female,Neha Gupta,98765
+Kabir,Reddy,2010-06-12,Unknown,Ravi Reddy,9876543216
+Saanvi,Nair,2010-08-25,Female,Lakshmi Nair,9876543217
+,Joshi,2010-02-14,Male,Prakash Joshi,9876543218
+Anika,Desai,2010-10-08,Female,,9876543219
+Advait,Mehta,2010-05-20,Male,Kiran Mehta,9876543220
+Myra,Iyer,2010-12-03,Female,Sunita Iyer,abcd123456

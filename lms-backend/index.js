@@ -49,44 +49,61 @@ app.use(express.json());
 // Database connection
 const db = require('./database/connection');
 
-// Test database connection on startup
-db.testConnection();
+// Async startup function
+async function startServer() {
+  try {
+    // Test database connection on startup
+    console.log('Testing database connection...');
+    await db.testConnection();
+    
+    // Routes
+    console.log('Loading routes...');
+    app.use('/api/auth', require('./routes/auth'));
+    app.use('/api/schools', require('./routes/schools'));
+    app.use('/api/centers', require('./routes/centers'));
+    app.use('/api/users', require('./routes/users'));
+    app.use('/api/classes', require('./routes/classes'));
+    app.use('/api/students', require('./routes/students'));
+    app.use('/api', require('./routes/bulk-upload'));
+    app.use('/api/timetables', require('./routes/timetables'));
+    app.use('/api/attendance', require('./routes/attendance'));
+    app.use('/api/progress', require('./routes/progress'));
+    app.use('/api/staff-assignments', require('./routes/staff-assignments'));
+    app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
+    app.use('/api/school-assignments', require('./routes/school-assignments'));
+    app.use('/api/curriculum', require('./routes/curriculum'));
+    app.use('/api/school-curriculum', require('./routes/school-curriculum'));
+    app.use('/api/settings', require('./routes/settings'));
+    app.use('/api/fees', require('./routes/fees'));
+    app.use('/api/help', require('./routes/help'));
+    console.log('Routes loaded successfully');
+    
+    // Health check
+    app.get('/', (req, res) => {
+      res.json({ status: 'ok', message: 'LMS API is running' });
+    });
+    
+    app.get('/api/health', (req, res) => {
+      res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    });
+    
+    // Error handling middleware
+    app.use((err, req, res, next) => {
+      console.error(err.stack);
+      logError(`Error: ${err.message}\n${err.stack}`);
+      res.status(500).json({ error: 'Something went wrong!' });
+    });
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`✅ LMS API running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    logError(`Server startup failed: ${error.message}\n${error.stack}`);
+    process.exit(1);
+  }
+}
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/schools', require('./routes/schools'));
-app.use('/api/centers', require('./routes/centers'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/classes', require('./routes/classes'));
-app.use('/api/students', require('./routes/students'));
-app.use('/api/timetables', require('./routes/timetables'));
-app.use('/api/attendance', require('./routes/attendance'));
-app.use('/api/progress', require('./routes/progress'));
-app.use('/api/staff-assignments', require('./routes/staff-assignments'));
-app.use('/api/teacher-assignments', require('./routes/teacher-assignments'));
-app.use('/api/school-assignments', require('./routes/school-assignments'));
-app.use('/api/curriculum', require('./routes/curriculum'));
-app.use('/api/school-curriculum', require('./routes/school-curriculum'));
-app.use('/api/settings', require('./routes/settings'));
-app.use('/api/fees', require('./routes/fees'));
-app.use('/api/help', require('./routes/help'));
-
-// Health check
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'LMS API is running' });
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  logError(`Error: ${err.message}\n${err.stack}`);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
-
-app.listen(PORT, () => {
-  console.log(`LMS API running on port ${PORT}`);
-});
+// Start the server
+startServer();

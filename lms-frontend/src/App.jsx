@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import ParentPortal from './pages/ParentPortal';
 import SchoolDashboard from './pages/school/Dashboard';
 import SchoolClasses from './pages/school/Classes';
+import ManageClassStudents from './pages/school/ManageClassStudents';
 import SchoolStudents from './pages/school/Students';
 import SchoolCurriculum from './pages/school/Curriculum';
 import SchoolClassProgress from './pages/school/ClassProgress';
@@ -59,6 +60,7 @@ function App() {
             {/* School Routes */}
             <Route path="school/dashboard" element={<SchoolDashboard />} />
             <Route path="school/classes" element={<SchoolClasses />} />
+            <Route path="school/classes/:classId/students" element={<ManageClassStudents />} />
             <Route path="school/students" element={<SchoolStudents />} />
             <Route path="school/curriculum" element={<SchoolCurriculum />} />
             <Route path="school/class-progress" element={<SchoolClassProgress />} />
