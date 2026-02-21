@@ -59,10 +59,11 @@ const PhoneInput = ({ value, onChange, required, placeholder }) => {
   const isValidLength = phoneNumber.length === currentConfig?.length;
 
   return (
-    <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+    <div className="mcs-phone-input-container" style={{ position: 'relative', display: 'flex', gap: '8px' }}>
       <select 
         value={countryCode} 
         onChange={handleCountryCodeChange}
+        className="mcs-phone-select"
         style={{ 
           width: '110px',
           padding: '10px 8px',
@@ -88,6 +89,7 @@ const PhoneInput = ({ value, onChange, required, placeholder }) => {
           type="tel"
           value={phoneNumber}
           onChange={handlePhoneChange}
+          className="mcs-phone-number-input"
           placeholder={placeholder || `Enter ${currentConfig?.length} digit number`}
           {...(required && {
             required: true,

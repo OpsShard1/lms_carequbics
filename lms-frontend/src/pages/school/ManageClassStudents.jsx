@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
@@ -20,6 +20,7 @@ const ManageClassStudents = () => {
   
   // Bulk upload states
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -27,7 +28,7 @@ const ManageClassStudents = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   
   // Add student form
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [newStudent, setNewStudent] = useState({
     first_name: '',
     last_name: '',
@@ -47,6 +48,31 @@ const ManageClassStudents = () => {
       loadStudents();
     }
   }, [classId, selectedSchool?.id]);
+
+  // Handle tooltip positioning
+  useEffect(() => {
+    const handleTooltipPosition = (e) => {
+      const tooltip = e.currentTarget.querySelector('.tooltip-content');
+      if (tooltip) {
+        const badge = e.currentTarget;
+        const rect = badge.getBoundingClientRect();
+        tooltip.style.left = `${rect.left + rect.width / 2}px`;
+        tooltip.style.top = `${rect.top - 8}px`;
+        tooltip.style.transform = 'translate(-50%, -100%)';
+      }
+    };
+
+    const tooltips = document.querySelectorAll('.error-tooltip');
+    tooltips.forEach(tooltip => {
+      tooltip.addEventListener('mouseenter', handleTooltipPosition);
+    });
+
+    return () => {
+      tooltips.forEach(tooltip => {
+        tooltip.removeEventListener('mouseenter', handleTooltipPosition);
+      });
+    };
+  }, [previewData]);
 
   const loadClassInfo = async () => {
     try {
@@ -234,7 +260,7 @@ const ManageClassStudents = () => {
         parent_name: '',
         parent_contact: ''
       });
-      setShowAddForm(false);
+      setShowAddModal(false);
       loadStudents();
     } catch (err) {
       showError(err.response?.data?.error || 'Failed to add student');
@@ -250,6 +276,28 @@ const ManageClassStudents = () => {
       loadStudents();
     } catch (err) {
       showError('Failed to remove student');
+    }
+  };
+
+  const handleApproveStudent = async (studentId) => {
+    try {
+      await api.post(`/students/${studentId}/approve`);
+      showSuccess('Student approved successfully');
+      loadStudents();
+    } catch (err) {
+      showError('Failed to approve student');
+    }
+  };
+
+  const handleDisapproveStudent = async (studentId) => {
+    if (!window.confirm('Disapprove this student? They will be marked as rejected.')) return;
+    
+    try {
+      await api.post(`/students/${studentId}/disapprove`);
+      showSuccess('Student disapproved');
+      loadStudents();
+    } catch (err) {
+      showError('Failed to disapprove student');
     }
   };
 
@@ -269,25 +317,27 @@ const ManageClassStudents = () => {
       <div className="page-header">
         <div className="mcs-header-left">
           <button onClick={() => navigate('/school/classes')} className="btn-back">
-            ← Back to Classes
+            <span className="back-icon">←</span> Back to Classes
           </button>
-          <div>
+          <div className="header-info">
             <h2>Manage Students</h2>
             {classInfo && (
-              <p className="class-info">
-                {classInfo.name} • Grade {classInfo.grade} • Section {classInfo.section || '-'}
-              </p>
+              <div className="class-info-badges">
+                <span className="badge badge-primary">{classInfo.name}</span>
+                {classInfo.section && <span className="badge badge-secondary">Section {classInfo.section}</span>}
+                <span className="badge badge-count">{students.length} Students</span>
+              </div>
             )}
           </div>
         </div>
         
         {canEdit && (
           <div className="header-actions">
-            <button onClick={() => setShowBulkUploadModal(true)} className="btn-secondary">
-              📤 Bulk Upload
+            <button onClick={() => setShowBulkUploadModal(true)} className="btn-outline">
+              Bulk Upload
             </button>
-            <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary">
-              + Add Student
+            <button onClick={() => setShowAddModal(true)} className="btn-primary">
+              <span className="btn-icon">+</span> Add Student
             </button>
           </div>
         )}
@@ -306,13 +356,10 @@ const ManageClassStudents = () => {
                 Upload a CSV file with student data. The file should contain the following columns:
                 <code>first_name, last_name, date_of_birth, gender, parent_name, parent_contact</code>
               </p>
-              <p className="upload-note">
-                <strong>Note:</strong> Only CSV files are supported. Date format should be DD-MM-YYYY or YYYY-MM-DD.
-              </p>
               
               <div className="upload-actions">
-                <button onClick={downloadTemplate} className="btn-link">
-                  📥 Download CSV Template
+                <button onClick={() => setShowInstructionsModal(true)} className="btn-link">
+                  View Instructions
                 </button>
                 
                 <div className="file-input-wrapper">
@@ -345,6 +392,131 @@ const ManageClassStudents = () => {
         </div>
       )}
 
+      {/* Instructions Modal */}
+      {showInstructionsModal && (
+        <div className="modal-overlay" onClick={() => setShowInstructionsModal(false)}>
+          <div className="modal-content modal-instructions" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>CSV File Creation Instructions</h3>
+              <button onClick={() => setShowInstructionsModal(false)} className="btn-close">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="instructions-content">
+                <h4>How to Create a CSV File Using Excel</h4>
+                
+                <div className="instruction-step">
+                  <span className="step-number">1</span>
+                  <div className="step-content">
+                    <h5>Open Microsoft Excel</h5>
+                    <p>Create a new blank workbook</p>
+                  </div>
+                </div>
+
+                <div className="instruction-step">
+                  <span className="step-number">2</span>
+                  <div className="step-content">
+                    <h5>Add Column Headers</h5>
+                    <p>In the first row, add these exact column names (case-sensitive):</p>
+                    <code className="code-block">first_name, last_name, date_of_birth, gender, parent_name, parent_contact</code>
+                  </div>
+                </div>
+
+                <div className="instruction-step">
+                  <span className="step-number">3</span>
+                  <div className="step-content">
+                    <h5>Fill in Student Data</h5>
+                    <p>Starting from row 2, enter student information:</p>
+                    <ul>
+                      <li><strong>first_name:</strong> Student's first name (required)</li>
+                      <li><strong>last_name:</strong> Student's last name (required)</li>
+                      <li><strong>date_of_birth:</strong> Format as DD-MM-YYYY or YYYY-MM-DD (e.g., 15-05-2010 or 2010-05-15)</li>
+                      <li><strong>gender:</strong> Must be exactly "Male", "Female", or "Other"</li>
+                      <li><strong>parent_name:</strong> Parent or guardian's name</li>
+                      <li><strong>parent_contact:</strong> 10-digit phone number (with or without +91)</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="instruction-step">
+                  <span className="step-number">4</span>
+                  <div className="step-content">
+                    <h5>Format Cells as Text (Important!)</h5>
+                    <p>To prevent Excel from auto-formatting dates and numbers:</p>
+                    <ul>
+                      <li>Select all cells with data</li>
+                      <li>Right-click → Format Cells</li>
+                      <li>Choose "Text" category</li>
+                      <li>Click OK</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="instruction-step">
+                  <span className="step-number">5</span>
+                  <div className="step-content">
+                    <h5>Save as CSV</h5>
+                    <p>File → Save As → Choose "CSV (Comma delimited) (*.csv)" as file type</p>
+                  </div>
+                </div>
+
+                <div className="instruction-note warning">
+                  <strong>⚠️ Important Notes:</strong>
+                  <ul>
+                    <li>Do not use Excel formulas or special characters</li>
+                    <li>Ensure dates are in text format to avoid auto-conversion</li>
+                    <li>Phone numbers should be 10 digits only (country code optional)</li>
+                    <li>Gender must match exactly: "Male", "Female", or "Other"</li>
+                    <li>Save as CSV, not Excel (.xlsx) format</li>
+                  </ul>
+                </div>
+
+                <div className="instruction-example">
+                  <h5>Example Data:</h5>
+                  <table className="example-table">
+                    <thead>
+                      <tr>
+                        <th>first_name</th>
+                        <th>last_name</th>
+                        <th>date_of_birth</th>
+                        <th>gender</th>
+                        <th>parent_name</th>
+                        <th>parent_contact</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>John</td>
+                        <td>Doe</td>
+                        <td>15-05-2010</td>
+                        <td>Male</td>
+                        <td>Jane Doe</td>
+                        <td>9876543210</td>
+                      </tr>
+                      <tr>
+                        <td>Mary</td>
+                        <td>Smith</td>
+                        <td>2011-03-20</td>
+                        <td>Female</td>
+                        <td>Robert Smith</td>
+                        <td>9123456789</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setShowInstructionsModal(false)} className="btn-secondary">
+                Close
+              </button>
+              <button onClick={downloadTemplate} className="btn-primary">
+                📥 Download Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Preview Section */}
       {showPreview && previewData && (
         <div className="preview-section">
@@ -360,13 +532,12 @@ const ManageClassStudents = () => {
             <table className="preview-table">
               <thead>
                 <tr>
-                  <th>Row</th>
                   <th>First Name</th>
                   <th>Last Name</th>
                   <th>Date of Birth</th>
                   <th>Gender</th>
                   <th>Parent Name</th>
-                  <th>Parent Contact</th>
+                  <th style={{ minWidth: '150px' }}>Parent Contact</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -374,7 +545,6 @@ const ManageClassStudents = () => {
               <tbody>
                 {previewData.students.map((student, index) => (
                   <tr key={index} className={student.isValid ? 'valid-row' : 'invalid-row'}>
-                    <td>{student.row}</td>
                     {editingIndex === index ? (
                       <>
                         <td>
@@ -512,87 +682,100 @@ const ManageClassStudents = () => {
         </div>
       )}
 
-      {showAddForm && (
-        <div className="add-student-form">
-          <h3>Add New Student</h3>
-          <form onSubmit={handleAddStudent}>
-            <div className="form-row">
-              <div className="form-group">
-                <label>First Name *</label>
-                <input
-                  type="text"
-                  value={newStudent.first_name}
-                  onChange={(e) => setNewStudent({ ...newStudent, first_name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Last Name *</label>
-                <input
-                  type="text"
-                  value={newStudent.last_name}
-                  onChange={(e) => setNewStudent({ ...newStudent, last_name: e.target.value })}
-                  required
-                />
-              </div>
+      {/* Add Student Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add New Student</h3>
+              <button onClick={() => setShowAddModal(false)} className="btn-close">×</button>
             </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Date of Birth *</label>
-                <DatePicker
-                  selected={newStudent.date_of_birth ? new Date(newStudent.date_of_birth) : null}
-                  onChange={(date) => {
-                    const formattedDate = date ? date.toISOString().split('T')[0] : '';
-                    setNewStudent({ ...newStudent, date_of_birth: formattedDate });
-                  }}
-                  required
-                />
+            <form onSubmit={handleAddStudent}>
+              <div className="modal-body">
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>First Name <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      value={newStudent.first_name}
+                      onChange={(e) => setNewStudent({ ...newStudent, first_name: e.target.value })}
+                      placeholder="Enter first name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Last Name <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      value={newStudent.last_name}
+                      onChange={(e) => setNewStudent({ ...newStudent, last_name: e.target.value })}
+                      placeholder="Enter last name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Date of Birth <span className="required">*</span></label>
+                    <DatePicker
+                      selected={newStudent.date_of_birth ? new Date(newStudent.date_of_birth + 'T00:00:00') : null}
+                      onChange={(date) => {
+                        if (date) {
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          setNewStudent({ ...newStudent, date_of_birth: `${year}-${month}-${day}` });
+                        } else {
+                          setNewStudent({ ...newStudent, date_of_birth: '' });
+                        }
+                      }}
+                      maxDate={new Date()}
+                      placeholderText="Select date of birth"
+                      className="mcs-datepicker-input"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Gender <span className="required">*</span></label>
+                    <select
+                      value={newStudent.gender}
+                      onChange={(e) => setNewStudent({ ...newStudent, gender: e.target.value })}
+                      required
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Parent Name <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      value={newStudent.parent_name}
+                      onChange={(e) => setNewStudent({ ...newStudent, parent_name: e.target.value })}
+                      placeholder="Enter parent name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Parent Contact <span className="required">*</span></label>
+                    <PhoneInput
+                      value={newStudent.parent_contact}
+                      onChange={(phone) => setNewStudent({ ...newStudent, parent_contact: phone })}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Gender *</label>
-                <select
-                  value={newStudent.gender}
-                  onChange={(e) => setNewStudent({ ...newStudent, gender: e.target.value })}
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
+              <div className="modal-footer">
+                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  <span className="btn-icon">+</span> Add Student
+                </button>
               </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Parent Name *</label>
-                <input
-                  type="text"
-                  value={newStudent.parent_name}
-                  onChange={(e) => setNewStudent({ ...newStudent, parent_name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Parent Contact *</label>
-                <PhoneInput
-                  value={newStudent.parent_contact}
-                  onChange={(phone) => setNewStudent({ ...newStudent, parent_contact: phone })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button type="button" onClick={() => setShowAddForm(false)} className="btn-secondary">
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary">
-                Add Student
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
 
@@ -613,6 +796,7 @@ const ManageClassStudents = () => {
                   <th>Gender</th>
                   <th>Parent Name</th>
                   <th>Parent Contact</th>
+                  <th>Status</th>
                   {canEdit && <th>Actions</th>}
                 </tr>
               </thead>
@@ -624,14 +808,43 @@ const ManageClassStudents = () => {
                     <td>{student.gender}</td>
                     <td>{student.parent_name}</td>
                     <td>{student.parent_contact}</td>
+                    <td>
+                      {student.is_extra === 1 || student.is_extra === true ? (
+                        <span className="status-badge pending">⏳ Pending Approval</span>
+                      ) : student.is_extra === 2 ? (
+                        <span className="status-badge rejected">✗ Rejected</span>
+                      ) : (
+                        <span className="status-badge approved">✓ Approved</span>
+                      )}
+                    </td>
                     {canEdit && (
                       <td>
-                        <button
-                          onClick={() => handleRemoveStudent(student.id)}
-                          className="btn-danger btn-sm"
-                        >
-                          Remove
-                        </button>
+                        <div className="action-buttons">
+                          {(student.is_extra === 1 || student.is_extra === true) && (
+                            <>
+                              <button
+                                onClick={() => handleApproveStudent(student.id)}
+                                className="btn-approve btn-sm"
+                                title="Approve student"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleDisapproveStudent(student.id)}
+                                className="btn-reject btn-sm"
+                                title="Reject student"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => handleRemoveStudent(student.id)}
+                            className="btn-danger btn-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>

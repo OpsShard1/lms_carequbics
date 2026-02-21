@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { useEditMode } from '../../hooks/useEditMode';
 import DatePicker from '../../components/DatePicker';
+import PhoneInput from '../../components/PhoneInput';
 import MonthPicker from '../../components/MonthPicker';
 import api from '../../api/axios';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
@@ -262,8 +263,17 @@ const SchoolAttendance = () => {
                 <div className="form-group">
                   <label>Date of Birth *</label>
                   <DatePicker
-                    selected={extraStudent.date_of_birth ? new Date(extraStudent.date_of_birth) : null}
-                    onChange={(date) => setExtraStudent({...extraStudent, date_of_birth: date ? date.toISOString().split('T')[0] : ''})}
+                    selected={extraStudent.date_of_birth ? new Date(extraStudent.date_of_birth + 'T00:00:00') : null}
+                    onChange={(date) => {
+                      if (date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        setExtraStudent({...extraStudent, date_of_birth: `${year}-${month}-${day}`});
+                      } else {
+                        setExtraStudent({...extraStudent, date_of_birth: ''});
+                      }
+                    }}
                     placeholder="Select date of birth"
                     required
                     maxDate={new Date()}
@@ -291,9 +301,9 @@ const SchoolAttendance = () => {
                 </div>
                 <div className="form-group">
                   <label>Parent Contact</label>
-                  <input 
+                  <PhoneInput
                     value={extraStudent.parent_contact}
-                    onChange={(e) => setExtraStudent({...extraStudent, parent_contact: e.target.value})}
+                    onChange={(phone) => setExtraStudent({...extraStudent, parent_contact: phone})}
                   />
                 </div>
               </div>
