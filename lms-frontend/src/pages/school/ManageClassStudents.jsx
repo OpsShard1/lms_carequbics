@@ -241,6 +241,53 @@ const ManageClassStudents = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleExportStudents = () => {
+    if (!classInfo || students.length === 0) {
+      showWarning('No students to export');
+      return;
+    }
+
+    // Create CSV header with school and class info
+    let csvContent = `School: ${selectedSchool.name}\n`;
+    csvContent += `Class: ${classInfo.name}\n`;
+    if (classInfo.section) {
+      csvContent += `Section: ${classInfo.section}\n`;
+    }
+    csvContent += `Total Students: ${students.length}\n`;
+    csvContent += `Export Date: ${new Date().toLocaleDateString()}\n\n`;
+    
+    // Add column headers
+    csvContent += 'First Name,Last Name,Date of Birth,Gender,Parent Name,Parent Contact,Status\n';
+    
+    // Add student data
+    students.forEach(student => {
+      const dob = new Date(student.date_of_birth).toLocaleDateString();
+      const status = student.is_extra === 1 || student.is_extra === true 
+        ? 'Pending Approval' 
+        : student.is_extra === 2 
+        ? 'Rejected' 
+        : 'Approved';
+      
+      csvContent += `${student.first_name},${student.last_name},${dob},${student.gender || ''},${student.parent_name || ''},${student.parent_contact || ''},${status}\n`;
+    });
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    
+    // Create filename: SchoolName_ClassName_Date.csv
+    const schoolName = selectedSchool.name.replace(/[^a-z0-9]/gi, '_');
+    const className = classInfo.name.replace(/[^a-z0-9]/gi, '_');
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `${schoolName}_${className}_${date}.csv`;
+    
+    a.click();
+    window.URL.revokeObjectURL(url);
+    showSuccess('Student data exported successfully');
+  };
+
   const handleAddStudent = async (e) => {
     e.preventDefault();
     
@@ -780,7 +827,14 @@ const ManageClassStudents = () => {
       )}
 
       <div className="students-section">
-        <h3>Students in Class ({students.length})</h3>
+        <div className="students-section-header">
+          <h3>Students in Class ({students.length})</h3>
+          {students.length > 0 && (
+            <button onClick={handleExportStudents} className="btn-export">
+              📥 Export Students
+            </button>
+          )}
+        </div>
         
         {students.length === 0 ? (
           <div className="empty-state">
