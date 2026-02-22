@@ -298,6 +298,62 @@ export const AuthProvider = ({ children }) => {
           setAvailableSchools([]);
           setAvailableCenters([]);
         }
+      } else if (userData.role_name === 'sales_head') {
+        // Sales head gets ALL schools (read-only)
+        try {
+          const schoolsRes = await Promise.race([
+            api.get('/schools').catch(() => ({ data: [] })),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => ({ data: [] }));
+          
+          clearTimeout(loadingTimeout);
+          
+          const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          setAvailableSchools(schools);
+          setAvailableCenters([]); // Sales head doesn't have center access
+          
+          // Auto-select first school
+          if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+            selectSchool(schools[0]);
+          }
+          
+          // Sales head only has school section
+          setCurrentSection('school');
+          localStorage.setItem('currentSection', 'school');
+        } catch (error) {
+          clearTimeout(loadingTimeout);
+          console.error('Error loading sales_head schools:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
+        }
+      } else if (userData.role_name === 'sales') {
+        // Sales users get their assigned schools from user_assignments
+        try {
+          const schoolsRes = await Promise.race([
+            api.get('/teacher-assignments/my-schools').catch(() => ({ data: [] })),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]).catch(() => ({ data: [] }));
+          
+          clearTimeout(loadingTimeout);
+          
+          const schools = Array.isArray(schoolsRes.data) ? schoolsRes.data : [];
+          setAvailableSchools(schools);
+          setAvailableCenters([]); // Sales users don't have center access
+          
+          // Auto-select first school
+          if (schools.length > 0 && !localStorage.getItem('selectedSchool')) {
+            selectSchool(schools[0]);
+          }
+          
+          // Sales users only have school section
+          setCurrentSection('school');
+          localStorage.setItem('currentSection', 'school');
+        } catch (error) {
+          clearTimeout(loadingTimeout);
+          console.error('Error loading sales schools:', error);
+          setAvailableSchools([]);
+          setAvailableCenters([]);
+        }
       } else {
         clearTimeout(loadingTimeout);
         // Other roles get from their user_assignments

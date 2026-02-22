@@ -4,8 +4,8 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all schools with their assigned teachers and principals
-router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
+// Get all schools with their assigned teachers, principals, and sales
+router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'sales_head'), async (req, res) => {
   try {
     // Get all schools
     const [schools] = await pool.query(`
@@ -26,7 +26,7 @@ router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), a
       JOIN users u ON ua.user_id = u.id
       JOIN roles r ON u.role_id = r.id
       WHERE ua.school_id IS NOT NULL 
-        AND (r.name = 'school_teacher' OR r.name LIKE '%principal%')
+        AND (r.name = 'school_teacher' OR r.name LIKE '%principal%' OR r.name = 'sales')
         AND u.is_active = true
       ORDER BY r.name, u.first_name
     `);
@@ -35,7 +35,8 @@ router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head'), a
     const schoolsWithAssignments = schools.map(school => ({
       ...school,
       teachers: assignments.filter(a => a.school_id === school.id && a.role_name === 'school_teacher'),
-      principals: assignments.filter(a => a.school_id === school.id && a.role_name.includes('principal'))
+      principals: assignments.filter(a => a.school_id === school.id && a.role_name.includes('principal')),
+      sales: assignments.filter(a => a.school_id === school.id && a.role_name === 'sales')
     }));
 
     res.json(schoolsWithAssignments);
@@ -79,8 +80,25 @@ router.get('/available-principals', authenticate, authorize('developer', 'owner'
   }
 });
 
-// Assign a user (teacher or principal) to a school
-router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
+// Get available sales users
+router.get('/available-sales', authenticate, authorize('developer', 'owner', 'trainer_head', 'sales_head'), async (req, res) => {
+  try {
+    const [salesUsers] = await pool.query(`
+      SELECT u.id, u.first_name, u.last_name, u.email
+      FROM users u 
+      JOIN roles r ON u.role_id = r.id 
+      WHERE r.name = 'sales' AND u.is_active = true 
+      ORDER BY u.first_name
+    `);
+    res.json(salesUsers);
+  } catch (error) {
+    console.error('Get available sales users error:', error);
+    res.status(500).json({ error: 'Failed to fetch sales users' });
+  }
+});
+
+// Assign a user (teacher, principal, or sales) to a school
+router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'sales_head'), async (req, res) => {
   try {
     const { user_id, school_id } = req.body;
     
@@ -112,7 +130,7 @@ router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head'), 
 });
 
 // Remove an assignment
-router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_head'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('developer', 'owner', 'trainer_head', 'sales_head'), async (req, res) => {
   try {
     await pool.query('DELETE FROM user_assignments WHERE id = ?', [req.params.id]);
     res.json({ message: 'Assignment removed successfully' });

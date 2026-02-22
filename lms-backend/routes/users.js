@@ -5,7 +5,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'super_admin', 'admin'), async (req, res) => {
+router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'super_admin', 'admin', 'sales_head'), async (req, res) => {
   try {
     const userRole = req.user.role_name;
     
@@ -27,6 +27,9 @@ router.get('/', authenticate, authorize('developer', 'owner', 'trainer_head', 's
     } else if (userRole === 'trainer_head') {
       // trainer_head cannot see admin, super_admin, owner users
       whereClause = "WHERE r.name NOT IN ('super_admin', 'admin', 'owner', 'parent')";
+    } else if (userRole === 'sales_head') {
+      // sales_head can only see sales users
+      whereClause = "WHERE r.name = 'sales'";
     }
     
     const [users] = await pool.query(`
@@ -99,7 +102,7 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'super_admin', 'admin'), async (req, res) => {
+router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head', 'super_admin', 'admin', 'sales_head'), async (req, res) => {
   try {
     const { email, password, first_name, last_name, phone, role_id, section_type, assignments } = req.body;
     if (!email || !password || !first_name || !role_id) {
@@ -116,11 +119,12 @@ router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head', '
     
     // Define role hierarchy permissions
     const rolePermissions = {
-      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar']
+      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar'],
+      'sales_head': ['sales']
     };
     
     const allowedRoles = rolePermissions[userRole] || [];
@@ -158,7 +162,7 @@ router.post('/', authenticate, authorize('developer', 'owner', 'trainer_head', '
   }
 });
 
-router.put('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 'trainer_head', 'admin'), async (req, res) => {
+router.put('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 'trainer_head', 'admin', 'sales_head'), async (req, res) => {
   try {
     const { email, first_name, last_name, phone, role_id, section_type, is_active, password, assignments } = req.body;
     
@@ -173,11 +177,12 @@ router.put('/:id', authenticate, authorize('developer', 'owner', 'super_admin', 
     
     // Define role hierarchy permissions
     const rolePermissions = {
-      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar']
+      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar'],
+      'sales_head': ['sales']
     };
     
     const allowedRoles = rolePermissions[userRole] || [];
@@ -285,11 +290,12 @@ router.delete('/:id', authenticate, authorize('developer', 'owner', 'super_admin
     
     // Define role hierarchy permissions
     const rolePermissions = {
-      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'],
-      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar']
+      'super_admin': ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'developer': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'admin': ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'owner': ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'],
+      'trainer_head': ['school_teacher', 'trainer', 'principal', 'registrar'],
+      'sales_head': ['sales']
     };
     
     const allowedRoles = rolePermissions[userRole] || [];

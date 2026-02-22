@@ -21,7 +21,7 @@ const Layout = () => {
     if (!user) return false;
     
     // Roles that don't need assignments (they have global access)
-    const rolesWithoutAssignments = ['developer', 'owner', 'super_admin'];
+    const rolesWithoutAssignments = ['developer', 'owner', 'super_admin', 'sales_head'];
     if (rolesWithoutAssignments.includes(user.role_name)) {
       return false;
     }
@@ -29,7 +29,7 @@ const Layout = () => {
     // Check if user has any assignments based on their role
     const roleName = user.role_name;
     
-    if (roleName === 'school_teacher' || roleName === 'principal') {
+    if (roleName === 'school_teacher' || roleName === 'principal' || roleName === 'sales') {
       // These roles need at least one school assignment
       return availableSchools.length === 0;
     }
@@ -146,13 +146,13 @@ const Layout = () => {
   };
 
   const schoolMenuItems = [
-    { path: '/school/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'principal', 'school_teacher', 'trainer_head', 'trainer'], settingKey: 'school_dashboard' },
-    { path: '/school/classes', label: 'Classes', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer_head', 'trainer'], settingKey: 'school_classes' },
-    { path: '/school/students', label: 'Students', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_students' },
-    { path: '/school/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head'], settingKey: 'school_curriculum' },
-    { path: '/school/class-progress', label: 'Class Progress', roles: ['developer', 'owner', 'principal', 'trainer_head', 'trainer'], settingKey: 'school_class_progress' },
-    { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_timetable' },
-    { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'principal', 'trainer', 'trainer_head'], settingKey: 'school_attendance' },
+    { path: '/school/dashboard', label: 'Dashboard', roles: ['developer', 'owner', 'principal', 'school_teacher', 'trainer_head', 'trainer', 'sales_head', 'sales'], settingKey: 'school_dashboard' },
+    { path: '/school/classes', label: 'Classes', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer_head', 'trainer', 'sales_head', 'sales'], settingKey: 'school_classes' },
+    { path: '/school/students', label: 'Students', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head', 'sales_head', 'sales'], settingKey: 'school_students' },
+    { path: '/school/curriculum', label: 'Curriculum', roles: ['developer', 'owner', 'trainer_head', 'sales_head'], settingKey: 'school_curriculum' },
+    { path: '/school/class-progress', label: 'Class Progress', roles: ['developer', 'owner', 'principal', 'trainer_head', 'trainer', 'sales_head', 'sales'], settingKey: 'school_class_progress' },
+    { path: '/school/timetable', label: 'Timetable', roles: ['developer', 'owner', 'school_teacher', 'principal', 'trainer', 'trainer_head', 'sales_head', 'sales'], settingKey: 'school_timetable' },
+    { path: '/school/attendance', label: 'Attendance', roles: ['developer', 'owner', 'principal', 'trainer', 'trainer_head', 'sales_head', 'sales'], settingKey: 'school_attendance' },
   ];
 
   const centerMenuItems = [
@@ -165,10 +165,10 @@ const Layout = () => {
   ];
 
   const adminMenuItems = [
-    { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_users' },
-    { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_schools' },
+    { path: '/admin/users', label: 'Users', roles: ['developer', 'owner', 'super_admin', 'trainer_head', 'sales_head'], settingKey: 'admin_users' },
+    { path: '/admin/schools', label: 'Schools', roles: ['developer', 'owner', 'super_admin', 'trainer_head', 'sales_head'], settingKey: 'admin_schools' },
     { path: '/admin/centers', label: 'Centers', roles: ['developer', 'owner', 'super_admin', 'trainer_head'], settingKey: 'admin_centers' },
-    { path: '/admin/help', label: 'Help', roles: ['developer', 'owner', 'super_admin', 'admin', 'trainer_head', 'trainer', 'school_teacher', 'principal', 'registrar'], settingKey: null },
+    { path: '/admin/help', label: 'Help', roles: ['developer', 'owner', 'super_admin', 'admin', 'trainer_head', 'trainer', 'school_teacher', 'principal', 'registrar', 'sales_head', 'sales'], settingKey: null },
     { path: '/admin/issues', label: 'Issues', roles: ['developer', 'owner', 'super_admin', 'admin', 'trainer_head'], settingKey: null },
     { path: '/admin/settings', label: 'Settings', roles: ['super_admin'], settingKey: null }, // Only super_admin can see settings
   ];

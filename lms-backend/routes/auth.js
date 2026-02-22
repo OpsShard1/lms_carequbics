@@ -8,6 +8,7 @@ const router = express.Router();
 
 // Login
 router.post('/login', async (req, res) => {
+  let connection;
   try {
     const { email, password } = req.body;
 
@@ -15,8 +16,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    // Get a connection from the pool
+    connection = await pool.getConnection();
+
     // First check if user exists (regardless of active status)
-    const [allUsers] = await pool.query(`
+    const [allUsers] = await connection.query(`
       SELECT u.*, r.name as role_name 
       FROM users u 
       JOIN roles r ON u.role_id = r.id 
@@ -24,6 +28,7 @@ router.post('/login', async (req, res) => {
     `, [email]);
 
     if (allUsers.length === 0) {
+      connection.release();
       return res.status(401).json({ error: 'Wrong email or password' });
     }
 
@@ -31,11 +36,13 @@ router.post('/login', async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
+      connection.release();
       return res.status(401).json({ error: 'Wrong email or password' });
     }
 
     // Check if user is deactivated
     if (!user.is_active) {
+      connection.release();
       return res.status(403).json({ 
         error: 'Account Deactivated',
         message: 'Your account has been deactivated. Please contact your administrator for assistance.',
@@ -43,13 +50,16 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const [assignments] = await pool.query(`
+    const [assignments] = await connection.query(`
       SELECT ua.*, s.name as school_name, c.name as center_name
       FROM user_assignments ua
       LEFT JOIN schools s ON ua.school_id = s.id
       LEFT JOIN centers c ON ua.center_id = c.id
       WHERE ua.user_id = ?
     `, [user.id]);
+
+    // Release connection back to pool
+    connection.release();
 
     const token = jwt.sign(
       { userId: user.id, role: user.role_name },
@@ -64,8 +74,35 @@ router.post('/login', async (req, res) => {
       user: { ...user, assignments }
     });
   } catch (error) {
+    // Release connection if it was acquired
+    if (connection) {
+      connection.release();
+    }
+    
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed', details: error.message });
+    
+    // Provide more specific error messages
+    if (error.code === 'ECONNRESET') {
+      return res.status(503).json({ 
+        error: 'Database connection lost', 
+        message: 'Unable to connect to the database. Please try again.',
+        details: 'The connection to the database was reset. This may be due to network issues or server timeout.'
+      });
+    }
+    
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ 
+        error: 'Database unavailable', 
+        message: 'Cannot reach the database server. Please try again later.',
+        details: error.message
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Login failed', 
+      message: 'An unexpected error occurred during login.',
+      details: error.message 
+    });
   }
 });
 

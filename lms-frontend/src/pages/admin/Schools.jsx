@@ -15,11 +15,13 @@ const AdminSchools = () => {
   const [showAssignTeacherModal, setShowAssignTeacherModal] = useState(false);
   const [showAssignPrincipalModal, setShowAssignPrincipalModal] = useState(false);
   const [showAssignTrainerModal, setShowAssignTrainerModal] = useState(false);
+  const [showAssignSalesModal, setShowAssignSalesModal] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [principals, setPrincipals] = useState([]);
   const [trainers, setTrainers] = useState([]);
+  const [salesUsers, setSalesUsers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [trainerAssignments, setTrainerAssignments] = useState([]);
   const [form, setForm] = useState({ name: '', address: '', contact_number: '', email: '' });
@@ -75,14 +77,16 @@ const AdminSchools = () => {
 
   const loadUsers = async () => {
     try {
-      const [usersRes, staffRes] = await Promise.all([
+      const [usersRes, staffRes, salesRes] = await Promise.all([
         api.get('/users'),
-        api.get('/staff-assignments/staff')
+        api.get('/staff-assignments/staff'),
+        api.get('/school-assignments/available-sales').catch(() => ({ data: [] }))
       ]);
       const allUsers = usersRes.data;
       setTeachers(allUsers.filter(u => u.role_name === 'school_teacher'));
       setPrincipals(allUsers.filter(u => u.role_name === 'principal'));
       setTrainers(staffRes.data.filter(s => s.role_name === 'trainer'));
+      setSalesUsers(salesRes.data);
     } catch (err) {
       console.error('Failed to load users:', err);
     }
@@ -95,7 +99,8 @@ const AdminSchools = () => {
       if (schoolData) {
         const allAssignments = [
           ...schoolData.teachers.map(t => ({ ...t, role_name: 'school_teacher' })),
-          ...schoolData.principals.map(p => ({ ...p, role_name: p.role_name }))
+          ...schoolData.principals.map(p => ({ ...p, role_name: p.role_name })),
+          ...(schoolData.sales || []).map(s => ({ ...s, role_name: 'sales' }))
         ];
         setAssignments(allAssignments);
       } else {
@@ -110,6 +115,27 @@ const AdminSchools = () => {
   const openAssignTrainerModal = () => {
     setSelectedUser(null);
     setShowAssignTrainerModal(true);
+  };
+
+  const openAssignSalesModal = () => {
+    setSelectedUser(null);
+    setShowAssignSalesModal(true);
+  };
+
+  const confirmAssignSales = async () => {
+    if (!checkEdit() || !selectedUser) return;
+    try {
+      await api.post('/school-assignments', {
+        user_id: selectedUser,
+        school_id: selectedSchool.id
+      });
+      setShowAssignSalesModal(false);
+      setSelectedUser(null);
+      await loadAssignments(selectedSchool.id);
+      showSuccess('Sales user assigned successfully!');
+    } catch (err) {
+      showError('Failed to assign sales user: ' + (err.response?.data?.error || err.message));
+    }
   };
 
   const confirmAssignTrainer = async () => {
@@ -223,8 +249,14 @@ const AdminSchools = () => {
     return trainers.filter(t => !assignedIds.includes(t.id));
   };
 
+  const getUnassignedSales = () => {
+    const assignedIds = assignments.map(a => a.user_id);
+    return salesUsers.filter(s => !assignedIds.includes(s.id));
+  };
+
   const assignedTeachers = assignments.filter(a => a.role_name === 'school_teacher');
   const assignedPrincipals = assignments.filter(a => a.role_name === 'principal');
+  const assignedSales = assignments.filter(a => a.role_name === 'sales');
 
   // Filter schools based on search term
   const filteredSchools = schools.filter(school => 
@@ -414,6 +446,40 @@ const AdminSchools = () => {
               </button>
             )}
           </div>
+
+          {/* Assigned Sales */}
+          <div className="assignment-section">
+            <h3>Assigned Sales ({assignedSales.length})</h3>
+            {assignedSales.length > 0 ? (
+              <div className="assigned-list">
+                {assignedSales.map(a => (
+                  <div key={a.id} className="assigned-item">
+                    <span>{a.first_name} {a.last_name} ({a.email})</span>
+                    {canEdit && (
+                      <button 
+                        onClick={() => handleUnassign(a.id)} 
+                        className="btn-text btn-delete"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="no-data">No sales users assigned yet.</p>
+            )}
+            
+            {canEdit && getUnassignedSales().length > 0 && (
+              <button 
+                onClick={openAssignSalesModal} 
+                className="btn-primary"
+                style={{ marginTop: '12px' }}
+              >
+                Assign Sales
+              </button>
+            )}
+          </div>
         </div>
       </Modal>
 
@@ -546,6 +612,52 @@ const AdminSchools = () => {
             </button>
             <button 
               onClick={confirmAssignTrainer} 
+              className="btn-primary"
+              disabled={!selectedUser}
+            >
+              Assign to {selectedSchool?.name}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirm Assign Sales Modal */}
+      <Modal 
+        isOpen={showAssignSalesModal} 
+        onClose={() => {
+          setShowAssignSalesModal(false);
+          setSelectedUser(null);
+        }} 
+        title="Assign Sales"
+      >
+        <div className="confirm-modal-content">
+          <div className="form-group">
+            <label>Select Sales User <span className="required">*</span></label>
+            <select 
+              value={selectedUser || ''} 
+              onChange={(e) => setSelectedUser(parseInt(e.target.value))}
+              required
+            >
+              <option value="">Choose a sales user...</option>
+              {getUnassignedSales().map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.first_name} {s.last_name} ({s.email})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-actions">
+            <button 
+              onClick={() => {
+                setShowAssignSalesModal(false);
+                setSelectedUser(null);
+              }} 
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={confirmAssignSales} 
               className="btn-primary"
               disabled={!selectedUser}
             >

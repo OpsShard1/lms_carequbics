@@ -6,6 +6,21 @@ const router = express.Router();
 
 router.get('/', authenticate, async (req, res) => {
   try {
+    const userRole = req.user.role_name;
+    
+    // Sales users only see schools assigned to them
+    if (userRole === 'sales') {
+      const [schools] = await pool.query(`
+        SELECT DISTINCT s.* 
+        FROM schools s
+        JOIN user_assignments ua ON ua.school_id = s.id
+        WHERE ua.user_id = ? AND s.is_active = true
+        ORDER BY s.name
+      `, [req.user.id]);
+      return res.json(schools);
+    }
+    
+    // Sales head and other roles see all schools
     const [schools] = await pool.query('SELECT * FROM schools WHERE is_active = true ORDER BY name');
     res.json(schools);
   } catch (error) {

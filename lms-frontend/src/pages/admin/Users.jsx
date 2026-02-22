@@ -74,24 +74,28 @@ const AdminUsers = () => {
     
     if (userRole === 'super_admin') {
       // Only super_admin can see admin accounts
-      return ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+      return ['admin', 'owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'];
     }
     
     if (userRole === 'developer') {
       // developer is technical role, not management - cannot see admin
-      return ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+      return ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'];
     }
     
     if (userRole === 'admin') {
-      return ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+      return ['owner', 'trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'];
     }
     
     if (userRole === 'owner') {
-      return ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar'];
+      return ['trainer_head', 'school_teacher', 'trainer', 'principal', 'registrar', 'sales_head', 'sales'];
     }
     
     if (userRole === 'trainer_head') {
       return ['school_teacher', 'trainer', 'principal', 'registrar'];
+    }
+    
+    if (userRole === 'sales_head') {
+      return ['sales'];
     }
     
     return [];
